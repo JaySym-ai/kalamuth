@@ -37,6 +37,8 @@ export interface GameServer {
   status?: "new" | "live" | "closed";
   /** Whether this server is restricted to paid users only (optional). */
   paidOnly?: boolean;
+  /** Whether gladiators can die in arena fights (optional). If true, death is possible; if false, no gladiator will ever die. */
+  hardcore?: boolean;
   /** Gameplay configuration for this world. */
   config: ServerConfig;
   /** ISO timestamp strings (optional metadata). */
