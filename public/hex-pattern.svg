@@ -1,0 +1,11 @@
+<svg width="150" height="150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="hexagons" width="150" height="150" patternUnits="userSpaceOnUse">
+      <polygon points="75,0 150,43.3 150,129.9 75,173.2 0,129.9 0,43.3" 
+               fill="none" 
+               stroke="rgba(245, 158, 11, 0.05)" 
+               stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#hexagons)" />
+</svg>
