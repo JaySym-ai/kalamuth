@@ -11,11 +11,13 @@ export const SERVERS: GameServer[] = [
     name: "Alpha 1",
     description: "Early test world for development and balance iteration.",
     status: "new",
+    paidOnly: false,
     config: {
       gladiatorHealthMin: 30,
       gladiatorHealthMax: 300,
       gladiatorStatMin: 10,
       gladiatorStatMax: 100,
+      ludusSize: 5,
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

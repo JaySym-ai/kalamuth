@@ -14,6 +14,9 @@ export interface ServerConfig {
   gladiatorStatMin: number;
   gladiatorStatMax: number;
 
+  /** Maximum number of gladiators that can be in a single ludus. */
+  ludusSize: number;
+
   /**
    * Placeholder for future knobs (e.g., economy rates, injury recovery, AI model hints).
    * Extend this interface over time rather than creating unrelated globals.
@@ -32,6 +35,8 @@ export interface GameServer {
   description?: string;
   /** Current status (optional; informational). */
   status?: "new" | "live" | "closed";
+  /** Whether this server is restricted to paid users only (optional). */
+  paidOnly?: boolean;
   /** Gameplay configuration for this world. */
   config: ServerConfig;
   /** ISO timestamp strings (optional metadata). */
