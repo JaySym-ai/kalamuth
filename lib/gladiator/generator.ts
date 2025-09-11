@@ -1,5 +1,5 @@
 import "server-only";
-import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
+
 import { Gladiator } from "@/types/gladiator";
 import {
   GladiatorZ,
@@ -10,12 +10,12 @@ import {
 export type GenerateOptions = {
   model?: string; // Default below
   seed?: number;
-  maxTokens?: number;
+
   temperature?: number;
   retry?: number; // number of LLM repair retries on validation failure
 };
 
-const DEFAULT_MODEL = "openai/gpt-4o-mini"; // Change as desired on OpenRouter
+const DEFAULT_MODEL = "nvidia/nemotron-nano-9b-v2:free"; // Change as desired on OpenRouter
 
 const systemPrompt = `
 You are generating gladiators for a Ludus management game.
@@ -46,25 +46,34 @@ function parseContent<T>(content: string): T {
   }
 }
 
-async function llmGenerateRaw(messages: { role: "system" | "user"; content: string }[], schema: Record<string, unknown>, opts: GenerateOptions) {
-  ensureOpenRouterKey();
-  const res = await openrouter.chat.completions.create({
+async function llmGenerateRaw(
+  messages: { role: "system" | "user"; content: string }[],
+  schema: Record<string, unknown>,
+  opts: GenerateOptions
+) {
+  const base = process.env.NEXT_PUBLIC_FUNCTIONS_BASE_URL;
+  if (!base) {
+    throw new Error("Missing NEXT_PUBLIC_FUNCTIONS_BASE_URL. Set it to your Cloud Functions base URL, e.g. https://us-central1-<project-id>.cloudfunctions.net");
+  }
+  const payload: any = {
     model: opts.model || DEFAULT_MODEL,
     messages,
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "Gladiator",
-        strict: true,
-        schema,
-      },
-    },
+    schema,
     seed: opts.seed,
-    max_tokens: opts.maxTokens ?? 1400,
     temperature: opts.temperature ?? 0.8,
+  };
+
+  const res = await fetch(`${base}/proxyOpenRouter`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
-  const content = res.choices?.[0]?.message?.content || "";
-  return content;
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Firebase Function proxyOpenRouter failed: ${res.status} ${text}`);
+  }
+  const json = (await res.json()) as { content?: string };
+  return json.content || "";
 }
 
 export async function generateGladiator(opts: GenerateOptions = {}): Promise<Gladiator> {
