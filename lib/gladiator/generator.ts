@@ -8,14 +8,11 @@ import {
 } from "@/lib/gladiator/schema";
 
 export type GenerateOptions = {
-  model?: string; // Default below
   seed?: number;
-
   temperature?: number;
   retry?: number; // number of LLM repair retries on validation failure
 };
 
-const DEFAULT_MODEL = "nvidia/nemotron-nano-9b-v2:free"; // Change as desired on OpenRouter
 
 const systemPrompt = `
 You are generating gladiators for a Ludus management game.
@@ -56,7 +53,6 @@ async function llmGenerateRaw(
     throw new Error("Missing NEXT_PUBLIC_FUNCTIONS_BASE_URL. Set it to your Cloud Functions base URL, e.g. https://us-central1-<project-id>.cloudfunctions.net");
   }
   const payload: any = {
-    model: opts.model || DEFAULT_MODEL,
     messages,
     schema,
     seed: opts.seed,
