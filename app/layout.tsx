@@ -20,8 +20,13 @@ export const metadata: Metadata = {
   themeColor: "#000000",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }],
-    shortcut: [{ url: "/icons/icon.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon.svg", type: "image/svg+xml" }
+    ],
+    shortcut: [
+      { url: "/favicon.svg", type: "image/svg+xml" }
+    ],
     apple: [{ url: "/icons/maskable.svg", type: "image/svg+xml" }],
   },
 };
