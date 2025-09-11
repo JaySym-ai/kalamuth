@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#FFB000"/>
+      <stop offset="100%" stop-color="#FF3B00"/>
+    </linearGradient>
+    <clipPath id="maskable">
+      <!-- 12dp corner radius equivalent mask for Android adaptive icons -->
+      <rect x="64" y="64" width="896" height="896" rx="192" ry="192"/>
+    </clipPath>
+  </defs>
+  <rect width="1024" height="1024" fill="#000"/>
+  <g clip-path="url(#maskable)">
+    <rect width="1024" height="1024" fill="url(#g)"/>
+    <g fill="#000" opacity="0.9" transform="translate(256,256)">
+      <path d="M256 0l64 96-64 96-64-96 64-96zm-96 160l96 160-64 96-96-160 64-96zm192 0l64 96-96 160-64-96 96-160zm-96 256l64 96-64 96-64-96 64-96z"/>
+    </g>
+  </g>
+</svg>
+

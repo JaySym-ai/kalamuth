@@ -80,7 +80,7 @@ export default function Footer() {
         {/* Easter Egg */}
         <div className="mt-8 text-center">
           <p className="text-gray-700 text-xs italic">
-            "Ave, Imperator, morituri te salutant" - Those who are about to die salute you
+            &ldquo;Ave, Imperator, morituri te salutant&rdquo; - Those who are about to die salute you
           </p>
         </div>
       </div>

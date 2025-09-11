@@ -4,7 +4,18 @@ import { useState } from "react";
 import SectionTitle from "../ui/SectionTitle";
 import GladiatorCard from "../ui/GladiatorCard";
 
-const gladiators = [
+const gladiators: {
+  name: string;
+  title: string;
+  class: string;
+  level: number;
+  wins: number;
+  losses: number;
+  skills: string[];
+  stats: { strength: number; agility: number; endurance: number; intelligence: number; };
+  image: string;
+  rarity: "common" | "rare" | "epic" | "legendary";
+}[] = [
   {
     name: "Marcus Aurelius",
     title: "The Unbreakable",
