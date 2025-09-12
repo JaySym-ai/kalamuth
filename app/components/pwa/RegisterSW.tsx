@@ -24,7 +24,7 @@ export default function RegisterSW() {
             }
           };
         };
-      } catch (err) {
+      } catch {
         // silent
       }
     };

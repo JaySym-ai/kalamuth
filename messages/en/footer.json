@@ -1,0 +1,41 @@
+{
+  "Footer": {
+    "description": "Forge your legend in the ultimate gladiator management simulation.",
+    "categories": {
+      "Game": "Game",
+      "Community": "Community",
+      "Resources": "Resources",
+      "Company": "Company"
+    },
+    "links": {
+      "features": "Features",
+      "gladiators": "Gladiators",
+      "battleSystem": "Battle System",
+      "ludusWars": "Ludus Wars",
+      "cityMarkets": "City Markets",
+      "discord": "Discord",
+      "forums": "Forums",
+      "reddit": "Reddit",
+      "twitter": "Twitter",
+      "youTube": "YouTube",
+      "gameGuide": "Game Guide",
+      "combatManual": "Combat Manual",
+      "apiDocs": "API Docs",
+      "patchNotes": "Patch Notes",
+      "roadmap": "Roadmap",
+      "about": "About",
+      "careers": "Careers",
+      "pressKit": "Press Kit",
+      "contact": "Contact",
+      "legal": "Legal"
+    },
+    "copyright": "© 2024 Kalamuth. All rights reserved. Glory awaits the brave.",
+    "legal": {
+      "privacyPolicy": "Privacy Policy",
+      "termsOfService": "Terms of Service",
+      "cookiePolicy": "Cookie Policy"
+    },
+    "quote": "“Ave, Imperator, morituri te salutant” - Those who are about to die salute you"
+  }
+}
+

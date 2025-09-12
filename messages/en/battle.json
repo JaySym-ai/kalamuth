@@ -1,0 +1,22 @@
+{
+  "Battle": {
+    "subtitle": "BATTLE SYSTEM",
+    "title": "AI-Simulated Combat",
+    "description": "Every fight is unique with detailed combat logs and strategic depth",
+    "controls": {
+      "play": "Simulate Battle",
+      "pause": "Pause Battle",
+      "reset": "Reset"
+    },
+    "logTitle": "Combat Log",
+    "live": "LIVE",
+    "roundLabel": "ROUND",
+    "stats": {
+      "totalDamage": "Total Damage",
+      "criticalHits": "Critical Hits",
+      "duration": "Duration"
+    },
+    "hpLabel": "HP"
+  }
+}
+

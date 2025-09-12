@@ -1,0 +1,34 @@
+{
+  "Features": {
+    "subtitle": "FONCTIONNALITÉS DU JEU",
+    "title": "Forgez votre empire",
+    "description": "Découvrez la gestion ultime de gladiateurs avec une IA de pointe",
+    "items": {
+      "aiPoweredCombat": {
+        "title": "Combats propulsés par l'IA",
+        "description": "Chaque combat est simulé de manière unique par une IA avancée, avec des journaux détaillés et des analyses stratégiques."
+      },
+      "trainChampions": {
+        "title": "Former des champions",
+        "description": "Développez les compétences, l'équipement et les styles de combat de vos gladiateurs pour créer des guerriers imparables."
+      },
+      "manageLudus": {
+        "title": "Gérer votre Ludus",
+        "description": "Construisez et agrandissez vos infrastructures, embauchez des serviteurs et bâtissez votre réputation."
+      },
+      "interactiveGladiators": {
+        "title": "Gladiateurs interactifs",
+        "description": "Discutez avec vos guerriers, découvrez leurs histoires et comprenez leurs motivations et leurs peurs."
+      },
+      "exploreCity": {
+        "title": "Explorer la cité",
+        "description": "Visitez les marchés pour acheter des gladiateurs, de l'équipement et des ressources. Découvrez des opportunités cachées."
+      },
+      "ludusWars": {
+        "title": "Guerres de Ludus",
+        "description": "Participez à des batailles massives où tous les gladiateurs se battent simultanément. Dominez les écoles rivales."
+      }
+    }
+  }
+}
+

@@ -2,7 +2,7 @@
 const VERSION = 'v1';
 const STATIC_CACHE = `static-${VERSION}`;
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
@@ -29,7 +29,7 @@ self.addEventListener('fetch', (event) => {
         const cache = await caches.open(STATIC_CACHE);
         cache.put(req, fresh.clone());
         return fresh;
-      } catch (err) {
+      } catch {
         const cache = await caches.open(STATIC_CACHE);
         const cached = await cache.match(req);
         return cached || caches.match('/');

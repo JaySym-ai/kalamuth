@@ -1,0 +1,34 @@
+{
+  "Features": {
+    "subtitle": "GAME FEATURES",
+    "title": "Forge Your Empire",
+    "description": "Experience the ultimate gladiator management simulation with cutting-edge AI technology",
+    "items": {
+      "aiPoweredCombat": {
+        "title": "AI-Powered Combat",
+        "description": "Every battle is uniquely simulated with advanced AI, providing detailed combat logs and strategic insights."
+      },
+      "trainChampions": {
+        "title": "Train Champions",
+        "description": "Develop your gladiators' skills, equipment, and fighting styles to create unstoppable warriors."
+      },
+      "manageLudus": {
+        "title": "Manage Your Ludus",
+        "description": "Build and expand your training grounds, hire servants, and establish your reputation."
+      },
+      "interactiveGladiators": {
+        "title": "Interactive Gladiators",
+        "description": "Talk to your warriors, learn their stories, and understand their motivations and fears."
+      },
+      "exploreCity": {
+        "title": "Explore the City",
+        "description": "Visit markets to buy gladiators, equipment, and resources. Discover hidden opportunities."
+      },
+      "ludusWars": {
+        "title": "Ludus Wars",
+        "description": "Engage in massive battles where all gladiators fight simultaneously. Dominate rival schools."
+      }
+    }
+  }
+}
+

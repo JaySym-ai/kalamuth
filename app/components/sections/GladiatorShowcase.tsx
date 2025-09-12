@@ -3,6 +3,7 @@
 import { useState } from "react";
 import SectionTitle from "../ui/SectionTitle";
 import GladiatorCard from "../ui/GladiatorCard";
+import { useTranslations } from "next-intl";
 
 const gladiators: {
   name: string;
@@ -12,7 +13,7 @@ const gladiators: {
   wins: number;
   losses: number;
   skills: string[];
-  stats: { strength: number; agility: number; endurance: number; intelligence: number; };
+  stats: { strength: number; agility: number; endurance: number; intelligence: number };
   image: string;
   rarity: "common" | "rare" | "epic" | "legendary";
 }[] = [
@@ -28,10 +29,10 @@ const gladiators: {
       strength: 92,
       agility: 78,
       endurance: 95,
-      intelligence: 65,
+      intelligence: 65
     },
     image: "🗡️",
-    rarity: "legendary",
+    rarity: "legendary"
   },
   {
     name: "Lucia Valeria",
@@ -45,10 +46,10 @@ const gladiators: {
       strength: 68,
       agility: 96,
       endurance: 72,
-      intelligence: 84,
+      intelligence: 84
     },
     image: "🏹",
-    rarity: "epic",
+    rarity: "epic"
   },
   {
     name: "Brutus Magnus",
@@ -62,15 +63,16 @@ const gladiators: {
       strength: 98,
       agility: 52,
       endurance: 88,
-      intelligence: 45,
+      intelligence: 45
     },
     image: "⚔️",
-    rarity: "epic",
-  },
+    rarity: "epic"
+  }
 ];
 
 export default function GladiatorShowcase() {
   const [selectedGladiator, setSelectedGladiator] = useState(0);
+  const t = useTranslations("Gladiators");
 
   return (
     <section className="relative py-24 bg-gradient-to-b from-black via-amber-950/10 to-black overflow-hidden">
@@ -82,9 +84,9 @@ export default function GladiatorShowcase() {
 
       <div className="relative z-10 container mx-auto px-6">
         <SectionTitle
-          subtitle="YOUR WARRIORS"
-          title="Meet The Gladiators"
-          description="Each warrior has unique abilities, personalities, and combat styles"
+          subtitle={t("subtitle")}
+          title={t("title")}
+          description={t("description")}
         />
 
         <div className="mt-16 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -102,7 +104,7 @@ export default function GladiatorShowcase() {
         <div className="mt-12 p-8 bg-black/50 backdrop-blur-sm border border-amber-900/20 rounded-2xl">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-2xl font-bold text-amber-400">
-              Combat Analysis: {gladiators[selectedGladiator].name}
+              {t("combatAnalysis")}: {gladiators[selectedGladiator].name}
             </h3>
             <div className="flex gap-2">
               {gladiators[selectedGladiator].skills.map((skill, index) => (
@@ -115,7 +117,7 @@ export default function GladiatorShowcase() {
               ))}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(gladiators[selectedGladiator].stats).map(([stat, value]) => (
               <div key={stat} className="bg-black/30 rounded-lg p-4">

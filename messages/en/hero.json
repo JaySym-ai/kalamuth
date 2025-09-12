@@ -1,0 +1,18 @@
+{
+  "Hero": {
+    "badge": "FORGE YOUR LEGEND",
+    "title1": "RISE AS A",
+    "title2": "LUDUS MASTER",
+    "subtitle1": "Command your gladiators. Train champions. Conquer the arena.",
+    "subtitle2": "Every battle is AI-simulated with full combat logs.",
+    "primaryCta": "Begin Your Legacy",
+    "secondaryCta": "Watch Battles",
+    "stats": {
+      "activeLudus": "Active Ludus",
+      "gladiators": "Gladiators",
+      "battlesFought": "Battles Fought",
+      "arenaOpen": "Arena Open"
+    }
+  }
+}
+

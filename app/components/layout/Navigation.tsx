@@ -2,30 +2,34 @@
 
 import { useState } from "react";
 import NavLink from "../ui/NavLink";
-
-const navItems = [
-  { label: "Arena", href: "#arena" },
-  { label: "Gladiators", href: "#gladiators" },
-  { label: "Training", href: "#training" },
-  { label: "City", href: "#city" },
-  { label: "Wars", href: "#wars" },
-];
+import { useTranslations } from "next-intl";
+import LanguageSwitcher from "../ui/LanguageSwitcher";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const t = useTranslations("Nav");
+
+  const navItems = [
+    { label: t("arena"), href: "#arena" },
+    { label: t("gladiators"), href: "#gladiators" },
+    { label: t("training"), href: "#training" },
+    { label: t("city"), href: "#city" },
+    { label: t("wars"), href: "#wars" }
+  ];
 
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden lg:flex items-center gap-8">
+      <nav className="hidden lg:flex items-center gap-6">
         {navItems.map((item) => (
           <NavLink key={item.label} href={item.href}>
             {item.label}
           </NavLink>
         ))}
         <button className="px-6 py-2 bg-gradient-to-r from-amber-600 to-red-600 text-white font-bold rounded-lg hover:from-amber-500 hover:to-red-500 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-amber-500/25">
-          Enter Arena
+          {t("enterArena")}
         </button>
+        <LanguageSwitcher />
       </nav>
 
       {/* Mobile Menu Button */}
@@ -58,6 +62,10 @@ export default function Navigation() {
         }`}
       >
         <nav className="container mx-auto px-6 py-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Language</span>
+            <LanguageSwitcher />
+          </div>
           {navItems.map((item) => (
             <NavLink
               key={item.label}
@@ -68,7 +76,7 @@ export default function Navigation() {
             </NavLink>
           ))}
           <button className="mt-4 px-6 py-3 bg-gradient-to-r from-amber-600 to-red-600 text-white font-bold rounded-lg hover:from-amber-500 hover:to-red-500 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-amber-500/25">
-            Enter Arena
+            {t("enterArena")}
           </button>
         </nav>
       </div>

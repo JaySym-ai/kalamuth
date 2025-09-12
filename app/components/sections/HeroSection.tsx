@@ -7,9 +7,11 @@ import AnimatedCounter from "../ui/AnimatedCounter";
 import GlowButton from "../ui/GlowButton";
 import ScrollIndicator from "../ui/ScrollIndicator";
 import ParticleEffect from "../effects/ParticleEffect";
+import { useTranslations } from "next-intl";
 
 export default function HeroSection() {
   const [mounted, setMounted] = useState(false);
+  const t = useTranslations("Hero");
 
   useEffect(() => {
     setMounted(true);
@@ -21,7 +23,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-br from-black via-red-950/20 to-black" />
       <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
       <ParticleEffect />
-      
+
       {/* Animated Background Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px]">
         <div className="absolute inset-0 bg-gradient-to-r from-amber-600/20 to-red-600/20 rounded-full blur-3xl animate-pulse" />
@@ -46,19 +48,19 @@ export default function HeroSection() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
             </span>
             <span className="text-amber-400 text-sm font-medium">
-              FORGE YOUR LEGEND
+              {t("badge")}
             </span>
           </motion.div>
 
           {/* Main Title */}
           <h1 className="mb-6">
             <AnimatedText
-              text="RISE AS A"
+              text={t("title1")}
               className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tight"
               delay={0.2}
             />
             <AnimatedText
-              text="LUDUS MASTER"
+              text={t("title2")}
               className="text-6xl md:text-8xl lg:text-9xl font-black bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent"
               delay={0.4}
             />
@@ -70,10 +72,10 @@ export default function HeroSection() {
               mounted ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
             }`}
           >
-            Command your gladiators. Train champions. Conquer the arena.
+            {t("subtitle1")}
             <br />
             <span className="text-amber-400 font-semibold">
-              Every battle is AI-simulated with full combat logs.
+              {t("subtitle2")}
             </span>
           </p>
 
@@ -84,28 +86,28 @@ export default function HeroSection() {
             }`}
           >
             <GlowButton primary size="large">
-              Begin Your Legacy
+              {t("primaryCta")}
             </GlowButton>
             <GlowButton size="large">
-              Watch Battles
+              {t("secondaryCta")}
             </GlowButton>
           </div>
 
           {/* Stats */}
           <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             {[
-              { value: "10K+", label: "Active Ludus" },
-              { value: "50K+", label: "Gladiators" },
-              { value: "1M+", label: "Battles Fought" },
-              { value: "24/7", label: "Arena Open" },
+              { value: "10K+", label: t("stats.activeLudus") },
+              { value: "50K+", label: t("stats.gladiators") },
+              { value: "1M+", label: t("stats.battlesFought") },
+              { value: "24/7", label: t("stats.arenaOpen") }
             ].map((stat, index) => (
               <AnimatedCounter
                 key={index}
                 value={stat.value}
                 label={stat.label}
                 delay={1 + index * 0.1}
-              />
-            ))}
+              />)
+            )}
           </div>
         </div>
       </div>

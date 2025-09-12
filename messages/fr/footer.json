@@ -1,0 +1,41 @@
+{
+  "Footer": {
+    "description": "Forgez votre légende dans la simulation ultime de gestion de gladiateurs.",
+    "categories": {
+      "Game": "Jeu",
+      "Community": "Communauté",
+      "Resources": "Ressources",
+      "Company": "Entreprise"
+    },
+    "links": {
+      "features": "Fonctionnalités",
+      "gladiators": "Gladiateurs",
+      "battleSystem": "Système de combat",
+      "ludusWars": "Guerres de Ludus",
+      "cityMarkets": "Marchés de la cité",
+      "discord": "Discord",
+      "forums": "Forums",
+      "reddit": "Reddit",
+      "twitter": "Twitter",
+      "youTube": "YouTube",
+      "gameGuide": "Guide du jeu",
+      "combatManual": "Manuel de combat",
+      "apiDocs": "Docs API",
+      "patchNotes": "Notes de version",
+      "roadmap": "Feuille de route",
+      "about": "À propos",
+      "careers": "Carrières",
+      "pressKit": "Kit presse",
+      "contact": "Contact",
+      "legal": "Mentions légales"
+    },
+    "copyright": "© 2024 Kalamuth. Tous droits réservés. La gloire appartient aux braves.",
+    "legal": {
+      "privacyPolicy": "Politique de confidentialité",
+      "termsOfService": "Conditions d'utilisation",
+      "cookiePolicy": "Politique de cookies"
+    },
+    "quote": "“Ave, Imperator, morituri te salutant” - Ceux qui vont mourir te saluent"
+  }
+}
+

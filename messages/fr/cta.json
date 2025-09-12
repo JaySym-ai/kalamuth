@@ -1,0 +1,20 @@
+{
+  "CTA": {
+    "title": "Votre destinée vous attend",
+    "subtitleLine1": "Rejoignez des milliers de maîtres de Ludus dans l'empire ultime des gladiateurs.",
+    "subtitleLine2": "L'arène appelle son prochain champion.",
+    "emailPlaceholder": "Entrez votre e-mail pour un accès anticipé",
+    "claimButton": "Réclamer votre Ludus",
+    "benefits": {
+      "exclusiveRewards": {"title": "Récompenses exclusives", "description": "Bonus d'accès anticipé"},
+      "priorityAccess": {"title": "Accès prioritaire", "description": "Soyez le premier dans l'arène"},
+      "founderStatus": {"title": "Statut de fondateur", "description": "Reconnaissance spéciale à vie"}
+    },
+    "trust": {
+      "noCardRequired": "Aucune carte requise",
+      "securePrivate": "Sécurisé et privé",
+      "joinPlayers": "+10 000 joueurs nous ont rejoints"
+    }
+  }
+}
+

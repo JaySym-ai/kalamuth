@@ -1,0 +1,20 @@
+{
+  "CTA": {
+    "title": "Your Destiny Awaits",
+    "subtitleLine1": "Join thousands of Ludus Masters in the ultimate gladiator empire.",
+    "subtitleLine2": "The arena calls for its next champion.",
+    "emailPlaceholder": "Enter your email for early access",
+    "claimButton": "Claim Your Ludus",
+    "benefits": {
+      "exclusiveRewards": {"title": "Exclusive Rewards", "description": "Early access bonuses"},
+      "priorityAccess": {"title": "Priority Access", "description": "Be first in the arena"},
+      "founderStatus": {"title": "Founder Status", "description": "Special recognition forever"}
+    },
+    "trust": {
+      "noCardRequired": "No Credit Card Required",
+      "securePrivate": "Secure & Private",
+      "joinPlayers": "Join 10,000+ Players"
+    }
+  }
+}
+

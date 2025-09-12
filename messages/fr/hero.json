@@ -1,0 +1,18 @@
+{
+  "Hero": {
+    "badge": "FORGEZ VOTRE LÉGENDE",
+    "title1": "DEVENEZ",
+    "title2": "MAÎTRE DE LUDUS",
+    "subtitle1": "Commandez vos gladiateurs. Formez des champions. Conquérez l'arène.",
+    "subtitle2": "Chaque combat est simulé par l'IA avec des journaux détaillés.",
+    "primaryCta": "Commencez votre héritage",
+    "secondaryCta": "Regarder des combats",
+    "stats": {
+      "activeLudus": "Ludus actifs",
+      "gladiators": "Gladiateurs",
+      "battlesFought": "Combats livrés",
+      "arenaOpen": "Arène ouverte"
+    }
+  }
+}
+

@@ -1,0 +1,22 @@
+{
+  "Battle": {
+    "subtitle": "SYSTÈME DE COMBAT",
+    "title": "Combat simulé par IA",
+    "description": "Chaque affrontement est unique avec des journaux détaillés et une grande profondeur stratégique",
+    "controls": {
+      "play": "Simuler le combat",
+      "pause": "Mettre en pause",
+      "reset": "Réinitialiser"
+    },
+    "logTitle": "Journal de combat",
+    "live": "DIRECT",
+    "roundLabel": "MANCHE",
+    "stats": {
+      "totalDamage": "Dégâts totaux",
+      "criticalHits": "Coups critiques",
+      "duration": "Durée"
+    },
+    "hpLabel": "PV"
+  }
+}
+

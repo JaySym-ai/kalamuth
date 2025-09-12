@@ -29,8 +29,8 @@ export const proxyOpenRouter = onRequest(
         },
       });
 
-      const request: any = {
-        model: model || "nvidia/nemotron-nano-9b-v2:free",
+      const completion = await client.chat.completions.create({
+        model: typeof model === "string" && model.length > 0 ? model : "nvidia/nemotron-nano-9b-v2:free",
         messages,
         response_format: {
           type: "json_schema",
@@ -38,15 +38,16 @@ export const proxyOpenRouter = onRequest(
         },
         seed,
         temperature: typeof temperature === "number" ? temperature : 0.8,
-      };
-
-      const completion = await client.chat.completions.create(request);
+      });
 
       const content = completion.choices?.[0]?.message?.content || "";
       res.status(200).json({ content });
       return;
-    } catch (err: any) {
-      const msg = typeof err?.message === "string" ? err.message : "Unknown error";
+    } catch (err: unknown) {
+      let msg = "Unknown error";
+      if (err instanceof Error && typeof err.message === "string") {
+        msg = err.message;
+      }
       res.status(500).json({ error: msg });
       return;
     }

@@ -43,6 +43,15 @@ function parseContent<T>(content: string): T {
   }
 }
 
+// Payload type for the Firebase Function proxy
+type ProxyOpenRouterPayload = {
+  messages: { role: "system" | "user"; content: string }[];
+  schema: Record<string, unknown>;
+  seed?: number;
+  temperature?: number;
+};
+
+
 async function llmGenerateRaw(
   messages: { role: "system" | "user"; content: string }[],
   schema: Record<string, unknown>,
@@ -52,7 +61,7 @@ async function llmGenerateRaw(
   if (!base) {
     throw new Error("Missing NEXT_PUBLIC_FUNCTIONS_BASE_URL. Set it to your Cloud Functions base URL, e.g. https://us-central1-<project-id>.cloudfunctions.net");
   }
-  const payload: any = {
+  const payload: ProxyOpenRouterPayload = {
     messages,
     schema,
     seed: opts.seed,

@@ -40,7 +40,7 @@ export async function signInWithGoogle(): Promise<void> {
     const idToken = result?.credential?.idToken;
     if (!idToken) throw new Error("Google native sign-in failed: missing idToken");
     const credential = GoogleAuthProvider.credential(idToken);
-    const userCred = await signInWithCredential(auth, credential);
+    await signInWithCredential(auth, credential);
 
     // On native, skip session cookie exchange (different origin). Use client SDK directly.
     // If you need to call your Next.js backend, send Authorization: Bearer <idToken>.
@@ -57,7 +57,7 @@ export async function signInWithGoogle(): Promise<void> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ idToken }),
     });
-  } catch (e) {
+  } catch {
     // Popup may be blocked; use redirect
     await signInWithRedirect(auth, provider);
   }

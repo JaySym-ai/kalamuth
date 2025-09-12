@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   try {
     await createSessionCookie(idToken);
     return NextResponse.json({ ok: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Failed to create session" }, { status: 401 });
   }
 }
