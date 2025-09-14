@@ -10,10 +10,10 @@ export const TEST_CREDENTIALS = {
  */
 export async function loginUser(page: Page, email = TEST_CREDENTIALS.email, password = TEST_CREDENTIALS.password) {
   await page.goto('/en/auth');
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', password);
-  await page.click('button[type="submit"]');
-  
+  await page.fill('[data-testid="email-input"]', email);
+  await page.fill('[data-testid="password-input"]', password);
+  await page.click('[data-testid="login-submit-button"]');
+
   // Wait for successful login redirect
   await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 10000 });
 }
@@ -23,18 +23,19 @@ export async function loginUser(page: Page, email = TEST_CREDENTIALS.email, pass
  */
 export async function registerUser(page: Page, email = TEST_CREDENTIALS.email, password = TEST_CREDENTIALS.password) {
   await page.goto('/en/auth');
-  
+
   // Switch to register mode
-  await page.click('text=New here? Create an account');
-  
+  await page.click('[data-testid="switch-to-register"]');
+
   // Fill registration form
-  await page.fill('input[type="email"]', email);
-  await page.fill('input[type="password"]', password);
-  await page.fill('input[name="passwordConfirm"]', password);
-  
+  await page.fill('[data-testid="register-email-input"]', email);
+  await page.fill('[data-testid="register-password-input"]', password);
+  await page.fill('[data-testid="register-password-confirm-input"]', password);
+  await page.check('[data-testid="terms-checkbox"]');
+
   // Submit registration
-  await page.click('button[type="submit"]');
-  
+  await page.click('[data-testid="register-submit-button"]');
+
   // Wait for successful registration redirect
   await page.waitForURL(/\/en\/onboarding/, { timeout: 10000 });
 }

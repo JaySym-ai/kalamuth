@@ -10,11 +10,12 @@ test.describe('Authentication Flow', () => {
     const page = await browser.newPage();
     try {
       await page.goto('http://localhost:3001/en/auth');
-      await page.click('text=New here? Create an account');
-      await page.fill('input[type="email"]', TEST_EMAIL);
-      await page.fill('input[type="password"]', TEST_PASSWORD);
-      await page.fill('input[name="passwordConfirm"]', TEST_PASSWORD);
-      await page.click('button[type="submit"]');
+      await page.click('[data-testid="switch-to-register"]');
+      await page.fill('[data-testid="register-email-input"]', TEST_EMAIL);
+      await page.fill('[data-testid="register-password-input"]', TEST_PASSWORD);
+      await page.fill('[data-testid="register-password-confirm-input"]', TEST_PASSWORD);
+      await page.check('[data-testid="terms-checkbox"]');
+      await page.click('[data-testid="register-submit-button"]');
       // Wait a bit for registration to complete
       await page.waitForTimeout(2000);
     } catch (error) {
@@ -49,18 +50,19 @@ test.describe('Authentication Flow', () => {
     await page.goto('/en/auth');
 
     // Switch to register mode
-    await page.click('text=New here? Create an account');
+    await page.click('[data-testid="switch-to-register"]');
 
     // Should see register form
     await expect(page.locator('h1')).toContainText('Create your account');
 
     // Fill registration form
-    await page.fill('input[type="email"]', testEmail);
-    await page.fill('input[type="password"]', TEST_PASSWORD);
-    await page.fill('input[name="passwordConfirm"]', TEST_PASSWORD);
-    
+    await page.fill('[data-testid="register-email-input"]', testEmail);
+    await page.fill('[data-testid="register-password-input"]', TEST_PASSWORD);
+    await page.fill('[data-testid="register-password-confirm-input"]', TEST_PASSWORD);
+    await page.check('[data-testid="terms-checkbox"]');
+
     // Submit registration
-    await page.click('button[type="submit"]');
+    await page.click('[data-testid="register-submit-button"]');
     
     // Should redirect to onboarding after successful registration
     await expect(page).toHaveURL(/\/en\/onboarding/, { timeout: 10000 });
@@ -72,16 +74,16 @@ test.describe('Authentication Flow', () => {
   test('should allow user login with email and password', async ({ page }) => {
     // Navigate to auth page
     await page.goto('/en/auth');
-    
+
     // Should be in login mode by default
     await expect(page.locator('h1')).toContainText('Welcome back');
-    
+
     // Fill login form
-    await page.fill('input[type="email"]', TEST_EMAIL);
-    await page.fill('input[type="password"]', TEST_PASSWORD);
-    
+    await page.fill('[data-testid="email-input"]', TEST_EMAIL);
+    await page.fill('[data-testid="password-input"]', TEST_PASSWORD);
+
     // Submit login
-    await page.click('button[type="submit"]');
+    await page.click('[data-testid="login-submit-button"]');
     
     // Should redirect to onboarding or home after successful login
     await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 10000 });
@@ -93,9 +95,9 @@ test.describe('Authentication Flow', () => {
   test('should allow authenticated users to access protected routes', async ({ page }) => {
     // First, log in
     await page.goto('/en/auth');
-    await page.fill('input[type="email"]', TEST_EMAIL);
-    await page.fill('input[type="password"]', TEST_PASSWORD);
-    await page.click('button[type="submit"]');
+    await page.fill('[data-testid="email-input"]', TEST_EMAIL);
+    await page.fill('[data-testid="password-input"]', TEST_PASSWORD);
+    await page.click('[data-testid="login-submit-button"]');
     
     // Wait for redirect after login
     await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 10000 });
@@ -114,9 +116,9 @@ test.describe('Authentication Flow', () => {
   test('should handle logout correctly', async ({ page }) => {
     // First, log in
     await page.goto('/en/auth');
-    await page.fill('input[type="email"]', TEST_EMAIL);
-    await page.fill('input[type="password"]', TEST_PASSWORD);
-    await page.click('button[type="submit"]');
+    await page.fill('[data-testid="email-input"]', TEST_EMAIL);
+    await page.fill('[data-testid="password-input"]', TEST_PASSWORD);
+    await page.click('[data-testid="login-submit-button"]');
     
     // Wait for redirect to onboarding
     await page.waitForURL(/\/en\/onboarding/, { timeout: 10000 });
@@ -137,9 +139,9 @@ test.describe('Authentication Flow', () => {
   test('should prevent authenticated users from accessing auth page', async ({ page }) => {
     // First, log in
     await page.goto('/en/auth');
-    await page.fill('input[type="email"]', TEST_EMAIL);
-    await page.fill('input[type="password"]', TEST_PASSWORD);
-    await page.click('button[type="submit"]');
+    await page.fill('[data-testid="email-input"]', TEST_EMAIL);
+    await page.fill('[data-testid="password-input"]', TEST_PASSWORD);
+    await page.click('[data-testid="login-submit-button"]');
     
     // Wait for redirect after login
     await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 10000 });
@@ -154,13 +156,13 @@ test.describe('Authentication Flow', () => {
   test('should handle invalid login credentials', async ({ page }) => {
     // Navigate to auth page
     await page.goto('/en/auth');
-    
+
     // Fill login form with invalid credentials
-    await page.fill('input[type="email"]', 'invalid@example.com');
-    await page.fill('input[type="password"]', 'wrongpassword');
-    
+    await page.fill('[data-testid="email-input"]', 'invalid@example.com');
+    await page.fill('[data-testid="password-input"]', 'wrongpassword');
+
     // Submit login
-    await page.click('button[type="submit"]');
+    await page.click('[data-testid="login-submit-button"]');
     
     // Should show error message
     await expect(page.locator('text=Something went wrong')).toBeVisible({ timeout: 5000 });
@@ -172,14 +174,41 @@ test.describe('Authentication Flow', () => {
   test('should validate required fields in registration', async ({ page }) => {
     // Navigate to auth page
     await page.goto('/en/auth');
-    
+
     // Switch to register mode
-    await page.click('text=New here? Create an account');
-    
+    await page.click('[data-testid="switch-to-register"]');
+
     // Try to submit without filling fields
-    await page.click('button[type="submit"]');
-    
+    await page.click('[data-testid="register-submit-button"]');
+
     // Should show validation error or stay on page
     await expect(page).toHaveURL(/\/auth/);
+  });
+
+  test('should toggle password visibility', async ({ page }) => {
+    // Navigate to auth page
+    await page.goto('/en/auth');
+
+    // Password should be hidden by default
+    const passwordInput = page.locator('[data-testid="password-input"]');
+    await expect(passwordInput).toHaveAttribute('type', 'password');
+
+    // Click toggle button to show password
+    await page.click('[data-testid="toggle-password-visibility"]');
+    await expect(passwordInput).toHaveAttribute('type', 'text');
+
+    // Click again to hide password
+    await page.click('[data-testid="toggle-password-visibility"]');
+    await expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+
+  test('should display Google sign-in button', async ({ page }) => {
+    // Navigate to auth page
+    await page.goto('/en/auth');
+
+    // Should see Google sign-in button
+    const googleButton = page.locator('[data-testid="google-signin-button"]');
+    await expect(googleButton).toBeVisible();
+    await expect(googleButton).toContainText('Continue with Google');
   });
 });

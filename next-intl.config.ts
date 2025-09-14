@@ -37,13 +37,13 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
   if (!detectedLocale && requestLocale) {
     try {
       detectedLocale = await requestLocale;
-    } catch (e) {
+    } catch {
       // Ignore errors
     }
   }
 
   // Fallback to default locale if unsupported
-  const activeLocale: string = detectedLocale && routing.locales.includes(detectedLocale as any) ? detectedLocale : routing.defaultLocale;
+  const activeLocale: string = detectedLocale && routing.locales.includes(detectedLocale as 'en' | 'fr') ? detectedLocale : routing.defaultLocale;
 
   const [common, nav, hero, features, gladiators, battle, cta, footer] = await Promise.all([
     import(`./messages/${activeLocale}/common.json`),
