@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { loginUser, TEST_CREDENTIALS } from './helpers/auth';
 
-// Test user credentials
-const TEST_EMAIL = 'test@kalamuth.com';
-const TEST_PASSWORD = 'testpassword123';
+// Use shared test credentials
+const TEST_EMAIL = TEST_CREDENTIALS.email;
+const TEST_PASSWORD = TEST_CREDENTIALS.password;
 
 test.describe('Protected Routes Access Control', () => {
   test.describe('Unauthenticated Access', () => {
@@ -38,14 +39,8 @@ test.describe('Protected Routes Access Control', () => {
 
   test.describe('Authenticated Access', () => {
     test.beforeEach(async ({ page }) => {
-      // Log in before each test
-      await page.goto('/en/auth');
-      await page.fill('input[type="email"]', TEST_EMAIL);
-      await page.fill('input[type="password"]', TEST_PASSWORD);
-      await page.click('button[type="submit"]');
-      
-      // Wait for successful login
-      await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 10000 });
+      // Log in before each test using shared helper
+      await loginUser(page);
     });
 
     test('should allow access to onboarding page when authenticated', async ({ page }) => {
@@ -107,11 +102,7 @@ test.describe('Protected Routes Access Control', () => {
   test.describe('Session Management', () => {
     test('should handle session expiration gracefully', async ({ page }) => {
       // Log in
-      await page.goto('/en/auth');
-      await page.fill('input[type="email"]', TEST_EMAIL);
-      await page.fill('input[type="password"]', TEST_PASSWORD);
-      await page.click('button[type="submit"]');
-      await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 10000 });
+      await loginUser(page);
       
       // Clear cookies to simulate session expiration
       await page.context().clearCookies();
@@ -125,11 +116,7 @@ test.describe('Protected Routes Access Control', () => {
 
     test('should handle logout and prevent access to protected routes', async ({ page }) => {
       // Log in
-      await page.goto('/en/auth');
-      await page.fill('input[type="email"]', TEST_EMAIL);
-      await page.fill('input[type="password"]', TEST_PASSWORD);
-      await page.click('button[type="submit"]');
-      await page.waitForURL(/\/en\/onboarding/, { timeout: 10000 });
+      await loginUser(page);
       
       // Logout
       await page.click('button:has-text("Sign out")');
@@ -149,26 +136,17 @@ test.describe('Protected Routes Access Control', () => {
       
       // Should see French login form
       await expect(page.locator('h1')).toContainText('Bon retour');
-      
-      // Log in
-      await page.fill('input[type="email"]', TEST_EMAIL);
-      await page.fill('input[type="password"]', TEST_PASSWORD);
-      await page.click('button[type="submit"]');
-      
-      // Should redirect to French onboarding
-      await page.waitForURL(/\/fr\/onboarding/, { timeout: 10000 });
+
+      // Log in using French locale
+      await loginUser(page, TEST_EMAIL, TEST_PASSWORD, 'fr');
+
+      // Should be on French onboarding
       await expect(page.locator('h1')).toBeVisible();
     });
 
     test('should maintain locale after authentication', async ({ page }) => {
-      // Start with French
-      await page.goto('/fr/auth');
-      await page.fill('input[type="email"]', TEST_EMAIL);
-      await page.fill('input[type="password"]', TEST_PASSWORD);
-      await page.click('button[type="submit"]');
-      
-      // Should stay in French locale
-      await page.waitForURL(/\/fr\/onboarding/, { timeout: 10000 });
+      // Log in with French locale
+      await loginUser(page, TEST_EMAIL, TEST_PASSWORD, 'fr');
       
       // Navigate to other pages - should maintain French locale
       await page.goto('/fr');

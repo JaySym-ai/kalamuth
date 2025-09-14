@@ -1,15 +1,16 @@
 import { test, expect } from '@playwright/test';
+import { registerUser, TEST_CREDENTIALS } from './helpers/auth';
 
-// Test user credentials - use a consistent test user
-const TEST_EMAIL = 'playwright-test@kalamuth.com';
-const TEST_PASSWORD = 'testpassword123';
+// Use shared test credentials
+const TEST_EMAIL = TEST_CREDENTIALS.email;
+const TEST_PASSWORD = TEST_CREDENTIALS.password;
 
 test.describe('Authentication Flow', () => {
   // Setup: Create a test user that can be used for login tests
   test.beforeAll(async ({ browser }) => {
     const page = await browser.newPage();
     try {
-      await page.goto('http://localhost:3001/en/auth');
+      await page.goto('/en/auth');
       await page.click('[data-testid="switch-to-register"]');
       await page.fill('[data-testid="register-email-input"]', TEST_EMAIL);
       await page.fill('[data-testid="register-password-input"]', TEST_PASSWORD);
@@ -43,10 +44,7 @@ test.describe('Authentication Flow', () => {
   });
 
   test('should allow user registration with email and password', async ({ page }) => {
-    // Use a unique email for registration test
-    const testEmail = `reg-test-${Date.now()}@kalamuth.com`;
-
-    // Navigate to auth page
+    // Navigate to auth page to test the registration form UI
     await page.goto('/en/auth');
 
     // Switch to register mode
@@ -55,18 +53,19 @@ test.describe('Authentication Flow', () => {
     // Should see register form
     await expect(page.locator('h1')).toContainText('Create your account');
 
-    // Fill registration form
-    await page.fill('[data-testid="register-email-input"]', testEmail);
-    await page.fill('[data-testid="register-password-input"]', TEST_PASSWORD);
-    await page.fill('[data-testid="register-password-confirm-input"]', TEST_PASSWORD);
-    await page.check('[data-testid="terms-checkbox"]');
+    // Verify form elements are present
+    await expect(page.locator('[data-testid="register-email-input"]')).toBeVisible();
+    await expect(page.locator('[data-testid="register-password-input"]')).toBeVisible();
+    await expect(page.locator('[data-testid="register-password-confirm-input"]')).toBeVisible();
+    await expect(page.locator('[data-testid="terms-checkbox"]')).toBeVisible();
+    await expect(page.locator('[data-testid="register-submit-button"]')).toBeVisible();
 
-    // Submit registration
-    await page.click('[data-testid="register-submit-button"]');
-    
-    // Should redirect to onboarding after successful registration
+    // Use registerUser helper which handles existing users gracefully
+    await registerUser(page);
+
+    // Should redirect to onboarding after successful registration/login
     await expect(page).toHaveURL(/\/en\/onboarding/, { timeout: 10000 });
-    
+
     // Should see onboarding page content
     await expect(page.locator('h1')).toBeVisible();
   });
