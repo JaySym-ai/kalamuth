@@ -4,7 +4,9 @@ import HeroSection from "../components/sections/HeroSection";
 import FeaturesSection from "../components/sections/FeaturesSection";
 import GladiatorShowcase from "../components/sections/GladiatorShowcase";
 import BattlePreview from "../components/sections/BattlePreview";
-import CTASection from "../components/sections/CTASection";
+import CTASection from "../components/sections/CTASectionContainer";
+
+export const runtime = "nodejs";
 
 export default function Home() {
   return (

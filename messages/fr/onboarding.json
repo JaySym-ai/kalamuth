@@ -1,0 +1,8 @@
+{
+  "Onboarding": {
+    "title": "Nous sommes à l'onboarding.",
+    "desc": "Complétez quelques étapes pour démarrer votre aventure de gladiateur.",
+    "cta": { "start": "Commencer" }
+  }
+}
+

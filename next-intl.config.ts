@@ -1,9 +1,49 @@
 import {getRequestConfig} from 'next-intl/server';
-import {locales, defaultLocale} from './i18n';
+import {routing} from './i18n/routing';
 
-export default getRequestConfig(async ({locale}) => {
+function deepifyMessages(obj: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  function setPath(target: Record<string, unknown>, parts: string[], value: unknown) {
+    let cur: Record<string, unknown> = target;
+    for (let i = 0; i < parts.length; i++) {
+      const p = parts[i]!;
+      if (i === parts.length - 1) {
+        cur[p] = value as never;
+      } else {
+        if (typeof cur[p] !== 'object' || cur[p] === null || Array.isArray(cur[p])) {
+          cur[p] = {} as never;
+        }
+        cur = cur[p] as Record<string, unknown>;
+      }
+    }
+  }
+  for (const [key, value] of Object.entries(obj || {})) {
+    if (key.includes('.')) {
+      setPath(out, key.split('.'), value);
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      out[key] = deepifyMessages(value as Record<string, unknown>);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+export default getRequestConfig(async ({locale, requestLocale}) => {
+  // Try to get locale from different sources
+  let detectedLocale: string | undefined = locale;
+
+  // If no locale, try to await requestLocale if it's a Promise
+  if (!detectedLocale && requestLocale) {
+    try {
+      detectedLocale = await requestLocale;
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
   // Fallback to default locale if unsupported
-  const activeLocale: string = locale && (Array.from(locales) as string[]).includes(locale) ? locale : defaultLocale;
+  const activeLocale: string = detectedLocale && routing.locales.includes(detectedLocale as any) ? detectedLocale : routing.defaultLocale;
 
   const [common, nav, hero, features, gladiators, battle, cta, footer] = await Promise.all([
     import(`./messages/${activeLocale}/common.json`),
@@ -16,8 +56,13 @@ export default getRequestConfig(async ({locale}) => {
     import(`./messages/${activeLocale}/footer.json`)
   ]);
 
-  const messages = Object.assign(
-    {},
+  // Optional namespaces (tolerate missing files per-locale)
+  let auth: {default: Record<string, unknown>};
+  let onboarding: {default: Record<string, unknown>} ;
+  try { auth = await import(`./messages/${activeLocale}/auth.json`); } catch { auth = { default: {} }; }
+  try { onboarding = await import(`./messages/${activeLocale}/onboarding.json`); } catch { onboarding = { default: {} }; }
+
+  const sources = [
     common.default,
     nav.default,
     hero.default,
@@ -25,12 +70,18 @@ export default getRequestConfig(async ({locale}) => {
     gladiators.default,
     battle.default,
     cta.default,
-    footer.default
-  );
+    footer.default,
+    auth.default,
+    onboarding.default
+  ].map((m) => deepifyMessages(m as Record<string, unknown>));
+
+  const messages = Object.assign({}, ...sources);
+
+
 
   return {
-    locales: Array.from(locales),
-    defaultLocale,
+    locales: routing.locales,
+    defaultLocale: routing.defaultLocale,
     locale: activeLocale,
     messages
   };

@@ -7,11 +7,13 @@ import AnimatedCounter from "../ui/AnimatedCounter";
 import GlowButton from "../ui/GlowButton";
 import ScrollIndicator from "../ui/ScrollIndicator";
 import ParticleEffect from "../effects/ParticleEffect";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 
 export default function HeroSection() {
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("Hero");
+  const locale = useLocale();
 
   useEffect(() => {
     setMounted(true);
@@ -85,9 +87,11 @@ export default function HeroSection() {
               mounted ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
             }`}
           >
-            <GlowButton primary size="large">
-              {t("primaryCta")}
-            </GlowButton>
+            <Link href={`/${locale}/auth`}>
+              <GlowButton primary size="large">
+                {t("primaryCta")}
+              </GlowButton>
+            </Link>
             <GlowButton size="large">
               {t("secondaryCta")}
             </GlowButton>

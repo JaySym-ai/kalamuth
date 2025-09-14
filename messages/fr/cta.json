@@ -5,6 +5,9 @@
     "subtitleLine2": "L'arène appelle son prochain champion.",
     "emailPlaceholder": "Entrez votre e-mail pour un accès anticipé",
     "claimButton": "Réclamer votre Ludus",
+    "openApp": "Ouvrir l’application",
+    "continueOnboarding": "Continuer l’onboarding",
+
     "benefits": {
       "exclusiveRewards": {"title": "Récompenses exclusives", "description": "Bonus d'accès anticipé"},
       "priorityAccess": {"title": "Accès prioritaire", "description": "Soyez le premier dans l'arène"},

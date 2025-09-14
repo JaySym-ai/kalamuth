@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import GlowButton from "../ui/GlowButton";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 
-export default function CTASection() {
+type Props = { authed?: boolean; onboardingDone?: boolean };
+export default function CTASection({ authed = false, onboardingDone = false }: Props) {
   const [email, setEmail] = useState("");
   const t = useTranslations("CTA");
+  const locale = useLocale();
 
   return (
     <section className="relative py-24 overflow-hidden">
@@ -46,9 +49,11 @@ export default function CTASection() {
                   placeholder={t("emailPlaceholder")}
                   className="flex-1 px-6 py-4 bg-black/50 backdrop-blur-sm border border-amber-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors"
                 />
-                <GlowButton primary size="large">
-                  {t("claimButton")}
-                </GlowButton>
+                <Link href={`/${locale}${authed ? (onboardingDone ? "" : "/onboarding") : "/auth"}`}>
+                  <GlowButton primary size="large">
+                    {authed ? (onboardingDone ? t("openApp") : t("continueOnboarding")) : t("claimButton")}
+                  </GlowButton>
+                </Link>
               </div>
             </div>
           </div>

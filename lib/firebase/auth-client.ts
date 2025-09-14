@@ -16,9 +16,7 @@ import {
 // Native auth bridge (Capacitor)
 // Install: `npm i @capacitor-firebase/authentication`
 // Types are provided by the plugin.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - until deps installed
-import { Authentication } from "@capacitor-firebase/authentication";
+import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 
 async function ensurePersistence() {
   const auth = getClientAuth();
@@ -36,7 +34,7 @@ export async function signInWithGoogle(): Promise<void> {
 
   if (isNative()) {
     // Native Google sign-in, then bridge to Firebase
-    const result = await Authentication.signInWithGoogle();
+    const result = await FirebaseAuthentication.signInWithGoogle();
     const idToken = result?.credential?.idToken;
     if (!idToken) throw new Error("Google native sign-in failed: missing idToken");
     const credential = GoogleAuthProvider.credential(idToken);
@@ -67,7 +65,7 @@ export async function signOut(): Promise<void> {
   const auth = getClientAuth();
   if (isNative()) {
     // Sign out native session (optional but recommended)
-    try { await Authentication.signOut(); } catch {}
+    try { await FirebaseAuthentication.signOut(); } catch {}
     await webSignOut(auth);
     return;
   }

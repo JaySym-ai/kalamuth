@@ -5,6 +5,9 @@
     "subtitleLine2": "The arena calls for its next champion.",
     "emailPlaceholder": "Enter your email for early access",
     "claimButton": "Claim Your Ludus",
+    "openApp": "Open App",
+    "continueOnboarding": "Continue Onboarding",
+
     "benefits": {
       "exclusiveRewards": {"title": "Exclusive Rewards", "description": "Early access bonuses"},
       "priorityAccess": {"title": "Priority Access", "description": "Be first in the arena"},
