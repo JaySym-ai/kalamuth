@@ -19,11 +19,33 @@ export default function AnimatedText({ text, className = "", delay = 0 }: Animat
     return () => clearTimeout(timer);
   }, [delay]);
 
+  // For gradient text, we need to apply all classes to the same element
+  const isGradientText = className.includes('bg-gradient') && className.includes('text-transparent');
+
+  if (isGradientText) {
+    // For gradient text, use inline styles to ensure webkit properties are applied
+    return (
+      <span
+        className={`${className} inline-block transform transition-all duration-1000 ease-out ${
+          isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+        }`}
+        style={{
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        }}
+      >
+        {text}
+      </span>
+    );
+  }
+
+  // For regular text, use nested structure for better animation control
   return (
-    <div className={`${className} overflow-hidden`}>
+    <div className={`${className} block`}>
       <div
         className={`transform transition-all duration-1000 ease-out ${
-          isVisible ? "translate-y-0 opacity-100" : "translate-y-full opacity-0"
+          isVisible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
         }`}
       >
         {text}
