@@ -1,0 +1,31 @@
+{
+  "LudusCreation": {
+    "badge": "FORGEZ VOTRE HÉRITAGE",
+    "title": "Créez Votre Ludus",
+    "subtitle": "Nommez votre école de gladiateurs et établissez votre présence dans le monde antique",
+    "form": {
+      "name": {
+        "label": "Nom du Ludus",
+        "placeholder": "Entrez le nom de votre ludus",
+        "hint": "Choisissez un nom qui inspirera la peur à vos ennemis"
+      },
+      "city": {
+        "label": "Emplacement",
+        "hint": "Où votre ludus est établi"
+      },
+      "motto": {
+        "label": "Devise du Ludus (Optionnel)",
+        "placeholder": "Victoire ou Mort, Gloire Avant Tout...",
+        "hint": "Un cri de guerre ou une philosophie pour vos gladiateurs"
+      }
+    },
+    "createButton": "Établir le Ludus",
+    "creating": "Création de votre héritage...",
+    "infoText": "Votre ludus sera créé avec des gladiateurs initiaux et des ressources de départ",
+    "errors": {
+      "nameRequired": "Le nom du ludus est requis",
+      "noServer": "Aucun serveur sélectionné",
+      "createFailed": "Échec de la création du ludus. Veuillez réessayer."
+    }
+  }
+}

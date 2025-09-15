@@ -58,9 +58,20 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
 
   // Optional namespaces (tolerate missing files per-locale)
   let auth: {default: Record<string, unknown>};
-  let onboarding: {default: Record<string, unknown>} ;
+  let intro: {default: Record<string, unknown>};
+  let serverSelection: {default: Record<string, unknown>};
+  let ludusCreation: {default: Record<string, unknown>};
+  let initialGladiators: {default: Record<string, unknown>};
+  let dashboard: {default: Record<string, unknown>};
+  let cities: {default: Record<string, unknown>};
+
   try { auth = await import(`./messages/${activeLocale}/auth.json`); } catch { auth = { default: {} }; }
-  try { onboarding = await import(`./messages/${activeLocale}/onboarding.json`); } catch { onboarding = { default: {} }; }
+  try { intro = await import(`./messages/${activeLocale}/intro.json`); } catch { intro = { default: {} }; }
+  try { serverSelection = await import(`./messages/${activeLocale}/server-selection.json`); } catch { serverSelection = { default: {} }; }
+  try { ludusCreation = await import(`./messages/${activeLocale}/ludus-creation.json`); } catch { ludusCreation = { default: {} }; }
+  try { initialGladiators = await import(`./messages/${activeLocale}/initial-gladiators.json`); } catch { initialGladiators = { default: {} }; }
+  try { dashboard = await import(`./messages/${activeLocale}/dashboard.json`); } catch { dashboard = { default: {} }; }
+  try { cities = await import(`./messages/${activeLocale}/cities.json`); } catch { cities = { default: {} }; }
 
   const sources = [
     common.default,
@@ -72,7 +83,12 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
     cta.default,
     footer.default,
     auth.default,
-    onboarding.default
+    intro.default,
+    serverSelection.default,
+    ludusCreation.default,
+    initialGladiators.default,
+    dashboard.default,
+    cities.default
   ].map((m) => deepifyMessages(m as Record<string, unknown>));
 
   const messages = Object.assign({}, ...sources);

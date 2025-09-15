@@ -49,10 +49,17 @@ export default function AuthClient() {
       }
 
       const json = await res.json().catch(() => ({}));
-      if (!json?.onboardingDone) {
+
+      // Check if user has a ludus (server selected)
+      const hasLudus = json?.hasLudus || false;
+
+      if (!hasLudus) {
+        // No ludus yet, go to server selection
+        router.push(`/${locale}/server-selection`);
+      } else if (!json?.onboardingDone) {
         router.push(`/${locale}/onboarding`);
       } else {
-        router.push(`/${locale}`);
+        router.push(`/${locale}/dashboard`);
       }
     } catch {
       router.push(`/${locale}/onboarding`);
@@ -196,6 +203,9 @@ export default function AuthClient() {
           </h1>
           <p className="mt-2 text-zinc-400">
             {mode === "login" ? t("subtitle.login") : t("subtitle.register")}
+          </p>
+          <p className="mt-3 text-amber-400/80 text-sm font-medium">
+            {t("ludusContext")}
           </p>
         </motion.div>
 

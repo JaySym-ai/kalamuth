@@ -3,7 +3,9 @@
  * Not connected to storage or UI yet.
  */
 export interface City {
-  /** Name of the city */
+  /** Unique identifier for translation lookup */
+  id: string;
+  /** Name of the city (fallback if translation not found) */
   name: string;
   /** Small description suitable for tooltips or cards (1-2 sentences). */
   description: string;

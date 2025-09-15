@@ -7,9 +7,24 @@ export const runtime = "nodejs";
 export async function GET(req: Request) {
   const user = await getRequestUser(req);
   if (!user) return NextResponse.json({error: "unauthorized"}, {status: 401});
+
+  // Get user data
   const snap = await adminDb().collection("users").doc(user.uid).get();
   const data = snap.exists ? snap.data() as {onboardingDone?: boolean} : {};
-  return NextResponse.json({ onboardingDone: Boolean(data.onboardingDone) });
+
+  // Check if user has a ludus
+  const ludiSnapshot = await adminDb()
+    .collection("ludi")
+    .where("userId", "==", user.uid)
+    .limit(1)
+    .get();
+
+  const hasLudus = !ludiSnapshot.empty;
+
+  return NextResponse.json({
+    onboardingDone: Boolean(data.onboardingDone),
+    hasLudus
+  });
 }
 
 export async function POST(req: Request) {

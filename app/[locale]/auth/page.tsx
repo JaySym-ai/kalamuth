@@ -10,10 +10,18 @@ export default async function AuthPage({ params }: { params: Promise<{ locale: s
   const user = await getSessionUser();
   if (user) {
     try {
-      const snap = await adminDb().collection("users").doc(user.uid).get();
-      const onboardingDone = Boolean(snap.exists ? (snap.data() as { onboardingDone?: boolean })?.onboardingDone : false);
-      if (!onboardingDone) redirect(`/${locale}/onboarding`);
-      redirect(`/${locale}`);
+      // If user already has a ludus, send them to app; otherwise, start setup
+      const ludiSnapshot = await adminDb()
+        .collection("ludi")
+        .where("userId", "==", user.uid)
+        .limit(1)
+        .get();
+
+      if (ludiSnapshot.empty) {
+        redirect(`/${locale}/server-selection`);
+      } else {
+        redirect(`/${locale}/dashboard`);
+      }
     } catch {
       redirect(`/${locale}`);
     }

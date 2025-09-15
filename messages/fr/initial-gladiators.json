@@ -1,0 +1,32 @@
+{
+  "InitialGladiators": {
+    "badge": "VOS GUERRIERS VOUS ATTENDENT",
+    "title": "Rencontrez Vos Gladiateurs",
+    "subtitle": "Ces braves guerriers ont rejoint {ludusName}. Entraînez-les bien, car leur destin est entre vos mains.",
+    "from": "De",
+    "health": "Santé",
+    "stats": {
+      "strength": "Force",
+      "agility": "Agilité",
+      "dexterity": "Dextérité",
+      "speed": "Vitesse",
+      "chance": "Chance",
+      "intelligence": "Intelligence",
+      "charisma": "Charisme",
+      "loyalty": "Loyauté"
+    },
+    "clickToViewDetails": "Cliquez pour voir tous les détails",
+    "continueButton": "Accéder au Tableau de Bord",
+    "loading": "Préparation de votre ludus...",
+    "combatStats": "Statistiques de Combat",
+    "details": {
+      "backstory": "Histoire",
+      "personality": "Personnalité",
+      "lifeGoal": "Objectif de Vie",
+      "likes": "Aime",
+      "dislikes": "N'aime pas",
+      "weakness": "Faiblesse",
+      "fear": "Plus Grande Peur"
+    }
+  }
+}

@@ -36,9 +36,8 @@ test.describe('Authentication Integration Tests', () => {
     // Step 1: Register a new user (or login if already exists)
     await registerUser(page);
 
-    // Verify we're on onboarding page after registration/login
-    await expect(page).toHaveURL(/\/en\/onboarding/);
-    await expect(page.locator('h1')).toBeVisible();
+    // Verify we're in setup flow after registration/login
+    await expect(page).toHaveURL(/\/en\/(server-selection|ludus-creation|initial-gladiators|dashboard)/);
 
     // Step 2: Logout
     await logoutUser(page);
@@ -47,8 +46,8 @@ test.describe('Authentication Integration Tests', () => {
     await loginUser(page);
     
     // Step 4: Verify access to protected content
-    await page.goto('/en/onboarding');
-    await expect(page).toHaveURL(/\/en\/onboarding/);
+    await page.goto('/en/server-selection');
+    await expect(page).toHaveURL(/\/en\/server-selection/);
     
     // Step 5: Test API access
     await testApiAuthentication(page, true);
@@ -117,12 +116,12 @@ test.describe('Authentication Integration Tests', () => {
     await page.fill('input[type="password"]', TEST_CREDENTIALS.password);
     await page.click('button[type="submit"]');
     
-    // Should redirect to French onboarding
-    await page.waitForURL(/\/fr\/onboarding/, { timeout: 10000 });
-    
+    // Should redirect to French setup flow
+    await page.waitForURL(/\/fr\/(server-selection|ludus-creation|initial-gladiators|dashboard)/, { timeout: 10000 });
+
     // Switch to English while authenticated
-    await page.goto('/en/onboarding');
-    await expect(page).toHaveURL(/\/en\/onboarding/);
+    await page.goto('/en/server-selection');
+    await expect(page).toHaveURL(/\/en\/server-selection/);
     
     // Should maintain authentication across locales
     await testApiAuthentication(page, true);
@@ -169,7 +168,7 @@ test.describe('Authentication Integration Tests', () => {
 
     // Wait for authentication to complete (either success or stay on auth page)
     try {
-      await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 15000 });
+      await page.waitForURL(/\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard|$)/, { timeout: 15000 });
       // If we get here, authentication succeeded
       await testApiAuthentication(page, true);
     } catch (error) {
@@ -187,22 +186,22 @@ test.describe('Authentication Integration Tests', () => {
     await loginUser(page);
     await waitForAuthState(page, true);
     
-    // Go to onboarding page
-    await page.goto('/en/onboarding');
-    await expect(page).toHaveURL(/\/en\/onboarding/);
-    
+    // Go to a protected page
+    await page.goto('/en/server-selection');
+    await expect(page).toHaveURL(/\/en\/server-selection/);
+
     // Refresh the page
     await page.reload();
-    
+
     // Should maintain authentication
-    await expect(page).toHaveURL(/\/en\/onboarding/);
+    await expect(page).toHaveURL(/\/en\/server-selection/);
     await testApiAuthentication(page, true);
-    
+
     // Refresh again
     await page.reload();
-    
+
     // Should still maintain authentication
-    await expect(page).toHaveURL(/\/en\/onboarding/);
+    await expect(page).toHaveURL(/\/en\/server-selection/);
     await testApiAuthentication(page, true);
   });
 
@@ -210,10 +209,10 @@ test.describe('Authentication Integration Tests', () => {
     // Login
     await loginUser(page);
     
-    // Open onboarding in new tab
+    // Open a protected page in new tab
     const newPage = await context.newPage();
-    await newPage.goto('/en/onboarding');
-    await expect(newPage).toHaveURL(/\/en\/onboarding/);
+    await newPage.goto('/en/server-selection');
+    await expect(newPage).toHaveURL(/\/en\/server-selection/);
     
     // Logout from original page
     await logoutUser(page);

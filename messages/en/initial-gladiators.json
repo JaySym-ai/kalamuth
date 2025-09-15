@@ -1,0 +1,32 @@
+{
+  "InitialGladiators": {
+    "badge": "YOUR WARRIORS AWAIT",
+    "title": "Meet Your Gladiators",
+    "subtitle": "These brave warriors have joined {ludusName}. Train them well, for their fate is in your hands.",
+    "from": "From",
+    "health": "Health",
+    "stats": {
+      "strength": "Strength",
+      "agility": "Agility",
+      "dexterity": "Dexterity",
+      "speed": "Speed",
+      "chance": "Luck",
+      "intelligence": "Intelligence",
+      "charisma": "Charisma",
+      "loyalty": "Loyalty"
+    },
+    "clickToViewDetails": "Click to view full details",
+    "continueButton": "Enter Your Dashboard",
+    "loading": "Preparing your ludus...",
+    "combatStats": "Combat Statistics",
+    "details": {
+      "backstory": "Backstory",
+      "personality": "Personality",
+      "lifeGoal": "Life Goal",
+      "likes": "Likes",
+      "dislikes": "Dislikes",
+      "weakness": "Weakness",
+      "fear": "Greatest Fear"
+    }
+  }
+}

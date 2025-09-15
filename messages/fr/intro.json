@@ -1,0 +1,31 @@
+{
+  "Intro": {
+    "badge": "GESTION DE GLADIATEURS PROPULSÉE PAR L'IA",
+    "title": "Entrez dans l'Arène des Légendes",
+    "description": {
+      "line1": "Ce jeu est propulsé par l'IA. Vous gérerez un ludus qui aura des gladiateurs IA. Vous pourrez leur parler, en savoir plus sur eux, les faire s'entraîner en utilisant le langage naturel, les faire combattre pour la gloire contre d'autres gladiateurs IA gérés par d'autres utilisateurs et plus encore.",
+      "line2": "Votre objectif sera d'être le Ludus le plus prospère du serveur. Vous décidez du chemin à suivre, chaque combat et action sera impacté par vos décisions.",
+      "question": "Serez-vous dans la légende ou votre maison s'effondrera-t-elle comme un château de cartes ?"
+    },
+    "features": {
+      "combat": {
+        "title": "Combat Propulsé par l'IA",
+        "description": "Chaque bataille est simulée de manière unique par l'IA avec des journaux de combat détaillés et des résultats dramatiques"
+      },
+      "interaction": {
+        "title": "Conversations Naturelles",
+        "description": "Parlez avec vos gladiateurs, apprenez leurs histoires et influencez leur entraînement par le langage naturel"
+      },
+      "management": {
+        "title": "Gestion Stratégique",
+        "description": "Construisez votre ludus, gérez les ressources et prenez des décisions critiques qui façonnent votre héritage"
+      },
+      "glory": {
+        "title": "Combattez pour la Gloire",
+        "description": "Affrontez les gladiateurs IA d'autres joueurs dans des batailles épiques et grimpez les rangs pour devenir légendaire"
+      }
+    },
+    "readyButton": "Je suis prêt",
+    "footer": "Votre destin vous attend dans les sables de l'arène"
+  }
+}

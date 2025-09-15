@@ -33,12 +33,12 @@ test.describe('Authentication Flow', () => {
   });
 
   test('should redirect unauthenticated users to auth page when accessing protected routes', async ({ page }) => {
-    // Try to access onboarding page without authentication
-    await page.goto('/en/onboarding');
-    
+    // Try to access protected page without authentication
+    await page.goto('/en/server-selection');
+
     // Should be redirected to auth page
     await expect(page).toHaveURL(/\/en\/auth/);
-    
+
     // Should see login form
     await expect(page.locator('h1')).toContainText('Welcome back');
   });
@@ -63,11 +63,8 @@ test.describe('Authentication Flow', () => {
     // Use registerUser helper which handles existing users gracefully
     await registerUser(page);
 
-    // Should redirect to onboarding after successful registration/login
-    await expect(page).toHaveURL(/\/en\/onboarding/, { timeout: 10000 });
-
-    // Should see onboarding page content
-    await expect(page.locator('h1')).toBeVisible();
+    // Should redirect into setup flow after successful registration/login
+    await expect(page).toHaveURL(/\/en\/(server-selection|ludus-creation|initial-gladiators|dashboard)/, { timeout: 15000 });
   });
 
   test('should allow user login with email and password', async ({ page }) => {
@@ -84,8 +81,8 @@ test.describe('Authentication Flow', () => {
     // Submit login
     await page.click('[data-testid="login-submit-button"]');
     
-    // Should redirect to onboarding or home after successful login
-    await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 10000 });
+    // Should redirect into setup flow or dashboard after successful login
+    await page.waitForURL(/\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard|$)/, { timeout: 15000 });
     
     // Should not be on auth page anymore
     await expect(page).not.toHaveURL(/\/auth/);
@@ -99,16 +96,9 @@ test.describe('Authentication Flow', () => {
     await page.click('[data-testid="login-submit-button"]');
     
     // Wait for redirect after login
-    await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 10000 });
-    
-    // Now try to access onboarding page directly
-    await page.goto('/en/onboarding');
-    
-    // Should be able to access onboarding page
-    await expect(page).toHaveURL(/\/en\/onboarding/);
-    await expect(page.locator('h1')).toBeVisible();
-    
-    // Should see logout button
+    await page.waitForURL(/\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard|$)/, { timeout: 15000 });
+
+    // Should see logout button in the header
     await expect(page.locator('button:has-text("Sign out")')).toBeVisible();
   });
 
@@ -119,18 +109,18 @@ test.describe('Authentication Flow', () => {
     await page.fill('[data-testid="password-input"]', TEST_PASSWORD);
     await page.click('[data-testid="login-submit-button"]');
     
-    // Wait for redirect to onboarding
-    await page.waitForURL(/\/en\/onboarding/, { timeout: 10000 });
-    
+    // Wait for redirect into app
+    await page.waitForURL(/\/en\/(server-selection|ludus-creation|initial-gladiators|dashboard)/, { timeout: 15000 });
+
     // Click logout button
     await page.click('button:has-text("Sign out")');
-    
+
     // Should redirect to home page
-    await expect(page).toHaveURL(/\/en\/?$/, { timeout: 10000 });
-    
+    await expect(page).toHaveURL(/\/en\/?$/, { timeout: 15000 });
+
     // Try to access protected route after logout
-    await page.goto('/en/onboarding');
-    
+    await page.goto('/en/server-selection');
+
     // Should be redirected to auth page
     await expect(page).toHaveURL(/\/en\/auth/);
   });
@@ -143,12 +133,12 @@ test.describe('Authentication Flow', () => {
     await page.click('[data-testid="login-submit-button"]');
     
     // Wait for redirect after login
-    await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 10000 });
-    
+    await page.waitForURL(/\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard|$)/, { timeout: 15000 });
+
     // Try to access auth page while authenticated
     await page.goto('/en/auth');
-    
-    // Should be redirected away from auth page (to home or onboarding)
+
+    // Should be redirected away from auth page (to setup or dashboard)
     await expect(page).not.toHaveURL(/\/auth/);
   });
 

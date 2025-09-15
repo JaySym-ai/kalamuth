@@ -8,8 +8,8 @@ import { GameServer } from "@/types/server";
 export const SERVERS: GameServer[] = [
   {
     id: "alpha-1",
-    name: "Alpha 1",
-    description: "Early test world for development and balance iteration.",
+    name: "Alpha 1", // Will be replaced by translation key
+    description: "Early test world for development and balance iteration.", // Will be replaced by translation key
     status: "new",
     paidOnly: false,
     hardcore: true,
@@ -26,8 +26,8 @@ export const SERVERS: GameServer[] = [
   },
   {
     id: "alpha-2",
-    name: "Alpha 2",
-    description: "Safe testing world where gladiators cannot die in combat.",
+    name: "Alpha 2", // Will be replaced by translation key
+    description: "Safe testing world where gladiators cannot die in combat.", // Will be replaced by translation key
     status: "new",
     paidOnly: false,
     hardcore: false,

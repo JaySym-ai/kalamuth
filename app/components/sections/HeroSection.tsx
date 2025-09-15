@@ -87,7 +87,7 @@ export default function HeroSection() {
               mounted ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
             }`}
           >
-            <Link href={`/${locale}/auth`}>
+            <Link href={`/${locale}/intro`}>
               <GlowButton primary size="large">
                 {t("primaryCta")}
               </GlowButton>

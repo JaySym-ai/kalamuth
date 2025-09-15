@@ -4,6 +4,7 @@ import { useState } from "react";
 import NavLink from "../ui/NavLink";
 import { useTranslations } from "next-intl";
 import LanguageSwitcher from "../ui/LanguageSwitcher";
+import LogoutButton from "../auth/LogoutButton";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,6 +31,7 @@ export default function Navigation() {
           {t("enterArena")}
         </button>
         <LanguageSwitcher />
+        <LogoutButton />
       </nav>
 
       {/* Mobile Menu Button */}
@@ -78,6 +80,9 @@ export default function Navigation() {
           <button className="mt-4 px-6 py-3 bg-gradient-to-r from-amber-600 to-red-600 text-white font-bold rounded-lg hover:from-amber-500 hover:to-red-500 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-amber-500/25">
             {t("enterArena")}
           </button>
+          <div className="mt-2">
+            <LogoutButton />
+          </div>
         </nav>
       </div>
     </>

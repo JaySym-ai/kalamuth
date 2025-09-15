@@ -1,0 +1,31 @@
+{
+  "Intro": {
+    "badge": "AI-POWERED GLADIATOR MANAGEMENT",
+    "title": "Enter the Arena of Legends",
+    "description": {
+      "line1": "This game is driven by AI. You will manage a ludus that will have AI Gladiators in it. You will be able to speak with them, know more about them, make them train using natural language, make them fight for glory versus other AI gladiators managed by other users and more.",
+      "line2": "Your goal will be to be the most successful Ludus on the server. You decide the path for this, every fight and action will be impacted by your decisions.",
+      "question": "Will you be in the legend or will your house fall like a card castle?"
+    },
+    "features": {
+      "combat": {
+        "title": "AI-Driven Combat",
+        "description": "Every battle is uniquely simulated by AI with detailed combat logs and dramatic outcomes"
+      },
+      "interaction": {
+        "title": "Natural Conversations",
+        "description": "Speak with your gladiators, learn their stories, and influence their training through natural language"
+      },
+      "management": {
+        "title": "Strategic Management",
+        "description": "Build your ludus, manage resources, and make critical decisions that shape your legacy"
+      },
+      "glory": {
+        "title": "Compete for Glory",
+        "description": "Face other players' AI gladiators in epic battles and climb the ranks to become legendary"
+      }
+    },
+    "readyButton": "I Am Ready",
+    "footer": "Your destiny awaits in the sands of the arena"
+  }
+}

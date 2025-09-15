@@ -22,9 +22,12 @@ export default function LogoutButton() {
     <button
       onClick={handleLogout}
       disabled={isLoggingOut}
-      className="px-4 py-2 text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-600 rounded-lg transition-colors disabled:opacity-50"
+      className="px-4 py-2 text-sm text-zinc-200 hover:text-white border border-zinc-700 hover:border-zinc-500 rounded-lg transition-colors disabled:opacity-50"
+      data-testid="logout-button"
+      aria-label={t("logout")}
     >
       {isLoggingOut ? t("loggingOut") : t("logout")}
     </button>
   );
 }
+

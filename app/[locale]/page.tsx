@@ -13,18 +13,28 @@ export const runtime = "nodejs";
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   // If the user is authenticated, do not show the public landing page.
-  // Redirect to onboarding (if not completed) or dashboard (if completed).
+  // Redirect to setup flow: server selection → ludus creation → initial gladiators → dashboard.
   const { locale } = await params;
   const user = await getSessionUser();
   if (user) {
     try {
-      const snap = await adminDb().collection("users").doc(user.uid).get();
-      const onboardingDone = Boolean(snap.exists ? (snap.data() as { onboardingDone?: boolean })?.onboardingDone : false);
-      if (!onboardingDone) redirect(`/${locale}/onboarding`);
-      redirect(`/${locale}/dashboard`);
+      // Check if user has a ludus
+      const ludiSnapshot = await adminDb()
+        .collection("ludi")
+        .where("userId", "==", user.uid)
+        .limit(1)
+        .get();
+
+      if (ludiSnapshot.empty) {
+        // No ludus yet: go start at server selection
+        redirect(`/${locale}/server-selection`);
+      } else {
+        // Has a ludus: continue to initial gladiators (that page may generate or redirect onward)
+        redirect(`/${locale}/initial-gladiators`);
+      }
     } catch {
-      // If checking onboarding fails, be conservative and send to onboarding
-      redirect(`/${locale}/onboarding`);
+      // If checking fails, start from server selection
+      redirect(`/${locale}/server-selection`);
     }
   }
 

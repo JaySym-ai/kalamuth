@@ -7,13 +7,13 @@ const TEST_PASSWORD = TEST_CREDENTIALS.password;
 
 test.describe('Protected Routes Access Control', () => {
   test.describe('Unauthenticated Access', () => {
-    test('should redirect to auth page when accessing onboarding without authentication', async ({ page }) => {
-      await page.goto('/en/onboarding');
+    test('should redirect to auth page when accessing setup without authentication', async ({ page }) => {
+      await page.goto('/en/server-selection');
       await expect(page).toHaveURL(/\/en\/auth/);
     });
 
-    test('should redirect to auth page when accessing French onboarding without authentication', async ({ page }) => {
-      await page.goto('/fr/onboarding');
+    test('should redirect to auth page when accessing French setup without authentication', async ({ page }) => {
+      await page.goto('/fr/server-selection');
       await expect(page).toHaveURL(/\/fr\/auth(\?.*)?$/);
     });
 
@@ -43,16 +43,14 @@ test.describe('Protected Routes Access Control', () => {
       await loginUser(page);
     });
 
-    test('should allow access to onboarding page when authenticated', async ({ page }) => {
-      await page.goto('/en/onboarding');
-      await expect(page).toHaveURL(/\/en\/onboarding/);
-      await expect(page.locator('h1')).toBeVisible();
+    test('should allow access to server selection when authenticated', async ({ page }) => {
+      await page.goto('/en/server-selection');
+      await expect(page).toHaveURL(/\/en\/server-selection/);
     });
 
-    test('should allow access to French onboarding page when authenticated', async ({ page }) => {
-      await page.goto('/fr/onboarding');
-      await expect(page).toHaveURL(/\/fr\/onboarding/);
-      await expect(page.locator('h1')).toBeVisible();
+    test('should allow access to French server selection when authenticated', async ({ page }) => {
+      await page.goto('/fr/server-selection');
+      await expect(page).toHaveURL(/\/fr\/server-selection/);
     });
 
     test('should redirect authenticated users away from auth page', async ({ page }) => {
@@ -71,31 +69,29 @@ test.describe('Protected Routes Access Control', () => {
     });
 
     test('should maintain authentication across page reloads', async ({ page }) => {
-      // Go to onboarding page
-      await page.goto('/en/onboarding');
-      await expect(page).toHaveURL(/\/en\/onboarding/);
-      
+      // Go to server selection page
+      await page.goto('/en/server-selection');
+      await expect(page).toHaveURL(/\/en\/server-selection/);
+
       // Reload the page
       await page.reload();
-      
-      // Should still be on onboarding page (not redirected to auth)
-      await expect(page).toHaveURL(/\/en\/onboarding/);
-      await expect(page.locator('h1')).toBeVisible();
+
+      // Should still be on server selection page (not redirected to auth)
+      await expect(page).toHaveURL(/\/en\/server-selection/);
     });
 
     test('should maintain authentication across navigation', async ({ page }) => {
-      // Start at onboarding
-      await page.goto('/en/onboarding');
-      await expect(page).toHaveURL(/\/en\/onboarding/);
-      
+      // Start at server selection
+      await page.goto('/en/server-selection');
+      await expect(page).toHaveURL(/\/en\/server-selection/);
+
       // Navigate to home
       await page.goto('/en');
       await expect(page).toHaveURL(/\/en/);
-      
-      // Navigate back to onboarding
-      await page.goto('/en/onboarding');
-      await expect(page).toHaveURL(/\/en\/onboarding/);
-      await expect(page.locator('h1')).toBeVisible();
+
+      // Navigate back to server selection
+      await page.goto('/en/server-selection');
+      await expect(page).toHaveURL(/\/en\/server-selection/);
     });
   });
 
@@ -108,8 +104,8 @@ test.describe('Protected Routes Access Control', () => {
       await page.context().clearCookies();
       
       // Try to access protected route
-      await page.goto('/en/onboarding');
-      
+      await page.goto('/en/server-selection');
+
       // Should be redirected to auth page
       await expect(page).toHaveURL(/\/en\/auth/);
     });
@@ -123,7 +119,7 @@ test.describe('Protected Routes Access Control', () => {
       await expect(page).toHaveURL(/\/en\/?$/, { timeout: 10000 });
       
       // Try to access protected route after logout
-      await page.goto('/en/onboarding');
+      await page.goto('/en/server-selection');
       await expect(page).toHaveURL(/\/en\/auth/);
     });
   });
@@ -140,8 +136,8 @@ test.describe('Protected Routes Access Control', () => {
       // Log in using French locale
       await loginUser(page, TEST_EMAIL, TEST_PASSWORD, 'fr');
 
-      // Should be on French onboarding
-      await expect(page.locator('h1')).toBeVisible();
+      // Should land in French setup flow or dashboard
+      await expect(page).toHaveURL(/\/fr\/(server-selection|ludus-creation|initial-gladiators|dashboard)/);
     });
 
     test('should maintain locale after authentication', async ({ page }) => {

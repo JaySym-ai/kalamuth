@@ -1,0 +1,64 @@
+{
+  "Cities": {
+    "velusia": {
+      "name": "Vélusie",
+      "description": "Capitale revêtue de marbre, célèbre pour ses amphithéâtres et ses routes méticuleuses.",
+      "historicEvent": "Vélusie a mis fin à la Guerre des Trois Bannières en accueillant le Concorde des Lances, un pourparler qui a duré sept jours. Quand les négociations ont échoué, un champion solitaire a réglé le différend en combat rituel, une tradition encore honorée dans l'arène."
+    },
+    "thalassar": {
+      "name": "Thalassar",
+      "description": "Port balayé par le vent sur une baie cobalt, ses phares ornés de mosaïques de verre marin.",
+      "historicEvent": "Thalassar a repoussé l'armada des Pirates de Lune avec des brûlots cachés parmi les bateaux de pêche. La fête de la victoire a duré trois marées et a donné naissance à la Guilde des Marins, maintenant les dirigeants discrets de la cité."
+    },
+    "dorosia": {
+      "name": "Dorosie",
+      "description": "Carrefour commercial où dix langues se mélangent et aucune pièce n'est refusée.",
+      "historicEvent": "Dorosie a codifié la première Paix des Marchands, interdisant l'effusion de sang en vue de ses obélisques de granit. Un duel qui a défié la loi a laissé des cicatrices jumelles sur les pierres, maintenant frottées pour la chance par les voyageurs."
+    },
+    "arx_ferrum": {
+      "name": "Arx Ferrum",
+      "description": "Citadelle enfumée des forgerons, ses rues saupoudrées de minerai rouge.",
+      "historicEvent": "Quand le Grand Séisme a brisé les mines voisines, Arx Ferrum a forgé des cages de sauvetage assez rapidement pour sauver des centaines de personnes. Le serment de la guilde—l'acier sert la vie avant la guerre—tient depuis trois générations."
+    },
+    "neropolis": {
+      "name": "Néropolis",
+      "description": "Cité tissée de canaux aux lanternes qui brûlent bleu avec le gaz des marais au crépuscule.",
+      "historicEvent": "Une peste a autrefois traqué Néropolis jusqu'à ce qu'une guérisseuse cartographie le vent et l'eau comme des veines. Ses portes de canal 'respirent' encore avec les marées, chassant la maladie de la cité chaque nuit."
+    },
+    "portus_nymphae": {
+      "name": "Port des Nymphes",
+      "description": "Port entouré de pierres chantantes qui bourdonnent quand les tempêtes se rassemblent.",
+      "historicEvent": "Après que la Tempête Noire ait coulé la moitié de la flotte, les plongeurs ont découvert que les pierres résonnaient avec le vent. Les pilotes 'écoutent' maintenant le chenal, naviguant par le chant quand la vue fait défaut."
+    },
+    "solaria": {
+      "name": "Solarie",
+      "description": "Cité de plateau cuite au soleil dont les tours miroirs guident les caravanes à des lieues de distance.",
+      "historicEvent": "Les miroirs de Solarie ont autrefois aveuglé une armée en approche à midi, transformant la bataille en déroute. Le même art éclaire maintenant les cliniques et les bains publics après le crépuscule, une gentillesse dont se souviennent les voyageurs."
+    },
+    "sableport": {
+      "name": "Port-Sable",
+      "description": "Quais ombragés sous des falaises de basalte, célèbres pour les voiles teintes et les affaires discrètes.",
+      "historicEvent": "Une reine-contrebandière a autrefois bloqué Port-Sable avec des navires fiscaux volés, exigeant l'amnistie pour son équipage. L'amnistie fut accordée—et ces marins devinrent les premiers gardiens du port de la cité."
+    },
+    "orontis": {
+      "name": "Orontis",
+      "description": "Cité oasis parfumée où les palmiers dattiers reflètent le ciel dans des bassins ornés de joyaux.",
+      "historicEvent": "Quand les puits sont devenus amers, Orontis a cartographié des citernes oubliées sous des villas effondrées. La 'Fouille Nocturne' a sauvé la cité et révélé des fresques qui attirent maintenant pèlerins et poètes."
+    },
+    "halicara": {
+      "name": "Halicara",
+      "description": "Citadelle austère gardant un col de montagne saupoudré de givre toute l'année.",
+      "historicEvent": "Des rois bandits ont assiégé Halicara jusqu'à ce qu'une avalanche coupe leurs lignes à l'aube. La cité a sculpté des cornes d'avertissement dans les congères gelées ; elles n'ont pas été silencieuses depuis."
+    },
+    "valdria": {
+      "name": "Valdrie",
+      "description": "Centre des basses terres des marchés aux chevaux et des gués, sentant toujours le cuir et la pluie.",
+      "historicEvent": "Quand les cavaliers ont apporté des nouvelles de famine, Valdrie a donné la dîme de ses troupeaux sans attendre de décret. Les caravanes de secours sont devenues légendaires, et la cité a gagné le titre de 'Pain-Bride'."
+    },
+    "vindicar": {
+      "name": "Vindicar",
+      "description": "Redoute frontalière devenue entrepôt animé au bord de la steppe.",
+      "historicEvent": "À l'origine une chaîne de tours de guet, Vindicar s'est unie sous une seule bannière après avoir repoussé un raid nomade avec des signaux de balise astucieux. Les marchands ont bientôt suivi la sécurité de ses lumières."
+    }
+  }
+}

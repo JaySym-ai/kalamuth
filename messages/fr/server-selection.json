@@ -1,0 +1,33 @@
+{
+  "ServerSelection": {
+    "badge": "CHOISISSEZ VOTRE MONDE",
+    "title": "Sélectionnez Votre Serveur",
+    "subtitle": "Chaque serveur offre une expérience unique. Choisissez judicieusement, car ce sera votre foyer pour la gloire et la conquête.",
+    "status": {
+      "new": "NOUVEAU",
+      "live": "EN LIGNE",
+      "closed": "FERMÉ"
+    },
+    "features": {
+      "hardcore": "Mode Hardcore - Les gladiateurs peuvent mourir",
+      "safe": "Mode Sûr - Pas de mort permanente",
+      "paidOnly": "Serveur Premium - Utilisateurs payants uniquement",
+      "initialGladiators": "{count} Gladiateurs de départ",
+      "maxGladiators": "Max {count} Gladiateurs par Ludus"
+    },
+    "selected": "SÉLECTIONNÉ",
+    "continueButton": "Continuer vers la Création du Ludus",
+    "loading": "Chargement...",
+    "infoText": "Vous ne pouvez avoir qu'un seul ludus par serveur. Choisissez votre serveur avec soin.",
+    "servers": {
+      "alpha-1": {
+        "name": "Alpha 1",
+        "description": "Monde de test précoce pour le développement et l'équilibrage."
+      },
+      "alpha-2": {
+        "name": "Alpha 2",
+        "description": "Monde de test sécurisé où les gladiateurs ne peuvent pas mourir au combat."
+      }
+    }
+  }
+}

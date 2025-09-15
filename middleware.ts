@@ -17,6 +17,7 @@ export async function middleware(request: NextRequest) {
     // For API routes, handle authentication but don't redirect
     // Only process API routes that need authentication
     const needsAuth = pathname.startsWith('/api/user') ||
+                     pathname.startsWith('/api/ludus') ||
                      (pathname.startsWith('/api/auth') && !pathname.includes('/session'));
 
     if (needsAuth) {
@@ -83,6 +84,7 @@ export const config = {
     // API routes that need authentication
     "/api/user/:path*",
     "/api/auth/:path*",
+    "/api/ludus/:path*",
     // Main application routes
     "/",
     "/(en|fr)/:path*",
