@@ -8,6 +8,10 @@ export const ServerConfigZ = z
     gladiatorHealthMax: z.number().int().min(1),
     gladiatorStatMin: z.number().int().min(1),
     gladiatorStatMax: z.number().int().min(1),
+    // Per-ludus capacity; server capacity is unlimited.
+    ludusMaxGladiators: z.number().int().min(1).default(5),
+    // How many gladiators to auto-generate when a new ludus is created
+    initialGladiatorsPerLudus: z.number().int().min(0).default(0),
   })
   .strict()
   .superRefine((cfg, ctx) => {

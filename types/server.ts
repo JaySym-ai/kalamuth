@@ -14,8 +14,10 @@ export interface ServerConfig {
   gladiatorStatMin: number;
   gladiatorStatMax: number;
 
-  /** Maximum number of gladiators that can be in a single ludus. */
-  ludusSize: number;
+  /** Maximum number of gladiators allowed per ludus (server capacity is unlimited). */
+  ludusMaxGladiators: number;
+  /** Number of gladiators to auto-generate for a new ludus on this server. */
+  initialGladiatorsPerLudus: number;
 
   /**
    * Placeholder for future knobs (e.g., economy rates, injury recovery, AI model hints).
