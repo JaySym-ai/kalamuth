@@ -3,6 +3,7 @@ import { defineSecret } from 'firebase-functions/params';
 import OpenAI from 'openai';
 import { db } from './admin';
 import { MODEL_JSON_STRUCTURED } from './models';
+import { FieldValue } from 'firebase-admin/firestore';
 
 
 const OPENROUTER_API_KEY = defineSecret('OPENROUTER_API_KEY');
@@ -91,7 +92,7 @@ async function generateOneGladiator(client: OpenAI) {
 
 export const onInitialGladiatorsJobCreated = onDocumentCreated(
   {
-    document: 'jobs/generateInitialGladiators/{jobId}',
+    document: 'jobs/{jobId}',
     region: 'us-central1',
     timeoutSeconds: 540,
     secrets: [OPENROUTER_API_KEY]
@@ -99,8 +100,8 @@ export const onInitialGladiatorsJobCreated = onDocumentCreated(
   async (event) => {
     const snap = event.data;
     if (!snap) return;
-    const job = snap.data() as { ludusId: string; serverId?: string; userId?: string; count: number } | undefined;
-    if (!job || !job.ludusId || !job.count) return;
+    const job = snap.data() as { type?: string; ludusId: string; serverId?: string; userId?: string; count: number; minRequired?: number } | undefined;
+    if (!job || job.type !== 'generateInitialGladiators' || !job.ludusId || !job.count) return;
 
     const client = new OpenAI({
       apiKey: OPENROUTER_API_KEY.value(),
@@ -111,10 +112,22 @@ export const onInitialGladiatorsJobCreated = onDocumentCreated(
     const gladiatorsCol = db.collection('gladiators');
     const ludusRef = db.collection('ludi').doc(job.ludusId);
 
+    // Determine how many we actually need at this moment to avoid overshooting
+    const existingSnap = await gladiatorsCol.where('ludusId', '==', job.ludusId).get();
+    const existingCount = existingSnap.size;
+    const minRequired = typeof job.minRequired === 'number' ? job.minRequired : job.count;
+    const missing = Math.max(0, minRequired - existingCount);
+    const toCreate = Math.min(job.count, missing);
+
+    if (toCreate <= 0) {
+      await snap.ref.set({ status: 'completed', created: 0, errors: [], finishedAt: FieldValue.serverTimestamp() }, { merge: true });
+      return;
+    }
+
     let created = 0;
     const errors: string[] = [];
 
-    for (let i = 0; i < job.count; i++) {
+    for (let i = 0; i < toCreate; i++) {
       try {
         const g = await generateOneGladiator(client);
         const now = new Date().toISOString();
@@ -139,7 +152,7 @@ export const onInitialGladiatorsJobCreated = onDocumentCreated(
       errors.push('Failed to update ludus gladiatorCount');
     }
 
-    await snap.ref.set({ status: errors.length ? 'completed_with_errors' : 'completed', created, errors, finishedAt: new Date().toISOString() }, { merge: true });
+    await snap.ref.set({ status: errors.length ? 'completed_with_errors' : 'completed', created, errors, finishedAt: FieldValue.serverTimestamp() }, { merge: true });
   }
 );
 

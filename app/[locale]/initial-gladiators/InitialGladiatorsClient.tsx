@@ -70,6 +70,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusName, ludusId
   }, [ludusId]);
 
   const currentCount = list.length;
+  const missingCount = Math.max(0, minRequired - currentCount);
 
   async function handleGenerateMissing() {
     try {
@@ -86,12 +87,20 @@ export default function InitialGladiatorsClient({ gladiators, ludusName, ludusId
     } finally {
       setGenerating(false);
     }
+  }
+
   // Watch latest generation job for this ludus for better error/progress messaging
   useEffect(() => {
     if (!ludusId) return;
     const db = getClientDb();
-    const jobs = collection(db, "jobs/generateInitialGladiators");
-    const q = query(jobs, where("ludusId", "==", ludusId), orderBy("createdAt", "desc"), fbLimit(1));
+    const jobsCol = collection(db, "jobs");
+    const q = query(
+      jobsCol,
+      where("ludusId", "==", ludusId),
+      where("type", "==", "generateInitialGladiators"),
+      orderBy("createdAt", "desc"),
+      fbLimit(1)
+    );
     const unsub = onSnapshot(q, (snap) => {
       if (!snap.empty) {
         const j = snap.docs[0].data() as any;
@@ -139,7 +148,13 @@ export default function InitialGladiatorsClient({ gladiators, ludusName, ludusId
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-amber-300 font-medium">{t("generatingWaiting")}</p>
+              <p className="text-sm text-amber-300 font-medium flex items-center gap-2" role="status" aria-live="polite">
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                {t("generatingWaiting")}
+              </p>
               <p className="text-xs text-amber-200/80 mt-1">{t("stillNeed", { count: Math.max(0, minRequired - currentCount) })}</p>
               {jobStatus === 'pending' && (
                 <p className="text-xs text-amber-200/90 mt-1" data-testid="job-status-pending">{t("jobInProgress")}</p>
@@ -162,6 +177,41 @@ export default function InitialGladiatorsClient({ gladiators, ludusName, ludusId
           </div>
         </div>
       )}
+
+      {missingCount > 0 && (
+        <div aria-hidden="true" data-testid="gladiator-skeletons" className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {Array.from({ length: missingCount }).map((_, idx) => (
+            <div key={`skeleton-${idx}`} className="relative">
+              <div className="bg-black/40 backdrop-blur-sm border border-red-900/30 rounded-xl p-6 animate-pulse">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <div className="h-5 w-40 bg-amber-700/30 rounded mb-2"></div>
+                    <div className="h-3 w-24 bg-amber-700/20 rounded"></div>
+                  </div>
+                  <div className="h-10 w-10 bg-amber-700/20 rounded-full"></div>
+                </div>
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm mb-1">
+                    <div className="h-3 w-16 bg-red-700/20 rounded"></div>
+                    <div className="h-3 w-10 bg-red-700/30 rounded"></div>
+                  </div>
+                  <div className="h-2 bg-black/50 rounded-full overflow-hidden">
+                    <div className="h-full w-1/3 bg-gradient-to-r from-red-600/60 to-red-400/60"></div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="h-3 w-20 bg-amber-700/20 rounded"></div>
+                  <div className="h-3 w-12 bg-amber-700/30 rounded"></div>
+                  <div className="h-3 w-16 bg-amber-700/20 rounded"></div>
+                  <div className="h-3 w-10 bg-amber-700/30 rounded"></div>
+                </div>
+                <div className="h-3 w-48 bg-amber-700/20 rounded"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
 
       {/* Gladiators Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
