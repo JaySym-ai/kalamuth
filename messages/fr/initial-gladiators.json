@@ -27,6 +27,12 @@
       "dislikes": "N'aime pas",
       "weakness": "Faiblesse",
       "fear": "Plus Grande Peur"
-    }
+    },
+    "generatingWaiting": "Invocation de vos gladiateurs...",
+    "generateRemaining": "Générer le reste",
+    "stillNeed": "Il en manque {count}",
+    "startFailed": "Échec de la génération. Réessayer ?",
+    "jobInProgress": "Génération en cours...",
+    "jobError": "Certains gladiateurs n'ont pas pu être générés. Vous pouvez réessayer."
   }
 }

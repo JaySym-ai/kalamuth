@@ -77,7 +77,16 @@ export default function LudusCreationClient() {
       
       // Store ludus ID for the next step
       sessionStorage.setItem("ludusId", data.ludusId);
-      
+
+      // Kick off async gladiator generation (fire-and-forget)
+      try {
+        await fetch("/api/gladiators/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ludusId: data.ludusId })
+        });
+      } catch {}
+
       // Navigate to gladiator display
       router.push(`/${locale}/initial-gladiators`);
     } catch (err) {

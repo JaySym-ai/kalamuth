@@ -27,6 +27,12 @@
       "dislikes": "Dislikes",
       "weakness": "Weakness",
       "fear": "Greatest Fear"
-    }
+    },
+    "generatingWaiting": "Summoning your gladiators...",
+    "generateRemaining": "Generate remaining",
+    "stillNeed": "Still need {count}",
+    "startFailed": "Generation failed. Retry?",
+    "jobInProgress": "Generation in progress...",
+    "jobError": "Some gladiators failed to generate. You can try again."
   }
 }

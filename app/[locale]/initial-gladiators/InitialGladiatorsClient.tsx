@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
+import { collection, onSnapshot, query, where, orderBy, limit as fbLimit } from "firebase/firestore";
+import { getClientDb } from "@/lib/firebase/client";
 
 interface GladiatorStats {
   strength: number;
@@ -39,18 +41,69 @@ interface Gladiator {
 interface Props {
   gladiators: Gladiator[];
   ludusName?: string;
+  ludusId: string;
+  serverId?: string;
+  minRequired: number;
 }
 
-export default function InitialGladiatorsClient({ gladiators, ludusName }: Props) {
+export default function InitialGladiatorsClient({ gladiators, ludusName, ludusId, minRequired }: Props) {
   const t = useTranslations("InitialGladiators");
   const locale = useLocale();
   const router = useRouter();
   const [selectedGladiator, setSelectedGladiator] = useState<Gladiator | null>(null);
   const [loading, setLoading] = useState(false);
+  const [list, setList] = useState<Gladiator[]>(gladiators || []);
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
+
+  // Live Firestore subscription for gladiators of this ludus
+  useEffect(() => {
+    if (!ludusId) return;
+    const db = getClientDb();
+    const q = query(collection(db, "gladiators"), where("ludusId", "==", ludusId));
+    const unsub = onSnapshot(q, (snap) => {
+      const items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as unknown as Gladiator[];
+      setList(items);
+    });
+    return () => unsub();
+  }, [ludusId]);
+
+  const currentCount = list.length;
+
+  async function handleGenerateMissing() {
+    try {
+      setGenerating(true);
+      setGenError(null);
+      const missing = Math.max(0, minRequired - currentCount) || 1;
+      await fetch("/api/gladiators/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ludusId, count: missing })
+      });
+    } catch (e) {
+      setGenError("error");
+    } finally {
+      setGenerating(false);
+    }
+  // Watch latest generation job for this ludus for better error/progress messaging
+  useEffect(() => {
+    if (!ludusId) return;
+    const db = getClientDb();
+    const jobs = collection(db, "jobs/generateInitialGladiators");
+    const q = query(jobs, where("ludusId", "==", ludusId), orderBy("createdAt", "desc"), fbLimit(1));
+    const unsub = onSnapshot(q, (snap) => {
+      if (!snap.empty) {
+        const j = snap.docs[0].data() as any;
+        setJobStatus(j.status ?? null);
+      }
+    });
+    return () => unsub();
+  }, [ludusId]);
 
   const handleContinue = async () => {
     setLoading(true);
-    
+
     try {
       // Mark onboarding as complete
       await fetch("/api/user", {
@@ -58,7 +111,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusName }: Props
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ onboardingDone: true }),
       });
-      
+
       // Navigate to dashboard
       router.push(`/${locale}/dashboard`);
     } catch (error) {
@@ -78,9 +131,41 @@ export default function InitialGladiatorsClient({ gladiators, ludusName }: Props
 
   return (
     <div>
+      {/* Generation Indicator */}
+      {currentCount < minRequired && (
+        <div
+          className="px-4 pb-[max(env(safe-area-inset-bottom),16px)] pt-4 max-w-screen-sm mx-auto mb-6 bg-amber-900/10 border border-amber-700/30 rounded-lg"
+          data-testid="generating-indicator"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-amber-300 font-medium">{t("generatingWaiting")}</p>
+              <p className="text-xs text-amber-200/80 mt-1">{t("stillNeed", { count: Math.max(0, minRequired - currentCount) })}</p>
+              {jobStatus === 'pending' && (
+                <p className="text-xs text-amber-200/90 mt-1" data-testid="job-status-pending">{t("jobInProgress")}</p>
+              )}
+              {jobStatus === 'completed_with_errors' && (
+                <p className="text-xs text-red-400 mt-1" data-testid="job-status-error">{t("jobError")}</p>
+              )}
+              {genError && (
+                <p className="text-xs text-red-400 mt-1">{t("startFailed")}</p>
+              )}
+            </div>
+            <button
+              onClick={handleGenerateMissing}
+              disabled={generating || jobStatus === 'pending'}
+              className="h-12 px-4 rounded-md bg-gradient-to-r from-amber-600 to-red-600 text-white text-sm font-semibold disabled:opacity-60"
+              data-testid="generate-remaining"
+            >
+              {t("generateRemaining")}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Gladiators Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-        {gladiators.map((gladiator, index) => (
+        {list.map((gladiator, index) => (
           <motion.div
             key={gladiator.id}
             initial={{ opacity: 0, y: 20 }}
@@ -114,7 +199,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusName }: Props
                     <span className="text-red-400">{gladiator.health} HP</span>
                   </div>
                   <div className="h-2 bg-black/50 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-gradient-to-r from-red-600 to-red-400"
                       style={{ width: `${(gladiator.health / 300) * 100}%` }}
                     />
@@ -168,7 +253,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusName }: Props
       <div className="flex justify-center">
         <button
           onClick={handleContinue}
-          disabled={loading}
+          disabled={loading || currentCount < minRequired}
           className="relative px-12 py-5 bg-gradient-to-r from-amber-600 to-red-600 rounded-lg font-bold text-xl text-white shadow-2xl transform transition-all duration-300 hover:scale-105 disabled:opacity-50"
           data-testid="continue-to-dashboard"
         >
@@ -233,7 +318,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusName }: Props
                         <span className={getStatColor(value as number)}>{value}</span>
                       </div>
                       <div className="h-2 bg-black/50 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className="h-full bg-gradient-to-r from-amber-600 to-red-600 transition-all duration-300"
                           style={{ width: getStatBarWidth(value as number) }}
                         />

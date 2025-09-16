@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getRequestUser } from "@/lib/firebase/request-auth";
 import { adminDb } from "@/lib/firebase/server";
 import InitialGladiatorsClient from "./InitialGladiatorsClient";
-import { generateGladiators } from "@/lib/gladiator/generator";
 import { SERVERS } from "@/data/servers";
 
 export const runtime = "nodejs";
@@ -18,7 +17,8 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
   // Get user's ludus
   let ludusData: any = null;
   let gladiators: any[] = [];
-  
+  let minRequired = 3;
+
   try {
     const ludiSnapshot = await adminDb()
       .collection("ludi")
@@ -40,74 +40,19 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
       .where("ludusId", "==", ludusDoc.id)
       .get();
     
-    if (gladiatorsSnapshot.empty) {
-      // Generate initial gladiators
-      const server = SERVERS.find(s => s.id === ludusData.serverId);
-      if (server) {
-        const count = server.config.initialGladiatorsPerLudus;
-        
-        try {
-          // Generate gladiators using AI
-          const generatedGladiators = await generateGladiators(count);
+    // Determine required initial count from server config
+    const server = SERVERS.find(s => s.id === ludusData.serverId);
+    minRequired = server ? server.config.initialGladiatorsPerLudus : 3;
 
-          // Save gladiators to database
-          const batch = adminDb().batch();
-
-          for (const gladiator of generatedGladiators) {
-            const gladiatorRef = adminDb().collection("gladiators").doc();
-            batch.set(gladiatorRef, {
-              ...gladiator,
-              ludusId: ludusDoc.id,
-              serverId: ludusData.serverId,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            });
-            gladiators.push({ id: gladiatorRef.id, ...gladiator });
-          }
-
-          // Update ludus gladiator count
-          batch.update(ludusDoc.ref, {
-            gladiatorCount: count,
-            updatedAt: new Date().toISOString(),
-          });
-
-          await batch.commit();
-        } catch (error) {
-          console.error("Error generating gladiators:", error);
-          // Fallback: create mock gladiators for demo and save them
-          const mockGladiators = createMockGladiators(count);
-          const batch = adminDb().batch();
-
-          for (const mockGladiator of mockGladiators) {
-            const gladiatorRef = adminDb().collection("gladiators").doc();
-            const { id: mockId, ...gladiatorWithoutId } = mockGladiator;
-            const gladiatorData = {
-              ...gladiatorWithoutId,
-              ludusId: ludusDoc.id,
-              serverId: ludusData.serverId,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            };
-            batch.set(gladiatorRef, gladiatorData);
-            gladiators.push({ id: gladiatorRef.id, ...gladiatorData });
-          }
-
-          // Update ludus gladiator count
-          batch.update(ludusDoc.ref, {
-            gladiatorCount: count,
-            updatedAt: new Date().toISOString(),
-          });
-
-          await batch.commit();
-        }
-      }
-    } else {
+    if (!gladiatorsSnapshot.empty) {
       // Load existing gladiators
       gladiators = gladiatorsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       }));
     }
+
+    // Do not generate here anymore; generation is now async via job + Firestore listener
   } catch (error) {
     console.error("Error loading gladiators:", error);
     redirect(`/${locale}/server-selection`);
@@ -154,7 +99,13 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
           </div>
 
           {/* Gladiators Display */}
-          <InitialGladiatorsClient gladiators={gladiators} ludusName={ludusData?.name} />
+          <InitialGladiatorsClient
+            gladiators={gladiators}
+            ludusName={ludusData?.name}
+            ludusId={ludusData!.id as string}
+            serverId={ludusData?.serverId as string}
+            minRequired={minRequired}
+          />
         </div>
       </div>
     </div>
