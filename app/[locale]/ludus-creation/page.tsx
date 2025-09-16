@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getRequestUser } from "@/lib/firebase/request-auth";
 import { adminDb } from "@/lib/firebase/server";
 import LudusCreationClient from "./LudusCreationClient";
+import LogoutButton from "../../components/auth/LogoutButton";
 
 export const runtime = "nodejs";
 
@@ -45,6 +46,9 @@ export default async function LudusCreationPage({ params }: { params: Promise<{ 
 
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="absolute top-4 right-4">
+          <LogoutButton />
+        </div>
         <div className="max-w-2xl mx-auto w-full">
           {/* Header */}
           <div className="text-center mb-12">

@@ -2,7 +2,9 @@
   "name": "functions",
   "private": true,
   "type": "module",
-  "engines": { "node": "22" },
+  "engines": {
+    "node": "20"
+  },
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -10,11 +12,10 @@
     "deploy": "firebase deploy --only functions"
   },
   "dependencies": {
-    "firebase-functions": "^5.1.0",
+    "firebase-functions": "^6.4.0",
     "openai": "^4.56.0"
   },
   "devDependencies": {
     "typescript": "^5.5.4"
   }
 }
-

@@ -15,19 +15,55 @@ export async function loginUser(page: Page, email = TEST_CREDENTIALS.email, pass
   await page.goto(`/${locale}/auth`);
   await page.waitForLoadState('networkidle');
 
-  // Check if we're already authenticated (redirected away from auth page)
+  // If already authenticated, nothing to do
   if (!page.url().includes('/auth')) {
     console.log('User already authenticated, skipping login');
     return;
   }
 
-  await page.fill('[data-testid="email-input"]', email);
-  await page.fill('[data-testid="password-input"]', password);
-  await page.click('[data-testid="login-submit-button"]');
+  // Smart registration: try to register first, then fallback to login if the user exists
+  try {
+    // Switch to register mode
+    await page.click('[data-testid="switch-to-register"]');
 
-  // Wait for successful login redirect (longer timeout for auth)
-  const localePattern = locale === 'en' ? /\/(en\/)?(onboarding|$)/ : new RegExp(`\\/${locale}\\/(onboarding|$)`);
-  await page.waitForURL(localePattern, { timeout: 15000 });
+    // Fill registration form
+    await page.fill('[data-testid="register-email-input"]', email);
+    await page.fill('[data-testid="register-password-input"]', password);
+    await page.fill('[data-testid="register-password-confirm-input"]', password);
+    await page.check('[data-testid="terms-checkbox"]');
+
+    // Submit registration
+    await page.click('[data-testid="register-submit-button"]');
+
+    // Wait for successful redirect into setup flow or dashboard
+    const postAuthPattern = locale === 'en'
+      ? /\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard)(\/)?$/
+      : new RegExp(`\\/${locale}\\/(server-selection|ludus-creation|initial-gladiators|dashboard)(\\/)?$`);
+    await page.waitForURL(postAuthPattern, { timeout: 15000 });
+    console.log('User registered successfully');
+    return;
+  } catch (e) {
+    console.log('Registration failed, attempting login (user might already exist)');
+
+    // Ensure we are on the auth page, then switch to login and try to login
+    if (!page.url().includes('/auth')) {
+      await page.goto(`/${locale}/auth`);
+      await page.waitForLoadState('networkidle');
+    }
+
+    await page.click('[data-testid="switch-to-login"]');
+    await page.fill('[data-testid="email-input"]', email);
+    await page.fill('[data-testid="password-input"]', password);
+    await page.click('[data-testid="login-submit-button"]');
+
+    const postAuthPattern = locale === 'en'
+      ? /\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard|$)/
+      : new RegExp(`\\/${locale}\\/(server-selection|ludus-creation|initial-gladiators|dashboard|$)`);
+    await page.waitForURL(postAuthPattern, { timeout: 30000 });
+    console.log('User logged in successfully');
+    return;
+
+  }
 }
 
 /**
@@ -60,8 +96,8 @@ export async function registerUser(page: Page, email = TEST_CREDENTIALS.email, p
   await page.click('[data-testid="register-submit-button"]');
 
   try {
-    // Wait for successful registration redirect
-    await page.waitForURL(/\/en\/onboarding/, { timeout: 10000 });
+    // Wait for successful registration redirect into setup flow
+    await page.waitForURL(/\/en\/(server-selection|ludus-creation|initial-gladiators|dashboard)/, { timeout: 15000 });
     console.log('User registered successfully');
   } catch (error) {
     // If registration fails (user might already exist), try to login instead
@@ -76,7 +112,7 @@ export async function registerUser(page: Page, email = TEST_CREDENTIALS.email, p
       await page.click('[data-testid="login-submit-button"]');
 
       // Wait for login redirect
-      await page.waitForURL(/\/(en\/)?(onboarding|$)/, { timeout: 15000 });
+      await page.waitForURL(/\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard|$)/, { timeout: 15000 });
       console.log('User logged in successfully');
     } else {
       // If we're not on auth page, we might already be authenticated
@@ -89,8 +125,8 @@ export async function registerUser(page: Page, email = TEST_CREDENTIALS.email, p
  * Helper function to log out a user
  */
 export async function logoutUser(page: Page) {
-  // Find and click logout button
-  await page.click('button:has-text("Sign out")');
+  // Find and click logout button (stable selector)
+  await page.getByTestId('logout-button').click();
 
   // Wait for redirect to home (can be /en or /)
   await expect(page).toHaveURL(/\/(en\/?)?$/, { timeout: 10000 });
@@ -102,9 +138,9 @@ export async function logoutUser(page: Page) {
 export async function isUserAuthenticated(page: Page): Promise<boolean> {
   const currentUrl = page.url();
   
-  // Try to access onboarding page
-  await page.goto('/en/onboarding');
-  
+  // Try to access a protected page
+  await page.goto('/en/server-selection');
+
   // If redirected to auth page, user is not authenticated
   if (page.url().includes('/auth')) {
     // Restore original URL
@@ -112,7 +148,7 @@ export async function isUserAuthenticated(page: Page): Promise<boolean> {
     return false;
   }
   
-  // If we can access onboarding, user is authenticated
+  // If we can access server selection, user is authenticated
   // Restore original URL
   await page.goto(currentUrl);
   return true;
@@ -143,13 +179,13 @@ export async function clearAuthState(page: Page) {
 export async function waitForAuthState(page: Page, authenticated: boolean = true) {
   if (authenticated) {
     // Wait until we can access a protected route
-    await page.goto('/en/onboarding');
-    await expect(page).toHaveURL(/\/en\/onboarding/, { timeout: 10000 });
+    await page.goto('/en/server-selection');
+    await expect(page).toHaveURL(/\/en\/server-selection/, { timeout: 15000 });
   } else {
     // Wait until we're redirected to auth when accessing protected route
-    await page.goto('/en/onboarding');
+    await page.goto('/en/server-selection');
     // Auth redirect may include redirect parameter
-    await expect(page).toHaveURL(/\/en\/auth/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/en\/auth/, { timeout: 15000 });
   }
 }
 

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginUser } from './helpers/auth';
 
 test.describe('Complete Onboarding Flow', () => {
   test('should complete full onboarding from intro to dashboard', async ({ page }) => {
@@ -77,15 +78,15 @@ test.describe('Complete Onboarding Flow', () => {
     await expect(page).toHaveURL(/\/en\/dashboard/);
   });
 
-  test('should redirect authenticated users with ludus to dashboard', async ({ page }) => {
-    // This test assumes a user is already authenticated and has completed onboarding
-    // In a real scenario, you'd set up the auth state before the test
-    
+  test('should redirect authenticated users with ludus from intro', async ({ page }) => {
+    // Login first
+    await loginUser(page);
+
     // Try to access intro page as authenticated user
     await page.goto('/en/intro');
-    
+
     // Should be redirected based on user state
-    // Either to dashboard (if onboarding complete) or to appropriate step
+    // Either to dashboard (if ludus exists) or to setup flow
     const url = page.url();
     expect(url).toMatch(/\/(dashboard|server-selection|ludus-creation|initial-gladiators)/);
   });
@@ -111,13 +112,12 @@ test.describe('Complete Onboarding Flow', () => {
   });
 
   test('should validate required fields in ludus creation', async ({ page }) => {
+    // Login first
+    await loginUser(page);
     // Navigate directly to ludus creation (assuming session storage has server)
     await page.goto('/en/ludus-creation');
     
-    // Try to submit without filling required fields
-    await page.getByTestId('create-ludus-button').click();
-    
-    // Should show error or button should be disabled
+    // Button should be disabled without required fields
     const button = page.getByTestId('create-ludus-button');
     await expect(button).toBeDisabled();
     
@@ -129,6 +129,8 @@ test.describe('Complete Onboarding Flow', () => {
   });
 
   test('should handle server selection properly', async ({ page }) => {
+    // Login first
+    await loginUser(page);
     await page.goto('/en/server-selection');
     
     // Verify multiple servers are displayed
@@ -151,6 +153,8 @@ test.describe('Complete Onboarding Flow', () => {
   });
 
   test('should display gladiator details modal', async ({ page }) => {
+    // Login first
+    await loginUser(page);
     // Navigate to initial gladiators page
     await page.goto('/en/initial-gladiators');
     
