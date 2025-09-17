@@ -5,10 +5,12 @@ import { getSessionUser } from "@/lib/firebase/session";
 import { adminDb } from "@/lib/firebase/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 
 export default async function IntroPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  
+
   // If user is already authenticated, skip intro and go to appropriate page
   const user = await getSessionUser();
   if (user) {
@@ -37,7 +39,7 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-red-950/30 to-black" />
         <div className="absolute inset-0 bg-[url('/arena-bg.svg')] opacity-5" />
-        
+
         {/* Animated glows */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-600/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -71,26 +73,26 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
             <p className="text-center">
               {t("description.line1")}
             </p>
-            
+
             <div className="grid md:grid-cols-2 gap-6 my-8">
               <div className="bg-black/40 backdrop-blur-sm border border-amber-900/30 rounded-xl p-6 hover:border-amber-700/50 transition-all duration-300">
                 <div className="text-3xl mb-3">⚔️</div>
                 <h3 className="text-amber-400 font-bold mb-2">{t("features.combat.title")}</h3>
                 <p className="text-gray-400 text-base">{t("features.combat.description")}</p>
               </div>
-              
+
               <div className="bg-black/40 backdrop-blur-sm border border-amber-900/30 rounded-xl p-6 hover:border-amber-700/50 transition-all duration-300">
                 <div className="text-3xl mb-3">🗣️</div>
                 <h3 className="text-amber-400 font-bold mb-2">{t("features.interaction.title")}</h3>
                 <p className="text-gray-400 text-base">{t("features.interaction.description")}</p>
               </div>
-              
+
               <div className="bg-black/40 backdrop-blur-sm border border-amber-900/30 rounded-xl p-6 hover:border-amber-700/50 transition-all duration-300">
                 <div className="text-3xl mb-3">🏛️</div>
                 <h3 className="text-amber-400 font-bold mb-2">{t("features.management.title")}</h3>
                 <p className="text-gray-400 text-base">{t("features.management.description")}</p>
               </div>
-              
+
               <div className="bg-black/40 backdrop-blur-sm border border-amber-900/30 rounded-xl p-6 hover:border-amber-700/50 transition-all duration-300">
                 <div className="text-3xl mb-3">👑</div>
                 <h3 className="text-amber-400 font-bold mb-2">{t("features.glory.title")}</h3>
@@ -101,7 +103,7 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
             <p className="text-center text-xl">
               {t("description.line2")}
             </p>
-            
+
             <p className="text-center text-2xl font-bold text-amber-400">
               {t("description.question")}
             </p>
@@ -109,7 +111,7 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
 
           {/* CTA Button */}
           <div className="flex justify-center">
-            <Link 
+            <Link
               href={`/${locale}/auth`}
               className="group relative inline-block"
               data-testid="intro-ready-button"

@@ -46,7 +46,7 @@ interface Props {
   minRequired: number;
 }
 
-export default function InitialGladiatorsClient({ gladiators, ludusName, ludusId, minRequired }: Props) {
+export default function InitialGladiatorsClient({ gladiators, ludusId, minRequired }: Props) {
   const t = useTranslations("InitialGladiators");
   const locale = useLocale();
   const router = useRouter();
@@ -63,7 +63,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusName, ludusId
     const db = getClientDb();
     const q = query(collection(db, "gladiators"), where("ludusId", "==", ludusId));
     const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as unknown as Gladiator[];
+      const items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) })) as unknown as Gladiator[];
       setList(items);
     });
     return () => unsub();
@@ -82,7 +82,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusName, ludusId
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ludusId, count: missing })
       });
-    } catch (e) {
+    } catch {
       setGenError("error");
     } finally {
       setGenerating(false);
@@ -103,8 +103,9 @@ export default function InitialGladiatorsClient({ gladiators, ludusName, ludusId
     );
     const unsub = onSnapshot(q, (snap) => {
       if (!snap.empty) {
-        const j = snap.docs[0].data() as any;
-        setJobStatus(j.status ?? null);
+        const data = snap.docs[0].data() as Record<string, unknown>;
+        const status = typeof data.status === 'string' ? data.status : null;
+        setJobStatus(status);
       }
     });
     return () => unsub();
@@ -286,7 +287,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusName, ludusId
 
                 {/* Personality Preview */}
                 <p className="text-sm text-gray-300 italic line-clamp-2">
-                  "{gladiator.personality}"
+                  &ldquo;{gladiator.personality}&rdquo;
                 </p>
 
                 {/* View Details Hint */}

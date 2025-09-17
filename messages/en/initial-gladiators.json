@@ -3,6 +3,7 @@
     "badge": "YOUR WARRIORS AWAIT",
     "title": "Meet Your Gladiators",
     "subtitle": "These brave warriors have joined {ludusName}. Train them well, for their fate is in your hands.",
+    "fallbackLudusName": "Your Ludus",
     "from": "From",
     "health": "Health",
     "stats": {

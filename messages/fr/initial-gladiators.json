@@ -3,6 +3,7 @@
     "badge": "VOS GUERRIERS VOUS ATTENDENT",
     "title": "Rencontrez Vos Gladiateurs",
     "subtitle": "Ces braves guerriers ont rejoint {ludusName}. Entraînez-les bien, car leur destin est entre vos mains.",
+    "fallbackLudusName": "Votre ludus",
     "from": "De",
     "health": "Santé",
     "stats": {

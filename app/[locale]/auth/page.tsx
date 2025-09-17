@@ -4,6 +4,8 @@ import { adminDb } from "@/lib/firebase/server";
 import AuthClient from "./AuthClient";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 
 export default async function AuthPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

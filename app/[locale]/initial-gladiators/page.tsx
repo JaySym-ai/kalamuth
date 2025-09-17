@@ -6,17 +6,21 @@ import InitialGladiatorsClient from "./InitialGladiatorsClient";
 import { SERVERS } from "@/data/servers";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
+
+type ClientProps = Parameters<typeof InitialGladiatorsClient>[0];
+type ClientGladiator = ClientProps['gladiators'][number];
 export default async function InitialGladiatorsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const user = await getRequestUser();
-  
+
   // Must be authenticated
   if (!user) redirect(`/${locale}/auth`);
-  
+
   // Get user's ludus
-  let ludusData: any = null;
-  let gladiators: any[] = [];
+  let ludusData: { id: string; name?: string; serverId?: string } | null = null;
+  let gladiators: ClientGladiator[] = [];
   let minRequired = 3;
 
   try {
@@ -25,23 +29,23 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
       .where("userId", "==", user.uid)
       .limit(1)
       .get();
-    
+
     if (ludiSnapshot.empty) {
       // No ludus found, redirect to server selection
       redirect(`/${locale}/server-selection`);
     }
-    
+
     const ludusDoc = ludiSnapshot.docs[0];
     ludusData = { id: ludusDoc.id, ...ludusDoc.data() };
-    
+
     // Check if gladiators already exist for this ludus
     const gladiatorsSnapshot = await adminDb()
       .collection("gladiators")
       .where("ludusId", "==", ludusDoc.id)
       .get();
-    
+
     // Determine required initial count from server config
-    const server = SERVERS.find(s => s.id === ludusData.serverId);
+    const server = SERVERS.find(s => s.id === (ludusData?.serverId ?? ""));
     minRequired = server ? server.config.initialGladiatorsPerLudus : 3;
 
     if (!gladiatorsSnapshot.empty) {
@@ -49,7 +53,7 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
       gladiators = gladiatorsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      })) as ClientGladiator[];
     }
 
     // Do not generate here anymore; generation is now async via job + Firestore listener
@@ -66,7 +70,7 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-red-950/20 to-black" />
         <div className="absolute inset-0 bg-[url('/arena-bg.svg')] opacity-5" />
-        
+
         {/* Animated glows */}
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-red-600/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-amber-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -86,15 +90,15 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
                 {t("badge")}
               </span>
             </div>
-            
+
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-4">
               <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent">
                 {t("title")}
               </span>
             </h1>
-            
+
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              {t("subtitle", { ludusName: ludusData?.name || "Your Ludus" })}
+              {t("subtitle", { ludusName: ludusData?.name ?? t("fallbackLudusName") })}
             </p>
           </div>
 
@@ -112,42 +116,4 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
   );
 }
 
-// Mock gladiators for fallback
-function createMockGladiators(count: number) {
-  const mockGladiators = [];
-  const names = ["Marcus", "Titus", "Gaius", "Lucius", "Quintus"];
-  const surnames = ["Maximus", "Felix", "Victor", "Magnus", "Fortis"];
-  
-  for (let i = 0; i < count; i++) {
-    mockGladiators.push({
-      id: `mock-${i}`,
-      name: names[i % names.length],
-      surname: surnames[i % surnames.length],
-      avatarUrl: "⚔️",
-      health: 150,
-      alive: true,
-      stats: {
-        strength: 50 + Math.floor(Math.random() * 30),
-        agility: 50 + Math.floor(Math.random() * 30),
-        dexterity: 50 + Math.floor(Math.random() * 30),
-        speed: 50 + Math.floor(Math.random() * 30),
-        chance: 50 + Math.floor(Math.random() * 30),
-        intelligence: 50 + Math.floor(Math.random() * 30),
-        charisma: 50 + Math.floor(Math.random() * 30),
-        loyalty: 50 + Math.floor(Math.random() * 30),
-      },
-      lifeGoal: "To win glory in the arena and earn freedom",
-      personality: "Brave and determined warrior",
-      backstory: "A former soldier captured in battle",
-      weakness: "Overconfidence in combat",
-      fear: "Dying without honor",
-      likes: "Fair combat and worthy opponents",
-      dislikes: "Cowardice and betrayal",
-      birthCity: "Rome",
-      physicalCondition: "Strong and battle-ready",
-      notableHistory: "Survived many battles",
-    });
-  }
-  
-  return mockGladiators;
-}
+

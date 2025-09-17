@@ -7,7 +7,7 @@ export const cleanupUserDocOnAuthDelete = functions
   .region('us-central1')
   .runWith({ memory: '256MB', timeoutSeconds: 540 })
   .auth.user()
-  .onDelete(async (user: any) => {
+  .onDelete(async (user: functions.auth.UserRecord) => {
     const uid = user.uid as string;
     try {
       await db.collection('users').doc(uid).delete();

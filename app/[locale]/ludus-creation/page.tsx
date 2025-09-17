@@ -6,14 +6,16 @@ import LudusCreationClient from "./LudusCreationClient";
 import LogoutButton from "../../components/auth/LogoutButton";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 
 export default async function LudusCreationPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const user = await getRequestUser();
-  
+
   // Must be authenticated
   if (!user) redirect(`/${locale}/auth`);
-  
+
   // Check if user already has a ludus
   try {
     const ludiSnapshot = await adminDb()
@@ -21,7 +23,7 @@ export default async function LudusCreationPage({ params }: { params: Promise<{ 
       .where("userId", "==", user.uid)
       .limit(1)
       .get();
-    
+
     if (!ludiSnapshot.empty) {
       // User already has a ludus: proceed into the app
       redirect(`/${locale}/dashboard`);
@@ -38,7 +40,7 @@ export default async function LudusCreationPage({ params }: { params: Promise<{ 
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-amber-950/20 to-black" />
         <div className="absolute inset-0 bg-[url('/arena-bg.svg')] opacity-5" />
-        
+
         {/* Animated glows */}
         <div className="absolute top-1/2 left-1/4 w-96 h-96 bg-amber-600/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/2 right-1/4 w-96 h-96 bg-red-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -61,13 +63,13 @@ export default async function LudusCreationPage({ params }: { params: Promise<{ 
                 {t("badge")}
               </span>
             </div>
-            
+
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-4">
               <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent">
                 {t("title")}
               </span>
             </h1>
-            
+
             <p className="text-xl text-gray-300 max-w-xl mx-auto">
               {t("subtitle")}
             </p>

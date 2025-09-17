@@ -7,14 +7,16 @@ import { SERVERS } from "@/data/servers";
 import LogoutButton from "../../components/auth/LogoutButton";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 
 export default async function ServerSelectionPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const user = await getRequestUser();
-  
+
   // Must be authenticated to select a server
   if (!user) redirect(`/${locale}/auth`);
-  
+
   // Check if user already has a ludus (server already selected)
   try {
     const ludiSnapshot = await adminDb()
@@ -22,7 +24,7 @@ export default async function ServerSelectionPage({ params }: { params: Promise<
       .where("userId", "==", user.uid)
       .limit(1)
       .get();
-    
+
     if (!ludiSnapshot.empty) {
       // User already has a ludus: proceed into the app
       redirect(`/${locale}/dashboard`);
@@ -68,7 +70,7 @@ export default async function ServerSelectionPage({ params }: { params: Promise<
                 {t("title")}
               </span>
             </h1>
-            
+
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
               {t("subtitle")}
             </p>

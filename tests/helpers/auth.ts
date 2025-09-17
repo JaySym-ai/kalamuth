@@ -42,7 +42,7 @@ export async function loginUser(page: Page, email = TEST_CREDENTIALS.email, pass
     await page.waitForURL(postAuthPattern, { timeout: 15000 });
     console.log('User registered successfully');
     return;
-  } catch (e) {
+  } catch {
     console.log('Registration failed, attempting login (user might already exist)');
 
     // Ensure we are on the auth page, then switch to login and try to login
@@ -99,7 +99,7 @@ export async function registerUser(page: Page, email = TEST_CREDENTIALS.email, p
     // Wait for successful registration redirect into setup flow
     await page.waitForURL(/\/en\/(server-selection|ludus-creation|initial-gladiators|dashboard)/, { timeout: 15000 });
     console.log('User registered successfully');
-  } catch (error) {
+  } catch {
     // If registration fails (user might already exist), try to login instead
     console.log('Registration failed, attempting login (user might already exist)');
 

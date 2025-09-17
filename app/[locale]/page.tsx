@@ -10,6 +10,8 @@ import { getSessionUser } from "@/lib/firebase/session";
 import { adminDb } from "@/lib/firebase/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   // If the user is authenticated, do not show the public landing page.

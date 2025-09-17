@@ -148,7 +148,7 @@ export const onInitialGladiatorsJobCreated = onDocumentCreated(
       if (created > 0) {
         await ludusRef.set({ gladiatorCount: created, updatedAt: new Date().toISOString() }, { merge: true });
       }
-    } catch (e) {
+    } catch {
       errors.push('Failed to update ludus gladiatorCount');
     }
 
