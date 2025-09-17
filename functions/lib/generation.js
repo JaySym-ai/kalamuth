@@ -75,7 +75,11 @@ async function generateOneGladiator(client) {
         response_format: { type: 'json_schema', json_schema: { name: 'Gladiator', strict: true, schema: GladiatorJsonSchema } },
         temperature: 0.8
     });
-    const content = completion.choices?.[0]?.message?.content || '';
+    const choice = completion.choices?.[0];
+    const choiceMessage = choice?.message;
+    const content = typeof choiceMessage?.content === 'string' ? choiceMessage.content : '';
+    const finishReason = choice?.finish_reason ?? null;
+    const toolCallsCount = Array.isArray(choiceMessage?.tool_calls) ? choiceMessage?.tool_calls.length ?? 0 : 0;
     try {
         return JSON.parse(content);
     }
@@ -89,7 +93,12 @@ async function generateOneGladiator(client) {
         logger.error('LLM did not return valid JSON', {
             error: parseErr instanceof Error ? parseErr.message : String(parseErr),
             contentPreview: preview,
-            contentLength: content?.length ?? 0,
+            contentLength: content.length,
+            finishReason,
+            completionId: completion.id ?? null,
+            usage: completion.usage ?? null,
+            choiceRole: choiceMessage?.role ?? null,
+            toolCallsCount,
         });
         throw new Error('LLM did not return valid JSON');
     }
