@@ -5,10 +5,13 @@ import NavLink from "../ui/NavLink";
 import { useTranslations } from "next-intl";
 import LanguageSwitcher from "../ui/LanguageSwitcher";
 import LogoutButton from "../auth/LogoutButton";
+import { usePathname } from "next/navigation";
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const t = useTranslations("Nav");
+  const pathname = usePathname();
+  const isHome = pathname === "/" || pathname === "/en" || pathname === "/fr" || pathname === "/en/" || pathname === "/fr/";
 
   const navItems = [
     { label: t("arena"), href: "#arena" },
@@ -31,7 +34,7 @@ export default function Navigation() {
           {t("enterArena")}
         </button>
         <LanguageSwitcher />
-        <LogoutButton />
+        {!isHome && <LogoutButton />}
       </nav>
 
       {/* Mobile Menu Button */}
@@ -59,7 +62,7 @@ export default function Navigation() {
 
       {/* Mobile Navigation */}
       <div
-        className={`lg:hidden fixed inset-x-0 top-[72px] bg-black/95 backdrop-blur-xl border-b border-amber-900/20 transform transition-transform duration-300 ${
+        className={`lg:hidden fixed inset-x-0 top[72px] bg-black/95 backdrop-blur-xl border-b border-amber-900/20 transform transition-transform duration-300 ${
           isMenuOpen ? "translate-y-0" : "-translate-y-full"
         }`}
       >
@@ -80,9 +83,11 @@ export default function Navigation() {
           <button className="mt-4 px-6 py-3 bg-gradient-to-r from-amber-600 to-red-600 text-white font-bold rounded-lg hover:from-amber-500 hover:to-red-500 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-amber-500/25">
             {t("enterArena")}
           </button>
-          <div className="mt-2">
-            <LogoutButton />
-          </div>
+          {!isHome && (
+            <div className="mt-2">
+              <LogoutButton />
+            </div>
+          )}
         </nav>
       </div>
     </>

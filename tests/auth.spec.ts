@@ -99,7 +99,7 @@ test.describe('Authentication Flow', () => {
     await page.waitForURL(/\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard|$)/, { timeout: 15000 });
 
     // Should see logout button in the header
-    await expect(page.locator('button:has-text("Sign out")')).toBeVisible();
+    await expect(page.getByTestId('logout-button')).toBeVisible();
   });
 
   test('should handle logout correctly', async ({ page }) => {
@@ -113,7 +113,7 @@ test.describe('Authentication Flow', () => {
     await page.waitForURL(/\/en\/(server-selection|ludus-creation|initial-gladiators|dashboard)/, { timeout: 15000 });
 
     // Click logout button
-    await page.click('button:has-text("Sign out")');
+    await page.getByTestId('logout-button').click();
 
     // Should redirect to home page
     await expect(page).toHaveURL(/\/en\/?$/, { timeout: 15000 });

@@ -1,6 +1,8 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import OpenAI from 'openai';
+import * as logger from 'firebase-functions/logger';
+
 
 const OPENROUTER_API_KEY = defineSecret('OPENROUTER_API_KEY');
 
@@ -22,6 +24,13 @@ export const proxyOpenRouter = onCall(
       );
     }
 
+    logger.info('proxyOpenRouter request', {
+      model: typeof model === 'string' && model.length > 0 ? model : 'nvidia/nemotron-nano-9b-v2:free',
+      seed: seed ?? null,
+      temperature: typeof temperature === 'number' ? temperature : 0.8,
+      messagesCount: Array.isArray(messages) ? messages.length : 0,
+    });
+
     const client = new OpenAI({
       apiKey: OPENROUTER_API_KEY.value(),
       baseURL: 'https://openrouter.ai/api/v1',
@@ -40,7 +49,9 @@ export const proxyOpenRouter = onCall(
     });
 
     const content = completion.choices?.[0]?.message?.content || '';
+    logger.info('proxyOpenRouter response', { contentLength: content.length });
     return { content };
+
   }
 );
 

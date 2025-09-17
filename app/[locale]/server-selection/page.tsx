@@ -18,19 +18,20 @@ export default async function ServerSelectionPage({ params }: { params: Promise<
   if (!user) redirect(`/${locale}/auth`);
 
   // Check if user already has a ludus (server already selected)
+  let hasLudus = false;
   try {
     const ludiSnapshot = await adminDb()
       .collection("ludi")
       .where("userId", "==", user.uid)
       .limit(1)
       .get();
-
-    if (!ludiSnapshot.empty) {
-      // User already has a ludus: proceed into the app
-      redirect(`/${locale}/dashboard`);
-    }
+    hasLudus = !ludiSnapshot.empty;
   } catch (error) {
     console.error("Error checking ludus:", error);
+  }
+  if (hasLudus) {
+    // User already has a ludus: proceed into the app
+    redirect(`/${locale}/dashboard`);
   }
 
   const t = await getTranslations("ServerSelection");

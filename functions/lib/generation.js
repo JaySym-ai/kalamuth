@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 import { db } from './admin.js';
 import { MODEL_JSON_STRUCTURED } from './models.js';
 import { FieldValue } from 'firebase-admin/firestore';
+import * as logger from 'firebase-functions/logger';
 const OPENROUTER_API_KEY = defineSecret('OPENROUTER_API_KEY');
 // Strict JSON schema for a single Gladiator (kept in sync with web app schema)
 const GladiatorJsonSchema = {
@@ -78,11 +79,18 @@ async function generateOneGladiator(client) {
     try {
         return JSON.parse(content);
     }
-    catch {
+    catch (parseErr) {
         // Providers sometimes wrap JSON in fences
         const match = content.match(/```json\n([\s\S]*?)```/i) || content.match(/```([\s\S]*?)```/i);
         if (match)
             return JSON.parse(match[1]);
+        // Log a safe preview of the invalid content for debugging
+        const preview = content ? content.slice(0, 500) : '';
+        logger.error('LLM did not return valid JSON', {
+            error: parseErr instanceof Error ? parseErr.message : String(parseErr),
+            contentPreview: preview,
+            contentLength: content?.length ?? 0,
+        });
         throw new Error('LLM did not return valid JSON');
     }
 }
@@ -98,6 +106,14 @@ export const onInitialGladiatorsJobCreated = onDocumentCreated({
     const job = snap.data();
     if (!job || job.type !== 'generateInitialGladiators' || !job.ludusId || !job.count)
         return;
+    // Structured log: job received
+    logger.info('Initial gladiators job received', {
+        jobId: event?.params?.jobId,
+        ludusId: job.ludusId,
+        userId: job.userId ?? null,
+        serverId: job.serverId ?? null,
+        requestedCount: job.count,
+    });
     const client = new OpenAI({
         apiKey: OPENROUTER_API_KEY.value(),
         baseURL: 'https://openrouter.ai/api/v1',
@@ -111,7 +127,19 @@ export const onInitialGladiatorsJobCreated = onDocumentCreated({
     const minRequired = typeof job.minRequired === 'number' ? job.minRequired : job.count;
     const missing = Math.max(0, minRequired - existingCount);
     const toCreate = Math.min(job.count, missing);
+    logger.info('Initial gladiators job capacity', {
+        jobId: event?.params?.jobId,
+        existingCount,
+        minRequired,
+        missing,
+        toCreate,
+    });
     if (toCreate <= 0) {
+        logger.info('Nothing to create; job completes immediately', {
+            jobId: event?.params?.jobId,
+            existingCount,
+            minRequired,
+        });
         await snap.ref.set({ status: 'completed', created: 0, errors: [], finishedAt: FieldValue.serverTimestamp() }, { merge: true });
         return;
     }
@@ -131,7 +159,14 @@ export const onInitialGladiatorsJobCreated = onDocumentCreated({
             created++;
         }
         catch (e) {
-            errors.push(e instanceof Error ? e.message : String(e));
+            const msg = e instanceof Error ? e.message : String(e);
+            logger.error('Gladiator generation attempt failed', {
+                jobId: event?.params?.jobId,
+                attempt: i + 1,
+                error: msg,
+                stack: e instanceof Error ? e.stack : undefined,
+            });
+            errors.push(msg);
         }
     }
     try {
@@ -139,8 +174,19 @@ export const onInitialGladiatorsJobCreated = onDocumentCreated({
             await ludusRef.set({ gladiatorCount: created, updatedAt: new Date().toISOString() }, { merge: true });
         }
     }
-    catch {
+    catch (err) {
+        logger.error('Failed to update ludus gladiatorCount', {
+            jobId: event?.params?.jobId,
+            ludusId: job.ludusId,
+            error: err instanceof Error ? err.message : String(err),
+        });
         errors.push('Failed to update ludus gladiatorCount');
     }
+    logger.info('Initial gladiators job finished', {
+        jobId: event?.params?.jobId,
+        created,
+        errorsCount: errors.length,
+        status: errors.length ? 'completed_with_errors' : 'completed',
+    });
     await snap.ref.set({ status: errors.length ? 'completed_with_errors' : 'completed', created, errors, finishedAt: FieldValue.serverTimestamp() }, { merge: true });
 });
