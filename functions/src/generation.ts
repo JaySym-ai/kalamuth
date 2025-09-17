@@ -1,8 +1,8 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { defineSecret } from 'firebase-functions/params';
 import OpenAI from 'openai';
-import { db } from './admin';
-import { MODEL_JSON_STRUCTURED } from './models';
+import { db } from './admin.js';
+import { MODEL_JSON_STRUCTURED } from './models.js';
 import { FieldValue } from 'firebase-admin/firestore';
 
 
