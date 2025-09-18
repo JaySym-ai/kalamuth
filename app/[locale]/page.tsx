@@ -20,6 +20,11 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const user = await getSessionUser();
   if (user) {
     try {
+      // Check if user has completed onboarding
+      const userDoc = await adminDb().collection("users").doc(user.uid).get();
+      const userData = userDoc.exists ? userDoc.data() : {};
+      const onboardingDone = Boolean(userData?.onboardingDone);
+
       // Check if user has a ludus
       const ludiSnapshot = await adminDb()
         .collection("ludi")
@@ -30,8 +35,11 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       if (ludiSnapshot.empty) {
         // No ludus yet: go start at server selection
         redirect(`/${locale}/server-selection`);
+      } else if (onboardingDone) {
+        // Has a ludus and completed onboarding: go to dashboard
+        redirect(`/${locale}/dashboard`);
       } else {
-        // Has a ludus: continue to initial gladiators (that page may generate or redirect onward)
+        // Has a ludus but not completed onboarding: continue to initial gladiators
         redirect(`/${locale}/initial-gladiators`);
       }
     } catch {

@@ -15,6 +15,11 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
   const user = await getSessionUser();
   if (user) {
     try {
+      // Check if user has completed onboarding
+      const userDoc = await adminDb().collection("users").doc(user.uid).get();
+      const userData = userDoc.exists ? userDoc.data() : {};
+      const onboardingDone = Boolean(userData?.onboardingDone);
+
       const ludiSnapshot = await adminDb()
         .collection("ludi")
         .where("userId", "==", user.uid)
@@ -23,8 +28,12 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
 
       if (ludiSnapshot.empty) {
         redirect(`/${locale}/server-selection`);
-      } else {
+      } else if (onboardingDone) {
+        // Has a ludus and completed onboarding: go to dashboard
         redirect(`/${locale}/dashboard`);
+      } else {
+        // Has a ludus but not completed onboarding: continue to initial gladiators
+        redirect(`/${locale}/initial-gladiators`);
       }
     } catch {
       redirect(`/${locale}/server-selection`);

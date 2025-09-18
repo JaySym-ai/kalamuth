@@ -17,6 +17,16 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
   // Must be authenticated
   if (!user) redirect(`/${locale}/auth`);
 
+  // Check if user has already completed onboarding
+  const userDoc = await adminDb().collection("users").doc(user.uid).get();
+  const userData = userDoc.exists ? userDoc.data() : {};
+  const onboardingDone = Boolean(userData?.onboardingDone);
+
+  // If onboarding is already done, redirect to dashboard
+  if (onboardingDone) {
+    redirect(`/${locale}/dashboard`);
+  }
+
   // Get user's ludus
   let ludusData: { id: string; name?: string; serverId?: string } | null = null;
   let gladiators: NormalizedGladiator[] = [];
