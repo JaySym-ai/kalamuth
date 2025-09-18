@@ -6,40 +6,10 @@ import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { collection, onSnapshot, query, where, orderBy, limit as fbLimit } from "firebase/firestore";
 import { getClientDb } from "@/lib/firebase/client";
-
-interface GladiatorStats {
-  strength: number;
-  agility: number;
-  dexterity: number;
-  speed: number;
-  chance: number;
-  intelligence: number;
-  charisma: number;
-  loyalty: number;
-}
-
-interface Gladiator {
-  id: string;
-  name: string;
-  surname: string;
-  avatarUrl: string;
-  health: number;
-  alive: boolean;
-  stats: GladiatorStats;
-  lifeGoal: string;
-  personality: string;
-  backstory: string;
-  weakness: string;
-  fear: string;
-  likes: string;
-  dislikes: string;
-  birthCity: string;
-  physicalCondition: string;
-  notableHistory: string;
-}
+import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 
 interface Props {
-  gladiators: Gladiator[];
+  gladiators: NormalizedGladiator[];
   ludusName?: string;
   ludusId: string;
   serverId?: string;
@@ -50,9 +20,9 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
   const t = useTranslations("InitialGladiators");
   const locale = useLocale();
   const router = useRouter();
-  const [selectedGladiator, setSelectedGladiator] = useState<Gladiator | null>(null);
+  const [selectedGladiator, setSelectedGladiator] = useState<NormalizedGladiator | null>(null);
   const [loading, setLoading] = useState(false);
-  const [list, setList] = useState<Gladiator[]>(gladiators || []);
+  const [list, setList] = useState<NormalizedGladiator[]>(gladiators || []);
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string | null>(null);
@@ -63,7 +33,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
     const db = getClientDb();
     const q = query(collection(db, "gladiators"), where("ludusId", "==", ludusId));
     const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) })) as unknown as Gladiator[];
+      const items = snap.docs.map((d) => normalizeGladiator(d.id, d.data() as Record<string, unknown>));
       setList(items);
     });
     return () => unsub();

@@ -2,6 +2,77 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineSecret } from 'firebase-functions/params';
 import OpenAI from 'openai';
 import * as logger from 'firebase-functions/logger';
+function safeSerialize(value, maxLength = 4000) {
+    try {
+        const json = JSON.stringify(value);
+        if (!json)
+            return '';
+        return json.length > maxLength ? `${json.slice(0, maxLength)}…` : json;
+    }
+    catch (err) {
+        return `[unserializable:${err instanceof Error ? err.message : String(err)}]`;
+    }
+}
+function markAsLogged(error) {
+    error.__logged = true;
+    return error;
+}
+function hasBeenLogged(error) {
+    return Boolean(error && typeof error === 'object' && '__logged' in error && error.__logged);
+}
+function extractApiErrorDetails(error) {
+    const fallbackMessage = error instanceof Error ? error.message : String(error);
+    if (!error || typeof error !== 'object') {
+        return { status: null, code: null, type: null, message: fallbackMessage, raw: null };
+    }
+    const errObj = error;
+    const response = errObj.response ?? undefined;
+    const responseData = response?.data ?? undefined;
+    const responseError = responseData?.error ?? errObj.error;
+    const status = typeof errObj.status === 'number'
+        ? errObj.status
+        : typeof response?.status === 'number'
+            ? response.status
+            : typeof response?.statusCode === 'number'
+                ? response.statusCode
+                : null;
+    const codeCandidate = responseError?.code ?? errObj.code;
+    const code = typeof codeCandidate === 'string' || typeof codeCandidate === 'number' ? codeCandidate : null;
+    const typeCandidate = responseError?.type ?? errObj.type;
+    const type = typeof typeCandidate === 'string' ? typeCandidate : null;
+    const messageCandidate = responseError?.message ?? fallbackMessage;
+    const message = typeof messageCandidate === 'string' ? messageCandidate : fallbackMessage;
+    const rawSource = responseData ?? responseError ?? null;
+    return {
+        status,
+        code,
+        type,
+        message,
+        raw: rawSource ? safeSerialize(rawSource) : null,
+    };
+}
+function extractProviderErrorDetails(payload) {
+    if (!payload || typeof payload !== 'object')
+        return null;
+    const base = payload;
+    const providerError = base.error ?? base.provider_error ?? base.response?.error;
+    if (!providerError || typeof providerError !== 'object') {
+        const message = providerError != null ? String(providerError) : '';
+        return message ? { message, code: null, raw: safeSerialize(providerError) } : null;
+    }
+    const errorObj = providerError;
+    const codeCandidate = errorObj.code;
+    const code = typeof codeCandidate === 'string' || typeof codeCandidate === 'number' ? codeCandidate : null;
+    const messageCandidate = errorObj.message ?? errorObj.reason ?? errorObj.status ?? code ?? '[provider_error]';
+    const message = typeof messageCandidate === 'string' || typeof messageCandidate === 'number'
+        ? String(messageCandidate)
+        : JSON.stringify(errorObj);
+    return {
+        message,
+        code,
+        raw: safeSerialize(providerError),
+    };
+}
 const OPENROUTER_API_KEY = defineSecret('OPENROUTER_API_KEY');
 export const proxyOpenRouter = onCall({
     region: 'us-central1',
@@ -28,8 +99,9 @@ export const proxyOpenRouter = onCall({
         baseURL: 'https://openrouter.ai/api/v1',
         defaultHeaders: { 'X-Title': 'Kalamuth' },
     });
+    let completion;
     try {
-        const completion = await client.chat.completions.create({
+        completion = await client.chat.completions.create({
             model: modelToUse,
             messages,
             response_format: {
@@ -39,22 +111,77 @@ export const proxyOpenRouter = onCall({
             seed,
             temperature: temperatureValue,
         });
+    }
+    catch (err) {
+        const details = extractApiErrorDetails(err);
+        logger.error('proxyOpenRouter transport error', {
+            model: modelToUse,
+            temperature: temperatureValue,
+            seed: seed ?? null,
+            status: details.status,
+            code: details.code ?? null,
+            type: details.type,
+            message: details.message,
+            rawError: details.raw,
+        });
+        if (err instanceof Error) {
+            throw markAsLogged(err);
+        }
+        throw markAsLogged(new HttpsError('internal', details.message || 'OpenRouter request failed'));
+    }
+    try {
+        const primaryChoice = completion.choices?.[0];
+        const message = primaryChoice?.message;
+        const content = typeof message?.content === 'string' ? message.content : '';
+        const reasoning = message && typeof message.reasoning === 'string' ? message.reasoning : null;
+        const reasoningDetails = message?.reasoning_details ? safeSerialize(message.reasoning_details) : null;
         logger.info('proxyOpenRouter completion', {
             id: completion.id ?? null,
-            finishReason: completion.choices?.[0]?.finish_reason ?? null,
+            finishReason: primaryChoice?.finish_reason ?? null,
             usage: completion.usage ?? null,
             choicesCount: completion.choices?.length ?? 0,
+            messageRole: message?.role ?? null,
+            toolCallsCount: Array.isArray(message?.tool_calls) ? message.tool_calls.length : 0,
+            hasReasoning: Boolean(reasoning),
         });
-        const content = completion.choices?.[0]?.message?.content || '';
+        const providerError = extractProviderErrorDetails(completion);
+        if (!content && providerError) {
+            logger.error('proxyOpenRouter provider error', {
+                model: modelToUse,
+                completionId: completion.id ?? null,
+                providerErrorCode: providerError.code,
+                providerError: providerError.raw,
+            });
+            throw markAsLogged(new HttpsError('failed-precondition', `Provider error: ${providerError.message}`));
+        }
+        if (!content) {
+            logger.warn('proxyOpenRouter returned empty content', {
+                id: completion.id ?? null,
+                finishReason: primaryChoice?.finish_reason ?? null,
+                usage: completion.usage ?? null,
+                reasoning: reasoning ? reasoning.slice(0, 500) : null,
+                reasoningDetails,
+                rawChoice: safeSerialize(primaryChoice),
+                rawCompletion: safeSerialize(completion),
+            });
+        }
         logger.info('proxyOpenRouter response', { contentLength: content.length });
         return { content };
     }
     catch (err) {
+        if (hasBeenLogged(err)) {
+            throw err;
+        }
+        const details = extractApiErrorDetails(err);
         logger.error('proxyOpenRouter failed', {
             model: modelToUse,
             temperature: temperatureValue,
             seed: seed ?? null,
-            error: err instanceof Error ? err.message : String(err),
+            status: details.status,
+            code: details.code ?? null,
+            type: details.type,
+            message: details.message,
+            rawError: details.raw,
         });
         throw err;
     }

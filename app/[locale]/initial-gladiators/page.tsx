@@ -4,13 +4,12 @@ import { getRequestUser } from "@/lib/firebase/request-auth";
 import { adminDb } from "@/lib/firebase/server";
 import InitialGladiatorsClient from "./InitialGladiatorsClient";
 import { SERVERS } from "@/data/servers";
+import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-type ClientProps = Parameters<typeof InitialGladiatorsClient>[0];
-type ClientGladiator = ClientProps['gladiators'][number];
 export default async function InitialGladiatorsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const user = await getRequestUser();
@@ -20,7 +19,7 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
 
   // Get user's ludus
   let ludusData: { id: string; name?: string; serverId?: string } | null = null;
-  let gladiators: ClientGladiator[] = [];
+  let gladiators: NormalizedGladiator[] = [];
   let minRequired = 3;
 
   try {
@@ -50,10 +49,9 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
 
     if (!gladiatorsSnapshot.empty) {
       // Load existing gladiators
-      gladiators = gladiatorsSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as ClientGladiator[];
+      gladiators = gladiatorsSnapshot.docs.map(doc =>
+        normalizeGladiator(doc.id, doc.data() as Record<string, unknown>)
+      );
     }
 
     // Do not generate here anymore; generation is now async via job + Firestore listener

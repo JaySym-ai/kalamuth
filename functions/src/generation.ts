@@ -6,108 +6,456 @@ import { MODEL_JSON_STRUCTURED } from './models.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import * as logger from 'firebase-functions/logger';
 
+function safeSerialize(value: unknown, maxLength = 4000) {
+  try {
+    const json = JSON.stringify(value);
+    if (!json) return '';
+    return json.length > maxLength ? `${json.slice(0, maxLength)}…` : json;
+  } catch (err) {
+    return `[unserializable:${err instanceof Error ? err.message : String(err)}]`;
+  }
+}
+
+type GenerationContext = {
+  jobId?: string;
+  attempt?: number;
+};
+
+
+type ApiErrorDetails = {
+  status: number | null;
+  code: string | number | null;
+  type: string | null;
+  message: string;
+  raw: string | null;
+};
+
+function extractApiErrorDetails(error: unknown): ApiErrorDetails {
+  const fallbackMessage = error instanceof Error ? error.message : String(error);
+  if (!error || typeof error !== 'object') {
+    return { status: null, code: null, type: null, message: fallbackMessage, raw: null };
+  }
+
+  const errObj = error as Record<string, unknown> & { response?: Record<string, unknown> };
+  const response = (errObj.response as Record<string, unknown> | undefined) ?? undefined;
+  const responseData = (response?.data as Record<string, unknown> | undefined) ?? undefined;
+  const responseError = (responseData?.error as Record<string, unknown> | undefined) ?? (errObj.error as Record<string, unknown> | undefined);
+
+  const status = typeof errObj.status === 'number'
+    ? errObj.status
+    : typeof response?.status === 'number'
+      ? response.status
+      : typeof response?.statusCode === 'number'
+        ? response.statusCode
+        : null;
+
+  const codeCandidate = responseError?.code ?? errObj.code;
+  const code = typeof codeCandidate === 'string' || typeof codeCandidate === 'number' ? codeCandidate : null;
+
+  const typeCandidate = responseError?.type ?? errObj.type;
+  const type = typeof typeCandidate === 'string' ? typeCandidate : null;
+
+  const messageCandidate = responseError?.message ?? fallbackMessage;
+  const message = typeof messageCandidate === 'string' ? messageCandidate : fallbackMessage;
+
+  const rawSource = responseData ?? responseError ?? null;
+
+  return {
+    status,
+    code,
+    type,
+    message,
+    raw: rawSource ? safeSerialize(rawSource) : null,
+  };
+}
+
+function extractProviderErrorDetails(payload: unknown): { message: string; code: string | number | null; raw: string | null } | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const base = payload as Record<string, unknown>;
+  const providerError = (base.error as unknown) ?? (base.provider_error as unknown) ?? ((base.response as Record<string, unknown> | undefined)?.error as unknown);
+  if (!providerError || typeof providerError !== 'object') {
+    const message = providerError != null ? String(providerError) : '';
+    return message ? { message, code: null, raw: safeSerialize(providerError) } : null;
+  }
+
+  const errorObj = providerError as Record<string, unknown>;
+  const codeCandidate = errorObj.code;
+  const code = typeof codeCandidate === 'string' || typeof codeCandidate === 'number' ? codeCandidate : null;
+  const messageCandidate = errorObj.message ?? errorObj.reason ?? errorObj.status ?? code ?? '[provider_error]';
+  const message = typeof messageCandidate === 'string' || typeof messageCandidate === 'number'
+    ? String(messageCandidate)
+    : JSON.stringify(errorObj);
+
+  return {
+    message,
+    code,
+    raw: safeSerialize(providerError),
+  };
+}
+
+
+
 
 
 const OPENROUTER_API_KEY = defineSecret('OPENROUTER_API_KEY');
 
-// Strict JSON schema for a single Gladiator (kept in sync with web app schema)
-const GladiatorJsonSchema = {
-  type: 'object',
-  properties: {
-    name: { type: 'string', minLength: 1 },
-    surname: { type: 'string', minLength: 1 },
-    avatarUrl: { type: 'string', format: 'uri' },
-    health: { type: 'integer', minimum: 30, maximum: 300 },
-    alive: { type: 'boolean' },
-    injury: { type: 'string', minLength: 1 },
-    injuryTimeLeftHours: { type: 'integer', minimum: 1 },
-    sickness: { type: 'string', minLength: 1 },
-    stats: {
-      type: 'object',
-      properties: {
-        strength: { type: 'integer', minimum: 10, maximum: 100 },
-        agility: { type: 'integer', minimum: 10, maximum: 100 },
-        dexterity: { type: 'integer', minimum: 10, maximum: 100 },
-        speed: { type: 'integer', minimum: 10, maximum: 100 },
-        chance: { type: 'integer', minimum: 10, maximum: 100 },
-        intelligence: { type: 'integer', minimum: 10, maximum: 100 },
-        charisma: { type: 'integer', minimum: 10, maximum: 100 },
-        loyalty: { type: 'integer', minimum: 10, maximum: 100 }
-      },
-      required: ['strength','agility','dexterity','speed','chance','intelligence','charisma','loyalty']
-    },
-    lifeGoal: { type: 'string', minLength: 1 },
-    personality: { type: 'string', minLength: 1 },
-    backstory: { type: 'string', minLength: 1 },
-    weakness: { type: 'string', minLength: 1 },
-    fear: { type: 'string', minLength: 1 },
-    likes: { type: 'string', minLength: 1 },
-    dislikes: { type: 'string', minLength: 1 },
-    birthCity: { type: 'string', minLength: 1 },
-    handicap: { type: 'string', minLength: 1 },
-    uniquePower: { type: 'string', minLength: 1 },
-    physicalCondition: { type: 'string', minLength: 1 },
-    notableHistory: { type: 'string', minLength: 1 }
-  },
-  required: ['name','surname','avatarUrl','health','alive','stats','lifeGoal','personality','backstory','weakness','fear','likes','dislikes','birthCity','physicalCondition','notableHistory'],
-  allOf: [
-    {
-      if: { properties: { injury: { type: 'string', minLength: 1 } }, required: ['injury'] },
-      then: { required: ['injuryTimeLeftHours'] }
-    }
-  ]
-} as const;
+const systemPrompt = `detailed thinking off
 
-const systemPrompt = `
-You are generating gladiators for a Ludus management game.
-Follow the provided JSON Schema exactly. Do not include any fields not in the schema.
-- Numbers must be integers and within their specified bounds.
-- "health" represents max health (HP cap), not current health.
-- Keep narrative fields vivid but concise (1 to 3 sentences each), suitable for in-game use.
-- The uniquePower must be subtle and not overpowered; it's optional.
-- If injury is present, injuryTimeLeftHours must be an integer >= 1.
-- Use realistic ancient/mediterranean naming, but creativity is welcome.
-- The avatarUrl is a placeholder for now put "https://placehold.co/256x256?text=Gladiator".
-Return only JSON matching the schema.
+You are generating gladiators for a Ludus management game. Respond with a single JSON object that matches this structure exactly (the values below are examples; replace them with new content, but keep the keys, casing, and types identical):
+
+{
+  "name": "Marcus Serpens",
+  "surname": "Shadowstep",
+  "avatarUrl": "https://placehold.co/256x256?text=Gladiator",
+  "health": 184,
+  "alive": true,
+  "injury": "Bruised ribs",
+  "injuryTimeLeftHours": 48,
+  "sickness": "",
+  "stats": {
+    "strength": 78,
+    "agility": 66,
+    "dexterity": 72,
+    "speed": 63,
+    "chance": 55,
+    "intelligence": 61,
+    "charisma": 70,
+    "loyalty": 82
+  },
+  "lifeGoal": "Earn glory in the arena and secure freedom for his brother.",
+  "personality": "Cunning and precise, he watches patiently before striking.",
+  "backstory": "Captured after a failed naval raid, he sold himself into the ludus to spare his crew.",
+  "weakness": "Overthinks when pressured, costing him precious moments.",
+  "fear": "Losing the loyalty of his fellow fighters.",
+  "likes": "Sea voyages, chiseling marble, and quiet dawn meditations.",
+  "dislikes": "Chaotic commanders and needless cruelty.",
+  "birthCity": "Halicara",
+  "handicap": "Old spear wound stiffens his left wrist in cold weather.",
+  "uniquePower": "Once per bout he can sense the crowd's mood and recover a burst of morale.",
+  "physicalCondition": "Lean and wiry, with fresh bandages along his ribs.",
+  "notableHistory": "Won a duel by predicting the opponent's every feint in a high-stakes exhibition."
+}
+
+Guidelines:
+- Key names must match the example EXACTLY (e.g., use "stats", never "statistics"). Do not introduce or rename keys.
+- Health must be an integer between 30 and 300.
+- Each stat must be an integer between 10 and 100.
+- Narrative fields (lifeGoal, personality, backstory, weakness, fear, likes, dislikes, birthCity, physicalCondition, notableHistory) must each be a single descriptive string, never an array.
+- "notableHistory" is always required with a non-empty string.
+- If there is no injury, injuryTimeLeftHours, sickness, handicap, or uniquePower, omit the key entirely instead of returning null or an array.
+- The avatarUrl must remain exactly "https://placehold.co/256x256?text=Gladiator".
+- Use authentic ancient Mediterranean-inspired names.
+- Keep descriptions flavorful but concise (1–3 sentences).
+- Output must be valid JSON with the exact casing shown.
 `;
 
-async function generateOneGladiator(client: OpenAI) {
-  const completion = await client.chat.completions.create({
-    model: MODEL_JSON_STRUCTURED,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: 'Create one compliant gladiator.' }
-    ],
-    response_format: { type: 'json_schema', json_schema: { name: 'Gladiator', strict: true, schema: GladiatorJsonSchema } },
-    temperature: 0.8
-  });
 
-  const choice = completion.choices?.[0];
-  const choiceMessage = choice?.message as { role?: string; content?: string; tool_calls?: unknown[] } | undefined;
-  const content = typeof choiceMessage?.content === 'string' ? choiceMessage.content : '';
-  const finishReason = choice?.finish_reason ?? null;
-  const toolCallsCount = Array.isArray(choiceMessage?.tool_calls) ? choiceMessage?.tool_calls.length ?? 0 : 0;
+const MAX_GENERATION_ATTEMPTS = 3;
+const HEALTH_MIN = 30;
+const HEALTH_MAX = 300;
+const STAT_MIN = 10;
+const STAT_MAX = 100;
 
-  try {
-    return JSON.parse(content);
-  } catch (parseErr) {
-    // Providers sometimes wrap JSON in fences
-    const match = content.match(/```json\n([\s\S]*?)```/i) || content.match(/```([\s\S]*?)```/i);
-    if (match) return JSON.parse(match[1]!);
-    // Log a safe preview of the invalid content for debugging
-    const preview = content ? content.slice(0, 500) : '';
-    logger.error('LLM did not return valid JSON', {
-      error: parseErr instanceof Error ? parseErr.message : String(parseErr),
-      contentPreview: preview,
-      contentLength: content.length,
-      finishReason,
-      completionId: completion.id ?? null,
-      usage: completion.usage ?? null,
-      choiceRole: choiceMessage?.role ?? null,
-      toolCallsCount,
-    });
-    throw new Error('LLM did not return valid JSON');
+const STAT_KEYS = ['strength', 'agility', 'dexterity', 'speed', 'chance', 'intelligence', 'charisma', 'loyalty'] as const;
+type StatKey = (typeof STAT_KEYS)[number];
+
+interface GeneratedGladiatorStats {
+  strength: number;
+  agility: number;
+  dexterity: number;
+  speed: number;
+  chance: number;
+  intelligence: number;
+  charisma: number;
+  loyalty: number;
+}
+
+interface GeneratedGladiator {
+  name: string;
+  surname: string;
+  avatarUrl: string;
+  health: number;
+  alive: boolean;
+  injury?: string;
+  injuryTimeLeftHours?: number;
+  sickness?: string;
+  stats: GeneratedGladiatorStats;
+  lifeGoal: string;
+  personality: string;
+  backstory: string;
+  weakness: string;
+  fear: string;
+  likes: string;
+  dislikes: string;
+  birthCity: string;
+  handicap?: string;
+  uniquePower?: string;
+  physicalCondition: string;
+  notableHistory: string;
+}
+
+function expectNonEmptyString(value: unknown, field: string): string {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
   }
+  throw new Error(`Field "${field}" must be a non-empty string`);
+}
+
+function expectOptionalString(value: unknown, field: string): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  throw new Error(`Field "${field}" must be omitted or a non-empty string`);
+}
+
+function expectBoolean(value: unknown, field: string): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  throw new Error(`Field "${field}" must be a boolean`);
+}
+
+function expectIntegerInRange(value: unknown, field: string, min: number, max: number): number {
+  const numeric =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number.parseInt(value, 10)
+        : Number.NaN;
+  if (!Number.isFinite(numeric)) {
+    throw new Error(`Field "${field}" must be an integer between ${min} and ${max}`);
+  }
+  const rounded = Math.round(numeric);
+  if (rounded < min || rounded > max) {
+    throw new Error(`Field "${field}" must be between ${min} and ${max}`);
+  }
+  return rounded;
+}
+
+function normalizeGeneratedGladiatorRaw(raw: Record<string, unknown>): GeneratedGladiator {
+  const name = expectNonEmptyString(raw.name, 'name');
+  const surname = expectNonEmptyString(raw.surname, 'surname');
+  const avatarUrl = expectNonEmptyString(raw.avatarUrl, 'avatarUrl');
+  if (avatarUrl !== 'https://placehold.co/256x256?text=Gladiator') {
+    throw new Error('Field "avatarUrl" must be "https://placehold.co/256x256?text=Gladiator"');
+  }
+  const health = expectIntegerInRange(raw.health, 'health', HEALTH_MIN, HEALTH_MAX);
+  const alive = expectBoolean(raw.alive, 'alive');
+
+  const statsSource = (raw.stats ?? raw.statistics) as unknown;
+  if (!statsSource || typeof statsSource !== 'object') {
+    throw new Error('Field "stats" must be an object containing all stat fields');
+  }
+  const statsRecord = statsSource as Record<string, unknown>;
+  const stats = STAT_KEYS.reduce((acc, key) => {
+    acc[key] = expectIntegerInRange(statsRecord[key], `stats.${key}`, STAT_MIN, STAT_MAX);
+    return acc;
+  }, {} as Record<StatKey, number>) as GeneratedGladiatorStats;
+
+  const lifeGoal = expectNonEmptyString(raw.lifeGoal, 'lifeGoal');
+  const personality = expectNonEmptyString(raw.personality, 'personality');
+  const backstory = expectNonEmptyString(raw.backstory, 'backstory');
+  const weakness = expectNonEmptyString(raw.weakness, 'weakness');
+  const fear = expectNonEmptyString(raw.fear, 'fear');
+  const likes = expectNonEmptyString(raw.likes, 'likes');
+  const dislikes = expectNonEmptyString(raw.dislikes, 'dislikes');
+  const birthCity = expectNonEmptyString(raw.birthCity, 'birthCity');
+  const physicalCondition = expectNonEmptyString(raw.physicalCondition, 'physicalCondition');
+  const notableHistory = expectNonEmptyString(raw.notableHistory, 'notableHistory');
+
+  const injury = expectOptionalString(raw.injury, 'injury');
+  const sickness = expectOptionalString(raw.sickness, 'sickness');
+  const handicap = expectOptionalString(raw.handicap, 'handicap');
+  const uniquePower = expectOptionalString(raw.uniquePower, 'uniquePower');
+
+  let injuryTimeLeftHours: number | undefined;
+  if (injury) {
+    injuryTimeLeftHours = expectIntegerInRange(
+      raw.injuryTimeLeftHours,
+      'injuryTimeLeftHours',
+      1,
+      24 * 30,
+    );
+  } else if (raw.injuryTimeLeftHours !== undefined && raw.injuryTimeLeftHours !== null) {
+    throw new Error('Omit "injuryTimeLeftHours" when there is no injury');
+  }
+
+  return {
+    name,
+    surname,
+    avatarUrl,
+    health,
+    alive,
+    ...(injury ? { injury } : {}),
+    ...(injuryTimeLeftHours ? { injuryTimeLeftHours } : {}),
+    ...(sickness ? { sickness } : {}),
+    stats,
+    lifeGoal,
+    personality,
+    backstory,
+    weakness,
+    fear,
+    likes,
+    dislikes,
+    birthCity,
+    ...(handicap ? { handicap } : {}),
+    ...(uniquePower ? { uniquePower } : {}),
+    physicalCondition,
+    notableHistory,
+  };
+}
+
+async function generateOneGladiator(client: OpenAI, context?: GenerationContext) {
+  let lastError: unknown = null;
+
+  for (let generationAttempt = 1; generationAttempt <= MAX_GENERATION_ATTEMPTS; generationAttempt++) {
+    let completion: OpenAI.Chat.Completions.ChatCompletion;
+    try {
+      const request = {
+        model: MODEL_JSON_STRUCTURED,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: 'Create one compliant gladiator.' }
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.7,
+      } as OpenAI.Chat.Completions.ChatCompletionCreateParams & { include_reasoning?: boolean };
+      request.include_reasoning = false;
+      completion = (await client.chat.completions.create(request)) as OpenAI.Chat.Completions.ChatCompletion;
+    } catch (err) {
+      const details = extractApiErrorDetails(err);
+      logger.error('OpenRouter transport error', {
+        jobId: context?.jobId ?? null,
+        attempt: context?.attempt ?? null,
+        generationAttempt,
+        model: MODEL_JSON_STRUCTURED,
+        status: details.status,
+        code: details.code ?? null,
+        type: details.type,
+        message: details.message,
+        rawError: details.raw,
+      });
+      lastError = err instanceof Error ? err : new Error(details.message || 'OpenRouter transport error');
+      continue;
+    }
+
+    const choice = completion.choices?.[0];
+    const choiceMessage = choice?.message as {
+      role?: string;
+      content?: string;
+      tool_calls?: unknown[];
+      reasoning?: unknown;
+      reasoning_details?: unknown;
+    } | undefined;
+    const content = typeof choiceMessage?.content === 'string' ? choiceMessage.content : '';
+    const finishReason = choice?.finish_reason ?? null;
+    const toolCallsCount = Array.isArray(choiceMessage?.tool_calls) ? choiceMessage.tool_calls.length : 0;
+    const reasoningText =
+      choiceMessage && typeof (choiceMessage as { reasoning?: unknown }).reasoning === 'string'
+        ? (choiceMessage as { reasoning: string }).reasoning
+        : null;
+    const reasoningDetails = choiceMessage?.reasoning_details ? safeSerialize(choiceMessage.reasoning_details) : null;
+
+    const providerError = extractProviderErrorDetails(completion);
+    if (!content && providerError) {
+      logger.error('OpenRouter provider error', {
+        jobId: context?.jobId ?? null,
+        attempt: context?.attempt ?? null,
+        generationAttempt,
+        completionId: completion.id ?? null,
+        providerErrorCode: providerError.code,
+        providerError: providerError.raw,
+      });
+      lastError = new Error(`Provider error: ${providerError.message}`);
+      continue;
+    }
+
+    if (!content) {
+      logger.error('LLM returned empty content', {
+        jobId: context?.jobId ?? null,
+        attempt: context?.attempt ?? null,
+        generationAttempt,
+        completionId: completion.id ?? null,
+        finishReason,
+        reasoning: reasoningText ? reasoningText.slice(0, 500) : null,
+        reasoningDetails,
+        rawChoice: safeSerialize(choice),
+        rawCompletion: safeSerialize(completion),
+      });
+      lastError = new Error('Provider returned empty content');
+      continue;
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(content);
+    } catch (parseErr) {
+      const fencedMatch = content.match(/```json\n([\s\S]*?)```/i) || content.match(/```([\s\S]*?)```/i);
+      if (fencedMatch) {
+        try {
+          parsed = JSON.parse(fencedMatch[1]!);
+        } catch (innerErr) {
+          logger.error('LLM fenced JSON parse failed', {
+            jobId: context?.jobId ?? null,
+            attempt: context?.attempt ?? null,
+            generationAttempt,
+            error: innerErr instanceof Error ? innerErr.message : String(innerErr),
+            rawSnippetLength: fencedMatch[1]?.length ?? 0,
+          });
+          lastError = innerErr instanceof Error ? innerErr : new Error(String(innerErr));
+          continue;
+        }
+      } else {
+        logger.error('LLM did not return valid JSON', {
+          jobId: context?.jobId ?? null,
+          attempt: context?.attempt ?? null,
+          generationAttempt,
+          error: parseErr instanceof Error ? parseErr.message : String(parseErr),
+          contentPreview: content.slice(0, 500),
+          contentLength: content.length,
+          finishReason,
+          completionId: completion.id ?? null,
+          usage: completion.usage ?? null,
+          choiceRole: choiceMessage?.role ?? null,
+          toolCallsCount,
+          reasoning: reasoningText ? reasoningText.slice(0, 500) : null,
+          reasoningDetails,
+          rawChoice: safeSerialize(choice),
+          rawCompletion: safeSerialize(completion),
+        });
+        lastError = parseErr instanceof Error ? parseErr : new Error(String(parseErr));
+        continue;
+      }
+    }
+
+    try {
+      const gladiator = normalizeGeneratedGladiatorRaw(parsed as Record<string, unknown>);
+      return gladiator;
+    } catch (validationErr) {
+      logger.error('Generated gladiator failed validation', {
+        jobId: context?.jobId ?? null,
+        attempt: context?.attempt ?? null,
+        generationAttempt,
+        completionId: completion.id ?? null,
+        error: validationErr instanceof Error ? validationErr.message : String(validationErr),
+        rawGladiator: safeSerialize(parsed),
+      });
+      lastError = validationErr instanceof Error ? validationErr : new Error(String(validationErr));
+      continue;
+    }
+  }
+
+  if (lastError instanceof Error) {
+    throw lastError;
+  }
+  throw new Error('Failed to generate gladiator after multiple attempts');
 }
 
 export const onInitialGladiatorsJobCreated = onDocumentCreated(
@@ -171,7 +519,10 @@ export const onInitialGladiatorsJobCreated = onDocumentCreated(
 
     for (let i = 0; i < toCreate; i++) {
       try {
-        const g = await generateOneGladiator(client);
+        const g = await generateOneGladiator(client, {
+          jobId: event?.params?.jobId,
+          attempt: i + 1,
+        });
         const now = new Date().toISOString();
         await gladiatorsCol.add({
           ...g,
