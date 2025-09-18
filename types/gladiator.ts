@@ -4,7 +4,7 @@
  * Notes:
  * - Name and surname are AI-generated.
  * - Health bounds: 30..300 (inclusive) — represents max health (HP cap).
- * - Combat attributes (stats): each in 10..100 (inclusive).
+ * - Combat attributes (stats): each is a 12 sentence descriptive string.
  * - Narrative fields are AI-generated descriptive strings.
  * - Optional fields (injury, sickness, handicap, uniquePower) may be omitted when not applicable.
  */
@@ -13,31 +13,29 @@
 export const GLADIATOR_HEALTH_MIN = 30;
 export const GLADIATOR_HEALTH_MAX = 300;
 
-/** Lower/upper bounds for all primary stats. */
-export const GLADIATOR_STAT_MIN = 10;
-export const GLADIATOR_STAT_MAX = 100;
+
 
 /**
  * Primary combat/behavioral attributes.
- * All values must be integers in [10, 100]. Enforcement is done by generators/validators.
+ * Each value is a 1–2 sentence descriptive string about how this gladiator expresses that trait in combat and behavior.
  */
 export interface GladiatorStats {
-  /** Raw power, affects damage and grapples. [10..100] */
-  strength: number;
-  /** Flexibility and balance, affects dodges and reaction. [10..100] */
-  agility: number;
-  /** Hand control and precision, affects weapon handling. [10..100] */
-  dexterity: number;
-  /** Movement speed and initiative. [10..100] */
-  speed: number;
-  /** Fortune factor impacting unlikely outcomes. [10..100] */
-  chance: number;
-  /** Tactical awareness and decision-making. [10..100] */
-  intelligence: number;
-  /** Crowd and opponent influence. [10..100] */
-  charisma: number;
-  /** Faithfulness to the ludus/master. [10..100] */
-  loyalty: number;
+  /** Raw power; describe typical displays of might. */
+  strength: string;
+  /** Flexibility and balance; describe dodges, footwork, recovery. */
+  agility: string;
+  /** Hand control and precision; describe weapon handling and finesse. */
+  dexterity: string;
+  /** Movement pace and initiative; describe bursts, closing distance, starts. */
+  speed: string;
+  /** Fortune factor; describe luck swings and improbable turns. */
+  chance: string;
+  /** Tactical awareness; describe reading opponents and decision-making. */
+  intelligence: string;
+  /** Presence and influence; describe crowd sway and psychological edge. */
+  charisma: string;
+  /** Faithfulness to the ludus; describe loyalty under pressure. */
+  loyalty: string;
 }
 
 /**
@@ -68,7 +66,7 @@ export interface Gladiator {
   sickness?: string;
 
   // — Core attributes —
-  /** Primary stats block; each value must be in [10..100]. */
+  /** Primary stats block; each value is a 1–2 sentence description for that trait. */
   stats: GladiatorStats;
 
   // — Narrative / flavor (all AI-generated strings) —

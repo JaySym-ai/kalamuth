@@ -99,75 +99,182 @@ function extractProviderErrorDetails(payload: unknown): { message: string; code:
 
 const OPENROUTER_API_KEY = defineSecret('OPENROUTER_API_KEY');
 
-const systemPrompt = `detailed thinking off
+const systemPromptBilingual = `detailed thinking off
 
-You are generating gladiators for a Ludus management game. Respond with a single JSON object that matches this structure exactly (the values below are examples; replace them with new content, but keep the keys, casing, and types identical):
+You are generating gladiators for a Ludus management game with BILINGUAL content (English and French).
+Respond with a single JSON object that matches this structure exactly (the values below are examples; replace them with new content, but keep the keys, casing, and types identical):
 
 {
   "name": "Marcus Serpens",
   "surname": "Shadowstep",
-  "avatarUrl": "https://placehold.co/256x256?text=Gladiator",
+  "avatarUrl": "",
   "health": 184,
   "alive": true,
-  "injury": "Bruised ribs",
-  "injuryTimeLeftHours": 48,
-  "sickness": "",
-  "stats": {
-    "strength": 78,
-    "agility": 66,
-    "dexterity": 72,
-    "speed": 63,
-    "chance": 55,
-    "intelligence": 61,
-    "charisma": 70,
-    "loyalty": 82
+  "injury": {
+    "en": "Bruised ribs",
+    "fr": "Côtes meurtries"
   },
-  "lifeGoal": "Earn glory in the arena and secure freedom for his brother.",
-  "personality": "Cunning and precise, he watches patiently before striking.",
-  "backstory": "Captured after a failed naval raid, he sold himself into the ludus to spare his crew.",
-  "weakness": "Overthinks when pressured, costing him precious moments.",
-  "fear": "Losing the loyalty of his fellow fighters.",
-  "likes": "Sea voyages, chiseling marble, and quiet dawn meditations.",
-  "dislikes": "Chaotic commanders and needless cruelty.",
+  "injuryTimeLeftHours": 48,
+  "sickness": {
+    "en": "Fever",
+    "fr": "Fièvre"
+  },
+  "stats": {
+    "strength": {
+      "en": "Drives forward with heavy, bone-rattling strikes that overwhelm guards.",
+      "fr": "Avance avec des frappes lourdes et fracassantes qui submergent les gardes."
+    },
+    "agility": {
+      "en": "Glides around blows with fluid hips and quick pivots, rarely losing balance.",
+      "fr": "Glisse autour des coups avec des hanches fluides et des pivots rapides, perdant rarement l'équilibre."
+    },
+    "dexterity": {
+      "en": "Spins the trident with surgeon-like precision, catching wrists and straps.",
+      "fr": "Fait tournoyer le trident avec une précision chirurgicale, attrapant poignets et sangles."
+    },
+    "speed": {
+      "en": "Explodes at the opening bell, closing distance before a shield can rise.",
+      "fr": "Explose au son de la cloche, réduisant la distance avant qu'un bouclier ne se lève."
+    },
+    "chance": {
+      "en": "Fortune seems to tip a blade his way; missteps turn into lucky recoveries.",
+      "fr": "La fortune semble pencher la lame en sa faveur; les faux pas deviennent des récupérations chanceuses."
+    },
+    "intelligence": {
+      "en": "Reads footwork early and baits feints, punishing telegraphed swings.",
+      "fr": "Lit les mouvements de pieds tôt et appâte les feintes, punissant les coups télégraphiés."
+    },
+    "charisma": {
+      "en": "Works the crowd with fearless posture and nods, rattling hesitant foes.",
+      "fr": "Travaille la foule avec une posture intrépide et des hochements de tête, déstabilisant les adversaires hésitants."
+    },
+    "loyalty": {
+      "en": "Keeps promises to his ludus and stands by stablemates when stakes rise.",
+      "fr": "Tient ses promesses envers son ludus et soutient ses compagnons quand les enjeux montent."
+    }
+  },
+  "lifeGoal": {
+    "en": "Earn glory in the arena and secure freedom for his brother.",
+    "fr": "Gagner la gloire dans l'arène et obtenir la liberté pour son frère."
+  },
+  "personality": {
+    "en": "Cunning and precise, he watches patiently before striking.",
+    "fr": "Rusé et précis, il observe patiemment avant de frapper."
+  },
+  "backstory": {
+    "en": "Captured after a failed naval raid, he sold himself into the ludus to spare his crew.",
+    "fr": "Capturé après un raid naval raté, il s'est vendu au ludus pour épargner son équipage."
+  },
+  "weakness": {
+    "en": "Overthinks when pressured, costing him precious moments.",
+    "fr": "Réfléchit trop sous pression, lui coûtant de précieux instants."
+  },
+  "fear": {
+    "en": "Losing the loyalty of his fellow fighters.",
+    "fr": "Perdre la loyauté de ses compagnons combattants."
+  },
+  "likes": {
+    "en": "Sea voyages, chiseling marble, and quiet dawn meditations.",
+    "fr": "Les voyages en mer, sculpter le marbre et les méditations silencieuses à l'aube."
+  },
+  "dislikes": {
+    "en": "Chaotic commanders and needless cruelty.",
+    "fr": "Les commandants chaotiques et la cruauté inutile."
+  },
   "birthCity": "Halicara",
-  "handicap": "Old spear wound stiffens his left wrist in cold weather.",
-  "uniquePower": "Once per bout he can sense the crowd's mood and recover a burst of morale.",
-  "physicalCondition": "Lean and wiry, with fresh bandages along his ribs.",
-  "notableHistory": "Won a duel by predicting the opponent's every feint in a high-stakes exhibition."
+  "handicap": {
+    "en": "Old spear wound stiffens his left wrist in cold weather.",
+    "fr": "Une vieille blessure de lance raidit son poignet gauche par temps froid."
+  },
+  "uniquePower": {
+    "en": "Once per bout he can sense the crowd's mood and recover a burst of morale.",
+    "fr": "Une fois par combat, il peut sentir l'humeur de la foule et récupérer un regain de moral."
+  },
+  "physicalCondition": {
+    "en": "Lean and wiry, with fresh bandages along his ribs.",
+    "fr": "Mince et nerveux, avec des bandages frais le long de ses côtes."
+  },
+  "notableHistory": {
+    "en": "Won a duel by predicting the opponent's every feint in a high-stakes exhibition.",
+    "fr": "A gagné un duel en prédisant chaque feinte de l'adversaire lors d'une exhibition à enjeux élevés."
+  }
 }
 
 Guidelines:
-- Key names must match the example EXACTLY (e.g., use "stats", never "statistics"). Do not introduce or rename keys.
+- Key names must match the example EXACTLY. Do not introduce or rename keys.
 - Health must be an integer between 30 and 300.
-- Each stat must be an integer between 10 and 100.
-- Narrative fields (lifeGoal, personality, backstory, weakness, fear, likes, dislikes, birthCity, physicalCondition, notableHistory) must each be a single descriptive string, never an array.
-- "notableHistory" is always required with a non-empty string.
-- If there is no injury, injuryTimeLeftHours, sickness, handicap, or uniquePower, omit the key entirely instead of returning null or an array.
-- The avatarUrl must remain exactly "https://placehold.co/256x256?text=Gladiator".
-- Use authentic ancient Mediterranean-inspired names.
-- Keep descriptions flavorful but concise (1–3 sentences).
+- Each bilingual text field must have both "en" and "fr" keys with appropriate translations.
+- Each stats.* value must be a non-empty textual description (1–2 sentences) in both languages.
+- Narrative fields must each be a bilingual object with "en" and "fr" keys.
+- "notableHistory" is always required with non-empty strings in both languages.
+- If there is no injury, injuryTimeLeftHours, sickness, handicap, or uniquePower, omit the key entirely.
+- The avatarUrl must remain exactly empty like that "".
+- Use authentic ancient Mediterranean-inspired names (names and birthCity stay single language).
+- Keep descriptions flavorful (1–4 sentences) and ensure French translations are natural and idiomatic.
 - Output must be valid JSON with the exact casing shown.
 `;
+
+// Keep the old system prompt for backward compatibility
+const systemPrompt = systemPromptBilingual;
 
 
 const MAX_GENERATION_ATTEMPTS = 3;
 const HEALTH_MIN = 30;
 const HEALTH_MAX = 300;
-const STAT_MIN = 10;
-const STAT_MAX = 100;
+
 
 const STAT_KEYS = ['strength', 'agility', 'dexterity', 'speed', 'chance', 'intelligence', 'charisma', 'loyalty'] as const;
 type StatKey = (typeof STAT_KEYS)[number];
 
+interface BilingualText {
+  en: string;
+  fr: string;
+}
+
+interface BilingualGladiatorStats {
+  strength: BilingualText;
+  agility: BilingualText;
+  dexterity: BilingualText;
+  speed: BilingualText;
+  chance: BilingualText;
+  intelligence: BilingualText;
+  charisma: BilingualText;
+  loyalty: BilingualText;
+}
+
 interface GeneratedGladiatorStats {
-  strength: number;
-  agility: number;
-  dexterity: number;
-  speed: number;
-  chance: number;
-  intelligence: number;
-  charisma: number;
-  loyalty: number;
+  strength: string;
+  agility: string;
+  dexterity: string;
+  speed: string;
+  chance: string;
+  intelligence: string;
+  charisma: string;
+  loyalty: string;
+}
+
+interface BilingualGeneratedGladiator {
+  name: string;
+  surname: string;
+  avatarUrl: string;
+  health: number;
+  alive: boolean;
+  injury?: BilingualText;
+  injuryTimeLeftHours?: number;
+  sickness?: BilingualText;
+  stats: BilingualGladiatorStats;
+  lifeGoal: BilingualText;
+  personality: BilingualText;
+  backstory: BilingualText;
+  weakness: BilingualText;
+  fear: BilingualText;
+  likes: BilingualText;
+  dislikes: BilingualText;
+  birthCity: string;
+  handicap?: BilingualText;
+  uniquePower?: BilingualText;
+  physicalCondition: BilingualText;
+  notableHistory: BilingualText;
 }
 
 interface GeneratedGladiator {
@@ -202,6 +309,33 @@ function expectNonEmptyString(value: unknown, field: string): string {
     }
   }
   throw new Error(`Field "${field}" must be a non-empty string`);
+}
+
+function expectStringAllowingEmpty(value: unknown, field: string): string {
+  if (value === undefined || value === null) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+  throw new Error(`Field "${field}" must be a string or omitted`);
+}
+
+function expectBilingualText(value: unknown, field: string): BilingualText {
+  if (!value || typeof value !== 'object') {
+    throw new Error(`Field "${field}" must be a bilingual object with 'en' and 'fr' keys`);
+  }
+  const obj = value as Record<string, unknown>;
+  const en = expectNonEmptyString(obj.en, `${field}.en`);
+  const fr = expectNonEmptyString(obj.fr, `${field}.fr`);
+  return { en, fr };
+}
+
+function expectOptionalBilingualText(value: unknown, field: string): BilingualText | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  return expectBilingualText(value, field);
 }
 
 function expectOptionalString(value: unknown, field: string): string | undefined {
@@ -239,12 +373,12 @@ function expectIntegerInRange(value: unknown, field: string, min: number, max: n
   return rounded;
 }
 
-function normalizeGeneratedGladiatorRaw(raw: Record<string, unknown>): GeneratedGladiator {
+function normalizeBilingualGladiatorRaw(raw: Record<string, unknown>): BilingualGeneratedGladiator {
   const name = expectNonEmptyString(raw.name, 'name');
   const surname = expectNonEmptyString(raw.surname, 'surname');
-  const avatarUrl = expectNonEmptyString(raw.avatarUrl, 'avatarUrl');
-  if (avatarUrl !== 'https://placehold.co/256x256?text=Gladiator') {
-    throw new Error('Field "avatarUrl" must be "https://placehold.co/256x256?text=Gladiator"');
+  const avatarUrl = expectStringAllowingEmpty(raw.avatarUrl, 'avatarUrl');
+  if (avatarUrl !== '' && avatarUrl !== 'https://placehold.co/256x256?text=Gladiator') {
+    throw new Error('Field "avatarUrl" must be empty string or "https://placehold.co/256x256?text=Gladiator"');
   }
   const health = expectIntegerInRange(raw.health, 'health', HEALTH_MIN, HEALTH_MAX);
   const alive = expectBoolean(raw.alive, 'alive');
@@ -255,9 +389,83 @@ function normalizeGeneratedGladiatorRaw(raw: Record<string, unknown>): Generated
   }
   const statsRecord = statsSource as Record<string, unknown>;
   const stats = STAT_KEYS.reduce((acc, key) => {
-    acc[key] = expectIntegerInRange(statsRecord[key], `stats.${key}`, STAT_MIN, STAT_MAX);
+    acc[key] = expectBilingualText(statsRecord[key], `stats.${key}`);
     return acc;
-  }, {} as Record<StatKey, number>) as GeneratedGladiatorStats;
+  }, {} as Record<StatKey, BilingualText>) as BilingualGladiatorStats;
+
+  const lifeGoal = expectBilingualText(raw.lifeGoal, 'lifeGoal');
+  const personality = expectBilingualText(raw.personality, 'personality');
+  const backstory = expectBilingualText(raw.backstory, 'backstory');
+  const weakness = expectBilingualText(raw.weakness, 'weakness');
+  const fear = expectBilingualText(raw.fear, 'fear');
+  const likes = expectBilingualText(raw.likes, 'likes');
+  const dislikes = expectBilingualText(raw.dislikes, 'dislikes');
+  const birthCity = expectNonEmptyString(raw.birthCity, 'birthCity');
+  const physicalCondition = expectBilingualText(raw.physicalCondition, 'physicalCondition');
+  const notableHistory = expectBilingualText(raw.notableHistory, 'notableHistory');
+
+  const injury = expectOptionalBilingualText(raw.injury, 'injury');
+  const sickness = expectOptionalBilingualText(raw.sickness, 'sickness');
+  const handicap = expectOptionalBilingualText(raw.handicap, 'handicap');
+  const uniquePower = expectOptionalBilingualText(raw.uniquePower, 'uniquePower');
+
+  let injuryTimeLeftHours: number | undefined;
+  if (injury) {
+    injuryTimeLeftHours = expectIntegerInRange(
+      raw.injuryTimeLeftHours,
+      'injuryTimeLeftHours',
+      1,
+      24 * 30,
+    );
+  } else if (raw.injuryTimeLeftHours !== undefined && raw.injuryTimeLeftHours !== null) {
+    throw new Error('Omit "injuryTimeLeftHours" when there is no injury');
+  }
+
+  return {
+    name,
+    surname,
+    avatarUrl: avatarUrl || 'https://placehold.co/256x256?text=Gladiator',
+    health,
+    alive,
+    ...(injury ? { injury } : {}),
+    ...(injuryTimeLeftHours ? { injuryTimeLeftHours } : {}),
+    ...(sickness ? { sickness } : {}),
+    stats,
+    lifeGoal,
+    personality,
+    backstory,
+    weakness,
+    fear,
+    likes,
+    dislikes,
+    birthCity,
+    ...(handicap ? { handicap } : {}),
+    ...(uniquePower ? { uniquePower } : {}),
+    physicalCondition,
+    notableHistory,
+  };
+}
+
+function normalizeGeneratedGladiatorRaw(raw: Record<string, unknown>): GeneratedGladiator {
+  const name = expectNonEmptyString(raw.name, 'name');
+  const surname = expectNonEmptyString(raw.surname, 'surname');
+  const rawAvatarUrl = expectStringAllowingEmpty(raw.avatarUrl, 'avatarUrl');
+  if (rawAvatarUrl !== '' && rawAvatarUrl !== 'https://placehold.co/256x256?text=Gladiator') {
+    throw new Error('Field "avatarUrl" must be empty string or "https://placehold.co/256x256?text=Gladiator"');
+  }
+  const avatarUrl = rawAvatarUrl || 'https://placehold.co/256x256?text=Gladiator';
+  const health = expectIntegerInRange(raw.health, 'health', HEALTH_MIN, HEALTH_MAX);
+  const alive = expectBoolean(raw.alive, 'alive');
+
+  const statsSource = (raw.stats ?? raw.statistics) as unknown;
+  if (!statsSource || typeof statsSource !== 'object') {
+    throw new Error('Field "stats" must be an object containing all stat fields');
+  }
+  const statsRecord = statsSource as Record<string, unknown>;
+  const stats = STAT_KEYS.reduce((acc, key) => {
+    acc[key] = expectNonEmptyString(statsRecord[key], `stats.${key}`);
+    return acc;
+  }, {} as Record<StatKey, string>) as GeneratedGladiatorStats;
 
   const lifeGoal = expectNonEmptyString(raw.lifeGoal, 'lifeGoal');
   const personality = expectNonEmptyString(raw.personality, 'personality');
@@ -312,7 +520,7 @@ function normalizeGeneratedGladiatorRaw(raw: Record<string, unknown>): Generated
   };
 }
 
-async function generateOneGladiator(client: OpenAI, context?: GenerationContext) {
+async function generateOneGladiator(client: OpenAI, context?: GenerationContext): Promise<GeneratedGladiator | BilingualGeneratedGladiator> {
   let lastError: unknown = null;
 
   for (let generationAttempt = 1; generationAttempt <= MAX_GENERATION_ATTEMPTS; generationAttempt++) {
@@ -436,8 +644,25 @@ async function generateOneGladiator(client: OpenAI, context?: GenerationContext)
     }
 
     try {
-      const gladiator = normalizeGeneratedGladiatorRaw(parsed as Record<string, unknown>);
-      return gladiator;
+      // Try to detect if this is bilingual data
+      const parsedObj = parsed as Record<string, unknown>;
+      const lifeGoalCandidate =
+        typeof parsedObj.lifeGoal === 'object' && parsedObj.lifeGoal !== null
+          ? (parsedObj.lifeGoal as Record<string, unknown>)
+          : null;
+      const isBilingual =
+        typeof lifeGoalCandidate?.['en'] === 'string' &&
+        typeof lifeGoalCandidate?.['fr'] === 'string';
+
+      if (isBilingual) {
+        // Handle bilingual gladiator
+        const bilingualGladiator = normalizeBilingualGladiatorRaw(parsedObj);
+        return bilingualGladiator;
+      } else {
+        // Handle legacy single-language gladiator
+        const gladiator = normalizeGeneratedGladiatorRaw(parsedObj);
+        return gladiator;
+      }
     } catch (validationErr) {
       logger.error('Generated gladiator failed validation', {
         jobId: context?.jobId ?? null,
@@ -566,4 +791,3 @@ export const onInitialGladiatorsJobCreated = onDocumentCreated(
     await snap.ref.set({ status: errors.length ? 'completed_with_errors' : 'completed', created, errors, finishedAt: FieldValue.serverTimestamp() }, { merge: true });
   }
 );
-

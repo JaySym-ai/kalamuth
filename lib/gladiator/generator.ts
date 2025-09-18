@@ -17,8 +17,8 @@ export type GenerateOptions = {
 const systemPrompt = `
 You are generating gladiators for a Ludus management game.
 Follow the provided JSON Schema exactly. Do not include any fields not in the schema.
-- Numbers must be integers and within their specified bounds.
-- "health" represents max health (HP cap), not current health.
+- "health" represents max health (HP cap) and must be an integer between 30 and 300.
+- "stats" fields (strength, agility, dexterity, speed, chance, intelligence, charisma, loyalty) must each be a 1–2 sentence descriptive string about how the gladiator expresses that trait in combat and behavior. Do not return numeric ratings for these.
 - Keep narrative fields vivid but concise (1-2 sentences each), suitable for in-game use.
 - The uniquePower must be subtle and not overpowered; it's optional.
 - If injury is present, injuryTimeLeftHours must be an integer >= 1.

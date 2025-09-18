@@ -50,7 +50,7 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
     if (!gladiatorsSnapshot.empty) {
       // Load existing gladiators
       gladiators = gladiatorsSnapshot.docs.map(doc =>
-        normalizeGladiator(doc.id, doc.data() as Record<string, unknown>)
+        normalizeGladiator(doc.id, doc.data() as Record<string, unknown>, locale)
       );
     }
 

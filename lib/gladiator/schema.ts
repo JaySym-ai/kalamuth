@@ -2,14 +2,33 @@ import { z } from "zod";
 import {
   GLADIATOR_HEALTH_MIN,
   GLADIATOR_HEALTH_MAX,
-  GLADIATOR_STAT_MIN,
-  GLADIATOR_STAT_MAX,
 } from "@/types/gladiator";
 
 // Base primitives
 const NonEmpty = z.string().trim().min(1);
-export const StatZ = z.number().int().min(GLADIATOR_STAT_MIN).max(GLADIATOR_STAT_MAX);
+export const StatZ = NonEmpty;
 
+// Bilingual text field schema
+export const BilingualTextZ = z.object({
+  en: NonEmpty,
+  fr: NonEmpty,
+});
+
+// Bilingual stats schema
+export const BilingualStatsZ = z
+  .object({
+    strength: BilingualTextZ,
+    agility: BilingualTextZ,
+    dexterity: BilingualTextZ,
+    speed: BilingualTextZ,
+    chance: BilingualTextZ,
+    intelligence: BilingualTextZ,
+    charisma: BilingualTextZ,
+    loyalty: BilingualTextZ,
+  })
+  .strict();
+
+// Legacy single-language stats (for backward compatibility)
 export const StatsZ = z
   .object({
     strength: StatZ,
@@ -23,6 +42,53 @@ export const StatsZ = z
   })
   .strict();
 
+// Bilingual gladiator schema (new)
+export const BilingualGladiatorZ = z
+  .object({
+    // Identity (names stay single language as they are proper nouns)
+    name: NonEmpty,
+    surname: NonEmpty,
+    avatarUrl: z.string().url(),
+
+    // Vital
+    health: z.number().int().min(GLADIATOR_HEALTH_MIN).max(GLADIATOR_HEALTH_MAX),
+    alive: z.boolean().default(true),
+
+    // Conditions (bilingual)
+    injury: BilingualTextZ.optional(),
+    injuryTimeLeftHours: z.number().int().min(1).optional(),
+    sickness: BilingualTextZ.optional(),
+
+    // Attributes (bilingual)
+    stats: BilingualStatsZ,
+
+    // Narrative (bilingual)
+    lifeGoal: BilingualTextZ,
+    personality: BilingualTextZ,
+    backstory: BilingualTextZ,
+    weakness: BilingualTextZ,
+    fear: BilingualTextZ,
+    likes: BilingualTextZ,
+    dislikes: BilingualTextZ,
+    birthCity: NonEmpty, // City names stay single as they are proper nouns
+    handicap: BilingualTextZ.optional(),
+    uniquePower: BilingualTextZ.optional(),
+    physicalCondition: BilingualTextZ,
+    notableHistory: BilingualTextZ,
+  })
+  .strict()
+  .superRefine((val, ctx) => {
+    // If injury is present, require injuryTimeLeftHours >= 1
+    if (val.injury && (!val.injuryTimeLeftHours || val.injuryTimeLeftHours < 1)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "injuryTimeLeftHours must be >= 1 when injury is present",
+        path: ["injuryTimeLeftHours"],
+      });
+    }
+  });
+
+// Legacy single-language gladiator schema (for backward compatibility)
 export const GladiatorZ = z
   .object({
     // Identity
@@ -68,6 +134,7 @@ export const GladiatorZ = z
     }
   });
 
+export type BilingualGladiatorFromZod = z.infer<typeof BilingualGladiatorZ>;
 export type GladiatorFromZod = z.infer<typeof GladiatorZ>;
 
 // JSON Schema for OpenRouter Structured Outputs (strict mode)
@@ -88,14 +155,14 @@ export const OpenRouterGladiatorJsonSchema = {
       type: "object",
       additionalProperties: false,
       properties: {
-        strength: { type: "integer", minimum: GLADIATOR_STAT_MIN, maximum: GLADIATOR_STAT_MAX },
-        agility: { type: "integer", minimum: GLADIATOR_STAT_MIN, maximum: GLADIATOR_STAT_MAX },
-        dexterity: { type: "integer", minimum: GLADIATOR_STAT_MIN, maximum: GLADIATOR_STAT_MAX },
-        speed: { type: "integer", minimum: GLADIATOR_STAT_MIN, maximum: GLADIATOR_STAT_MAX },
-        chance: { type: "integer", minimum: GLADIATOR_STAT_MIN, maximum: GLADIATOR_STAT_MAX },
-        intelligence: { type: "integer", minimum: GLADIATOR_STAT_MIN, maximum: GLADIATOR_STAT_MAX },
-        charisma: { type: "integer", minimum: GLADIATOR_STAT_MIN, maximum: GLADIATOR_STAT_MAX },
-        loyalty: { type: "integer", minimum: GLADIATOR_STAT_MIN, maximum: GLADIATOR_STAT_MAX },
+        strength: { type: "string", minLength: 1 },
+        agility: { type: "string", minLength: 1 },
+        dexterity: { type: "string", minLength: 1 },
+        speed: { type: "string", minLength: 1 },
+        chance: { type: "string", minLength: 1 },
+        intelligence: { type: "string", minLength: 1 },
+        charisma: { type: "string", minLength: 1 },
+        loyalty: { type: "string", minLength: 1 },
       },
       required: [
         "strength",

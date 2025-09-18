@@ -6,6 +6,8 @@
     "fallbackLudusName": "Votre ludus",
     "from": "De",
     "health": "Santé",
+    "hasPower": "Pouvoir Spécial",
+    "hasHandicap": "Handicapé",
     "stats": {
       "strength": "Force",
       "agility": "Agilité",
@@ -27,7 +29,18 @@
       "likes": "Aime",
       "dislikes": "N'aime pas",
       "weakness": "Faiblesse",
-      "fear": "Plus Grande Peur"
+      "fear": "Plus Grande Peur",
+      "conditions": "État et Conditions",
+      "injury": "Blessure",
+      "sickness": "Maladie",
+      "handicap": "Handicap",
+      "uniquePower": "Pouvoir Unique",
+      "recoveryTime": "{hours} heures de récupération",
+      "physicalHistory": "Physique et Historique",
+      "physicalCondition": "Condition Physique",
+      "notableHistory": "Histoire Notable",
+      "character": "Caractère et Personnalité",
+      "preferences": "Préférences et Traits"
     },
     "generatingWaiting": "Invocation de vos gladiateurs...",
     "generateRemaining": "Générer le reste",

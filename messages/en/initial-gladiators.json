@@ -6,6 +6,8 @@
     "fallbackLudusName": "Your Ludus",
     "from": "From",
     "health": "Health",
+    "hasPower": "Special Power",
+    "hasHandicap": "Handicapped",
     "stats": {
       "strength": "Strength",
       "agility": "Agility",
@@ -27,7 +29,18 @@
       "likes": "Likes",
       "dislikes": "Dislikes",
       "weakness": "Weakness",
-      "fear": "Greatest Fear"
+      "fear": "Greatest Fear",
+      "conditions": "Status & Conditions",
+      "injury": "Injury",
+      "sickness": "Sickness",
+      "handicap": "Handicap",
+      "uniquePower": "Unique Power",
+      "recoveryTime": "{hours} hours to recover",
+      "physicalHistory": "Physical & Historical",
+      "physicalCondition": "Physical Condition",
+      "notableHistory": "Notable History",
+      "character": "Character & Personality",
+      "preferences": "Preferences & Traits"
     },
     "generatingWaiting": "Summoning your gladiators...",
     "generateRemaining": "Generate remaining",
