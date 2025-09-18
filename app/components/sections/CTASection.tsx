@@ -49,7 +49,7 @@ export default function CTASection({ authed = false, onboardingDone = false }: P
                   placeholder={t("emailPlaceholder")}
                   className="flex-1 px-6 py-4 bg-black/50 backdrop-blur-sm border border-amber-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors"
                 />
-                <Link href={`/${locale}${authed ? (onboardingDone ? "" : "/onboarding") : "/auth"}`}>
+                <Link href={`/${locale}${authed ? (onboardingDone ? "" : "/initial-gladiators") : "/auth"}`}>
                   <GlowButton primary size="large">
                     {authed ? (onboardingDone ? t("openApp") : t("continueOnboarding")) : t("claimButton")}
                   </GlowButton>

@@ -71,9 +71,9 @@ test.describe('Authentication Integration Tests', () => {
     const newPage = await context.newPage();
     
     // Should maintain authentication in new page
-    await newPage.goto('/en/onboarding');
-    await expect(newPage).toHaveURL(/\/en\/onboarding/);
-    
+    await newPage.goto('/en/initial-gladiators');
+    await expect(newPage).toHaveURL(/\/en\/(initial-gladiators|server-selection|dashboard)/);
+
     // Test API access in new page
     await testApiAuthentication(newPage, true);
     

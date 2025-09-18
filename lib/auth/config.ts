@@ -30,7 +30,6 @@ export const PUBLIC_PATHS = ["/auth", "/register", "/login", "/reset-password", 
 
 // Protected paths that require authentication
 export const PROTECTED_PATHS = [
-  "/onboarding",
   "/dashboard",
   "/profile",
   "/server-selection",

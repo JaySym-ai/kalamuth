@@ -57,12 +57,12 @@ export default function AuthClient() {
         // No ludus yet, go to server selection
         router.push(`/${locale}/server-selection`);
       } else if (!json?.onboardingDone) {
-        router.push(`/${locale}/onboarding`);
+        router.push(`/${locale}/initial-gladiators`);
       } else {
         router.push(`/${locale}/dashboard`);
       }
     } catch {
-      router.push(`/${locale}/onboarding`);
+      router.push(`/${locale}/initial-gladiators`);
     }
   }, [locale, router]);
 
