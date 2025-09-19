@@ -36,6 +36,7 @@ export default function LudusStats({ ludus, translations: t }: Props) {
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.1 }}
       className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
+      data-testid="ludus-overview-card"
     >
       <h3 className="text-xl font-bold text-amber-400 mb-4">
         {t.ludusOverview}

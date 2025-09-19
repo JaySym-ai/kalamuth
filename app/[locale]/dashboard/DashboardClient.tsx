@@ -90,21 +90,9 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
         {/* Main Grid Layout */}
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Ludus Overview */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Arena Status Card */}
-            <ArenaStatus
-              isOpen={false}
-              translations={{
-                arena: t.arena,
-                arenaStatus: t.arenaStatus,
-                arenaClosed: t.arenaClosed,
-                arenaOpen: t.arenaOpen,
-                arenaHint: t.arenaHint,
-              }}
-            />
-
+          <div className="lg:col-span-1 space-y-6" data-testid="dashboard-left-column">
             {/* Ludus Stats Card */}
-            <LudusStats 
+            <LudusStats
               ludus={ludus}
               translations={{
                 ludusOverview: t.ludusOverview,
@@ -119,6 +107,18 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
                 level: t.level,
                 location: t.location,
                 gladiatorCount: t.gladiatorCount,
+              }}
+            />
+
+            {/* Arena Status Card */}
+            <ArenaStatus
+              isOpen={false}
+              translations={{
+                arena: t.arena,
+                arenaStatus: t.arenaStatus,
+                arenaClosed: t.arenaClosed,
+                arenaOpen: t.arenaOpen,
+                arenaHint: t.arenaHint,
               }}
             />
           </div>

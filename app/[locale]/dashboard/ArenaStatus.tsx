@@ -20,6 +20,7 @@ export default function ArenaStatus({ isOpen, translations: t }: Props) {
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
+      data-testid="arena-status-card"
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-bold text-amber-400 flex items-center gap-2">

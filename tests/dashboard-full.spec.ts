@@ -34,6 +34,23 @@ test.describe('Dashboard Page - Full Test Suite', () => {
     
     // Check gladiators section
     await expect(page.getByText('Vos Gladiateurs')).toBeVisible();
+
+    // Ensure Ludus overview card appears before arena card on mobile
+    await expect(page.getByTestId('dashboard-left-column')).toBeVisible();
+    await expect(page.getByTestId('ludus-overview-card')).toBeVisible();
+    await expect(page.getByTestId('arena-status-card')).toBeVisible();
+
+    const isOverviewBeforeArena = await page.evaluate(() => {
+      const leftColumn = document.querySelector('[data-testid="dashboard-left-column"]');
+      const overview = leftColumn?.querySelector('[data-testid="ludus-overview-card"]');
+      const arena = leftColumn?.querySelector('[data-testid="arena-status-card"]');
+      if (!overview || !arena) {
+        return false;
+      }
+      return (overview.compareDocumentPosition(arena) & Node.DOCUMENT_POSITION_FOLLOWING) > 0;
+    });
+
+    expect(isOverviewBeforeArena).toBe(true);
   });
 
   test('displays gladiator cards with health status', async ({ page }) => {
