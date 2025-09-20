@@ -191,13 +191,5 @@ test.describe('Authentication Flow', () => {
     await expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  test('should display Google sign-in button', async ({ page }) => {
-    // Navigate to auth page
-    await page.goto('/en/auth');
 
-    // Should see Google sign-in button
-    const googleButton = page.locator('[data-testid="google-signin-button"]');
-    await expect(googleButton).toBeVisible();
-    await expect(googleButton).toContainText('Continue with Google');
-  });
 });

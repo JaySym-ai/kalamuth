@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { getRequestUser } from "@/lib/firebase/request-auth";
-import { adminDb } from "@/lib/firebase/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import ServerSelectionClient from "./ServerSelectionClient";
 import { SERVERS } from "@/data/servers";
 import LogoutButton from "../../components/auth/LogoutButton";
@@ -12,7 +12,9 @@ export const dynamic = "force-dynamic";
 
 export default async function ServerSelectionPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const user = await getRequestUser();
+  const supabase = createClient(await cookies());
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
 
   // Must be authenticated to select a server
   if (!user) redirect(`/${locale}/auth`);
@@ -20,12 +22,13 @@ export default async function ServerSelectionPage({ params }: { params: Promise<
   // Check if user already has a ludus (server already selected)
   let hasLudus = false;
   try {
-    const ludiSnapshot = await adminDb()
-      .collection("ludi")
-      .where("userId", "==", user.uid)
+    const { data: ludus } = await supabase
+      .from("ludi")
+      .select("id")
+      .eq("userId", user.id)
       .limit(1)
-      .get();
-    hasLudus = !ludiSnapshot.empty;
+      .maybeSingle();
+    hasLudus = Boolean(ludus);
   } catch (error) {
     console.error("Error checking ludus:", error);
   }

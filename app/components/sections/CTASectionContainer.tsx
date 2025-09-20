@@ -1,16 +1,21 @@
-import { getSessionUser } from "@/lib/firebase/session";
-import { adminDb } from "@/lib/firebase/server";
 import CTASection from "./CTASection";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 
 export default async function CTASectionContainer() {
-  const user = await getSessionUser();
+  const supabase = createClient(await cookies());
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
   if (!user) return <CTASection authed={false} onboardingDone={false} />;
   try {
-    const snap = await adminDb().collection("users").doc(user.uid).get();
-    const onboardingDone = Boolean(snap.exists ? (snap.data() as { onboardingDone?: boolean })?.onboardingDone : false);
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("onboardingDone")
+      .eq("id", user.id)
+      .maybeSingle();
+    const onboardingDone = Boolean(userRow?.onboardingDone);
     return <CTASection authed={true} onboardingDone={onboardingDone} />;
   } catch {
     return <CTASection authed={true} onboardingDone={false} />;
   }
 }
-

@@ -1,8 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/firebase/session";
-import { adminDb } from "@/lib/firebase/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,23 +12,28 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
   const { locale } = await params;
 
   // If user is already authenticated, skip intro and go to appropriate page
-  const user = await getSessionUser();
+  const supabase = createClient(await cookies());
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
   if (user) {
     try {
       // Check if user has completed onboarding
-      const userDoc = await adminDb().collection("users").doc(user.uid).get();
-      const userData = userDoc.exists ? userDoc.data() : {};
-      const onboardingDone = Boolean(userData?.onboardingDone);
+      const { data: userRow } = await supabase
+        .from("users")
+        .select("onboardingDone")
+        .eq("id", user.id)
+        .maybeSingle();
 
-      const ludiSnapshot = await adminDb()
-        .collection("ludi")
-        .where("userId", "==", user.uid)
+      const { data: ludus } = await supabase
+        .from("ludi")
+        .select("id")
+        .eq("userId", user.id)
         .limit(1)
-        .get();
+        .maybeSingle();
 
-      if (ludiSnapshot.empty) {
+      if (!ludus) {
         redirect(`/${locale}/server-selection`);
-      } else if (onboardingDone) {
+      } else if (userRow?.onboardingDone) {
         // Has a ludus and completed onboarding: go to dashboard
         redirect(`/${locale}/dashboard`);
       } else {

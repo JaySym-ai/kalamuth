@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { getRequestUser } from "@/lib/firebase/request-auth";
-import { adminDb } from "@/lib/firebase/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import DashboardClient from "./DashboardClient";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
@@ -11,7 +11,9 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const user = await getRequestUser();
+  const supabase = createClient(await cookies());
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
   if (!user) redirect(`/${locale}/auth`);
 
   // Fetch user's ludus
@@ -19,30 +21,32 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   let gladiators: NormalizedGladiator[] = [];
 
   try {
-    const ludiSnapshot = await adminDb()
-      .collection("ludi")
-      .where("userId", "==", user.uid)
+    const { data: ludus } = await supabase
+      .from("ludi")
+      .select("id,name,serverId,createdAt")
+      .eq("userId", user.id)
       .limit(1)
-      .get();
+      .maybeSingle();
 
-    if (ludiSnapshot.empty) {
+    if (!ludus) {
       redirect(`/${locale}/server-selection`);
     }
 
-    const ludusDoc = ludiSnapshot.docs[0];
-    ludusData = { id: ludusDoc.id, ...ludusDoc.data() } as Ludus & { id: string };
+    ludusData = { id: ludus.id, name: ludus.name, serverId: ludus.serverId, createdAt: ludus.createdAt } as Ludus & { id: string };
 
     // Fetch gladiators for this ludus
-    const gladiatorsSnapshot = await adminDb()
-      .collection("gladiators")
-      .where("ludusId", "==", ludusDoc.id)
-      .get();
+    const { data: glads } = await supabase
+      .from("gladiators")
+      .select("id, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt")
+      .eq("ludusId", ludus.id);
 
-    gladiators = gladiatorsSnapshot.docs.map(doc =>
-      normalizeGladiator(doc.id, doc.data() as Record<string, unknown>, locale)
-    );
+    if (glads) {
+      gladiators = glads.map(doc =>
+        normalizeGladiator(doc.id as string, doc as unknown as Record<string, unknown>, locale)
+      );
+    }
 
-    // Sort gladiators by createdAt in memory (to avoid needing a Firestore index)
+    // Sort gladiators by createdAt in memory
     gladiators.sort((a, b) => {
       const aTime = a.createdAt || "";
       const bTime = b.createdAt || "";

@@ -115,7 +115,7 @@ test.describe('Protected Routes Access Control', () => {
       await loginUser(page);
       
       // Logout
-      await page.click('button:has-text("Sign out")');
+      await page.getByTestId('logout-button').click();
       await expect(page).toHaveURL(/\/en\/?$/, { timeout: 10000 });
       
       // Try to access protected route after logout

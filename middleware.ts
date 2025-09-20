@@ -1,94 +1,89 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
-import { getTokens } from "next-firebase-auth-edge";
+import { createServerClient } from "@supabase/ssr";
 import { routing } from "./i18n/routing";
-import { authConfig, PUBLIC_PATHS } from "./lib/auth/config";
+import { PUBLIC_PATHS } from "./lib/auth/config";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Check if this is an API route
-  const isApiRoute = pathname.startsWith('/api/');
+  // API routes: authenticate and return 401 on failure
+  if (pathname.startsWith("/api/")) {
+    const needsAuth = pathname.startsWith("/api/user") || pathname.startsWith("/api/ludus");
+    if (!needsAuth) return NextResponse.next();
 
-  if (isApiRoute) {
-    // For API routes, handle authentication but don't redirect
-    // Only process API routes that need authentication
-    const needsAuth = pathname.startsWith('/api/user') ||
-                     pathname.startsWith('/api/ludus') ||
-                     (pathname.startsWith('/api/auth') && !pathname.includes('/session'));
+    const response = NextResponse.next();
 
-    if (needsAuth) {
-      try {
-        const tokens = await getTokens(request.cookies, authConfig);
-        if (!tokens) {
-          return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-        }
-        // Continue to the API route with verified tokens
-        return NextResponse.next();
-      } catch (error) {
-        console.error("API authentication error:", error);
-        return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-      }
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+          },
+        },
+      },
+    );
+
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
-
-    // For other API routes (like /api/auth/session), just continue
-    return NextResponse.next();
+    return response;
   }
 
-  // For non-API routes, run intl middleware first
-  const intlResponse = intlMiddleware(request);
+  // Non-API routes: run i18n middleware first
+  const response = intlMiddleware(request);
 
-  // Get the locale for checking
+  // Extract locale and path without locale
   const localeMatch = pathname.match(/^\/(en|fr)(\/.*)?$/);
-  const pathWithoutLocale = localeMatch ? (localeMatch[2] || "/") : pathname;
-  const locale = localeMatch ? localeMatch[1] : "en";
+  const pathWithoutLocale = localeMatch ? localeMatch[2] || "/" : pathname;
+  const locale = (localeMatch ? localeMatch[1] : "en") as "en" | "fr";
 
-  // Check if this is a public page
-  const isPublicPage = PUBLIC_PATHS.some(path => pathWithoutLocale.startsWith(path)) || pathWithoutLocale === "/";
+  // Public pages do not require auth
+  const isPublicPage = PUBLIC_PATHS.some((p) => pathWithoutLocale.startsWith(p)) || pathWithoutLocale === "/";
+  if (isPublicPage) return response;
 
-  if (isPublicPage) {
-    // For public pages, just return the intl response
-    return intlResponse;
-  }
+  // Protected page: validate Supabase session
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        },
+      },
+    },
+  );
 
-  // For protected pages, check authentication
-  try {
-    const tokens = await getTokens(request.cookies, authConfig);
-
-    if (!tokens) {
-      // No valid tokens, redirect to auth page
-      const url = request.nextUrl.clone();
-      url.pathname = `/${locale}/auth`;
-      url.searchParams.set('redirect', request.nextUrl.pathname);
-      return NextResponse.redirect(url);
-    }
-
-    // User is authenticated, return the intl response
-    return intlResponse;
-  } catch (error) {
-    console.error("Authentication error:", error);
-
-    // On error, redirect to auth page
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/auth`;
-    url.searchParams.set('redirect', request.nextUrl.pathname);
+    url.searchParams.set("redirect", request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
+
+  return response;
 }
 
 export const config = {
   matcher: [
-    // API routes that need authentication
     "/api/user/:path*",
-    "/api/auth/:path*",
     "/api/ludus/:path*",
-    // Main application routes
     "/",
     "/(en|fr)/:path*",
-    // Exclude static files and Next.js internals
     "/((?!_next|favicon.ico|.*\\.).*)",
   ],
 };

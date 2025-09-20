@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { getRequestUser } from "@/lib/firebase/request-auth";
-import { adminDb } from "@/lib/firebase/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import InitialGladiatorsClient from "./InitialGladiatorsClient";
 import { SERVERS } from "@/data/servers";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
@@ -12,15 +12,20 @@ export const dynamic = "force-dynamic";
 
 export default async function InitialGladiatorsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const user = await getRequestUser();
+  const supabase = createClient(await cookies());
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
 
   // Must be authenticated
   if (!user) redirect(`/${locale}/auth`);
 
   // Check if user has already completed onboarding
-  const userDoc = await adminDb().collection("users").doc(user.uid).get();
-  const userData = userDoc.exists ? userDoc.data() : {};
-  const onboardingDone = Boolean(userData?.onboardingDone);
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("onboardingDone")
+    .eq("id", user.id)
+    .maybeSingle();
+  const onboardingDone = Boolean(userRow?.onboardingDone);
 
   // If onboarding is already done, redirect to dashboard
   if (onboardingDone) {
@@ -33,38 +38,37 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
   let minRequired = 3;
 
   try {
-    const ludiSnapshot = await adminDb()
-      .collection("ludi")
-      .where("userId", "==", user.uid)
+    const { data: ludus } = await supabase
+      .from("ludi")
+      .select("id,name,serverId")
+      .eq("userId", user.id)
       .limit(1)
-      .get();
+      .maybeSingle();
 
-    if (ludiSnapshot.empty) {
+    if (!ludus) {
       // No ludus found, redirect to server selection
       redirect(`/${locale}/server-selection`);
     }
 
-    const ludusDoc = ludiSnapshot.docs[0];
-    ludusData = { id: ludusDoc.id, ...ludusDoc.data() };
+    ludusData = { id: ludus.id, name: ludus.name, serverId: ludus.serverId };
 
     // Check if gladiators already exist for this ludus
-    const gladiatorsSnapshot = await adminDb()
-      .collection("gladiators")
-      .where("ludusId", "==", ludusDoc.id)
-      .get();
+    const { data: glads } = await supabase
+      .from("gladiators")
+      .select("id, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt")
+      .eq("ludusId", ludus.id);
 
     // Determine required initial count from server config
     const server = SERVERS.find(s => s.id === (ludusData?.serverId ?? ""));
     minRequired = server ? server.config.initialGladiatorsPerLudus : 3;
 
-    if (!gladiatorsSnapshot.empty) {
-      // Load existing gladiators
-      gladiators = gladiatorsSnapshot.docs.map(doc =>
-        normalizeGladiator(doc.id, doc.data() as Record<string, unknown>, locale)
+    if (glads && glads.length) {
+      gladiators = glads.map(doc =>
+        normalizeGladiator(doc.id as string, doc as unknown as Record<string, unknown>, locale)
       );
     }
 
-    // Do not generate here anymore; generation is now async via job + Firestore listener
+    // Do not generate here anymore; generation is now async via job + Supabase listener (future)
   } catch (error) {
     console.error("Error loading gladiators:", error);
     redirect(`/${locale}/server-selection`);

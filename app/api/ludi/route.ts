@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
-import { getRequestUser } from "@/lib/firebase/request-auth";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import { createLudus, listLudiByUser } from "@/lib/ludus/repository";
 import { DEFAULT_SERVER_ID } from "@/data/servers";
 
-export const runtime = "nodejs"; // Admin SDK requires Node runtime
+export const runtime = "nodejs";
 
 // GET /api/ludi?serverId=alpha-1 — list current user's ludi (optionally filtered by server)
 export async function GET(req: Request) {
-  const user = await getRequestUser(req);
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const supabase = createClient(await cookies());
+  const { data: auth } = await supabase.auth.getUser();
+  const u = auth.user;
+  if (!u) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const url = new URL(req.url);
   const serverId = url.searchParams.get("serverId") || undefined;
-  const ludi = await listLudiByUser(user.uid, { serverId: serverId || undefined });
+  const ludi = await listLudiByUser(u.id, { serverId: serverId || undefined });
   return NextResponse.json({ ludi });
 }
 
@@ -19,8 +22,10 @@ export async function GET(req: Request) {
 // Creates a new ludus for the authenticated user on the specified server.
 // If the user already has a ludus on that server, returns the existing one (idempotent).
 export async function POST(req: Request) {
-  const user = await getRequestUser(req);
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const supabase = createClient(await cookies());
+  const { data: auth } = await supabase.auth.getUser();
+  const u = auth.user;
+  if (!u) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
   const name = typeof body?.name === "string" && body.name.trim().length > 0 ? body.name.trim() : "Ludus";
@@ -28,7 +33,7 @@ export async function POST(req: Request) {
   const serverId = typeof body?.serverId === "string" && body.serverId.trim() ? body.serverId : DEFAULT_SERVER_ID;
 
   try {
-    const ludus = await createLudus({ userId: user.uid, serverId, name, logoUrl });
+    const ludus = await createLudus({ userId: u.id, serverId, name, logoUrl });
     return NextResponse.json({ ludus }, { status: 201 });
   } catch (err) {
     if (process.env.NODE_ENV !== "production") console.error("[ludi] create failed", err);

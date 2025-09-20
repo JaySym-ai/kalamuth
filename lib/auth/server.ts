@@ -1,9 +1,7 @@
 import "server-only";
 
-import { getTokens } from "next-firebase-auth-edge";
 import { cookies } from "next/headers";
-import { authConfig } from "./config";
-import type { DecodedIdToken } from "firebase-admin/auth";
+import { createClient } from "@/utils/supabase/server";
 
 export interface AuthUser {
   uid: string;
@@ -14,28 +12,20 @@ export interface AuthUser {
   customClaims: Record<string, unknown>;
 }
 
-/**
- * Get the current authenticated user from server-side context
- * Returns null if no valid authentication is found
- */
 export async function getAuthUser(): Promise<AuthUser | null> {
   try {
-    const cookieStore = await cookies();
-    const tokens = await getTokens(cookieStore, authConfig);
-    
-    if (!tokens) {
-      return null;
-    }
-
-    const { decodedToken } = tokens;
-    
+    const jar = await cookies();
+    const supabase = createClient(jar);
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) return null;
+    const u = data.user;
     return {
-      uid: decodedToken.uid,
-      email: decodedToken.email || null,
-      emailVerified: decodedToken.email_verified || false,
-      displayName: decodedToken.name || null,
-      photoURL: decodedToken.picture || null,
-      customClaims: (decodedToken.custom_claims as Record<string, unknown>) || {},
+      uid: u.id,
+      email: u.email ?? null,
+      emailVerified: Boolean(u.email_confirmed_at),
+      displayName: (u.user_metadata?.name as string) ?? null,
+      photoURL: (u.user_metadata?.avatar_url as string) ?? null,
+      customClaims: {},
     };
   } catch (error) {
     console.error("Failed to get authenticated user:", error);
@@ -43,34 +33,11 @@ export async function getAuthUser(): Promise<AuthUser | null> {
   }
 }
 
-/**
- * Get the decoded ID token from server-side context
- * Returns null if no valid authentication is found
- */
-export async function getDecodedToken(): Promise<DecodedIdToken | null> {
-  try {
-    const cookieStore = await cookies();
-    const tokens = await getTokens(cookieStore, authConfig);
-    
-    return tokens?.decodedToken || null;
-  } catch (error) {
-    console.error("Failed to get decoded token:", error);
-    return null;
-  }
-}
-
-/**
- * Check if the current request is authenticated
- */
 export async function isAuthenticated(): Promise<boolean> {
   const user = await getAuthUser();
   return user !== null;
 }
 
-/**
- * Require authentication - throws an error if not authenticated
- * Use this in server components or API routes that require authentication
- */
 export async function requireAuth(): Promise<AuthUser> {
   const user = await getAuthUser();
   if (!user) {

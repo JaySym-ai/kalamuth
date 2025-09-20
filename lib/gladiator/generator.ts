@@ -6,6 +6,8 @@ import {
   OpenRouterGladiatorJsonSchema,
   makeGladiatorArrayJsonSchema,
 } from "@/lib/gladiator/schema";
+import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
+
 
 export type GenerateOptions = {
   seed?: number;
@@ -43,42 +45,30 @@ function parseContent<T>(content: string): T {
   }
 }
 
-// Payload type for the Firebase Function proxy
-type ProxyOpenRouterPayload = {
-  messages: { role: "system" | "user"; content: string }[];
-  schema: Record<string, unknown>;
-  seed?: number;
-  temperature?: number;
-};
 
+const MODEL_JSON_STRUCTURED = "nvidia/nemotron-nano-9b-v2:free";
 
 async function llmGenerateRaw(
   messages: { role: "system" | "user"; content: string }[],
   schema: Record<string, unknown>,
   opts: GenerateOptions
 ) {
-  const base = process.env.NEXT_PUBLIC_FUNCTIONS_BASE_URL;
-  if (!base) {
-    throw new Error("Missing NEXT_PUBLIC_FUNCTIONS_BASE_URL. Set it to your Cloud Functions base URL, e.g. https://us-central1-<project-id>.cloudfunctions.net");
-  }
-  const payload: ProxyOpenRouterPayload = {
+  ensureOpenRouterKey();
+  const completion = await openrouter.chat.completions.create({
+    model: MODEL_JSON_STRUCTURED,
     messages,
-    schema,
+    response_format: {
+      type: "json_schema",
+      json_schema: { name: "Gladiator", strict: true, schema },
+    },
     seed: opts.seed,
     temperature: opts.temperature ?? 0.8,
-  };
-
-  const res = await fetch(`${base}/proxyOpenRouter`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Firebase Function proxyOpenRouter failed: ${res.status} ${text}`);
+  const content = completion.choices?.[0]?.message?.content ?? "";
+  if (!content) {
+    throw new Error("OpenRouter returned empty content");
   }
-  const json = (await res.json()) as { content?: string };
-  return json.content || "";
+  return content;
 }
 
 export async function generateGladiator(opts: GenerateOptions = {}): Promise<Gladiator> {

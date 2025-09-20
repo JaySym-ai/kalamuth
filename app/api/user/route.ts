@@ -1,39 +1,53 @@
-import {NextResponse} from "next/server";
-import {adminDb} from "@/lib/firebase/server";
-import {getRequestUser} from "@/lib/firebase/request-auth";
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 
 export const runtime = "nodejs";
 
-export async function GET(req: Request) {
-  const user = await getRequestUser(req);
-  if (!user) return NextResponse.json({error: "unauthorized"}, {status: 401});
+export async function GET() {
+  const supabase = createClient(await cookies());
+  const { data: auth } = await supabase.auth.getUser();
+  const u = auth.user;
+  if (!u) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   // Get user data
-  const snap = await adminDb().collection("users").doc(user.uid).get();
-  const data = snap.exists ? snap.data() as {onboardingDone?: boolean} : {};
+  const { data: userRow } = await supabase
+    .from("users")
+    .select("onboardingDone")
+    .eq("id", u.id)
+    .maybeSingle();
 
   // Check if user has a ludus
-  const ludiSnapshot = await adminDb()
-    .collection("ludi")
-    .where("userId", "==", user.uid)
+  const { data: ludusRow } = await supabase
+    .from("ludi")
+    .select("id")
+    .eq("userId", u.id)
     .limit(1)
-    .get();
+    .maybeSingle();
 
-  const hasLudus = !ludiSnapshot.empty;
+  const hasLudus = Boolean(ludusRow);
 
   return NextResponse.json({
-    onboardingDone: Boolean(data.onboardingDone),
-    hasLudus
+    onboardingDone: Boolean(userRow?.onboardingDone),
+    hasLudus,
   });
 }
 
 export async function POST(req: Request) {
-  const user = await getRequestUser(req);
-  if (!user) return NextResponse.json({error: "unauthorized"}, {status: 401});
-  const ref = adminDb().collection("users").doc(user.uid);
+  const supabase = createClient(await cookies());
+  const { data: auth } = await supabase.auth.getUser();
+  const u = auth.user;
+  if (!u) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const body = await req.json().catch(() => ({}));
   const onboardingDone = typeof body?.onboardingDone === "boolean" ? body.onboardingDone : false;
-  await ref.set({ onboardingDone }, { merge: true });
+
+  const { error } = await supabase
+    .from("users")
+    .upsert({ id: u.id, onboardingDone })
+    .eq("id", u.id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
 

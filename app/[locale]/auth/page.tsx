@@ -1,25 +1,27 @@
 import { redirect } from "next/navigation";
-import { getSessionUser } from "@/lib/firebase/session";
-import { adminDb } from "@/lib/firebase/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import AuthClient from "./AuthClient";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-
 export default async function AuthPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const user = await getSessionUser();
+  const supabase = createClient(await cookies());
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
+
   if (user) {
     try {
-      // If user already has a ludus, send them to app; otherwise, start setup
-      const ludiSnapshot = await adminDb()
-        .collection("ludi")
-        .where("userId", "==", user.uid)
+      const { data: ludi, error } = await supabase
+        .from("ludi")
+        .select("id")
+        .eq("userId", user.id)
         .limit(1)
-        .get();
+        .maybeSingle();
 
-      if (ludiSnapshot.empty) {
+      if (!ludi) {
         redirect(`/${locale}/server-selection`);
       } else {
         redirect(`/${locale}/dashboard`);
@@ -30,4 +32,3 @@ export default async function AuthPage({ params }: { params: Promise<{ locale: s
   }
   return <AuthClient />;
 }
-

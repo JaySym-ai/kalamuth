@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
-import { collection, onSnapshot, query, where, orderBy, limit as fbLimit } from "firebase/firestore";
-import { getClientDb } from "@/lib/firebase/client";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 
 interface Props {
@@ -27,24 +25,6 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
   const [genError, setGenError] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string | null>(null);
 
-  // Live Firestore subscription for gladiators of this ludus
-  useEffect(() => {
-    if (!ludusId) return;
-    const db = getClientDb();
-    // Keep server ordering stable in UI: sort by createdAt asc (fallback to id)
-    const q = query(collection(db, "gladiators"), where("ludusId", "==", ludusId));
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => normalizeGladiator(d.id, d.data() as Record<string, unknown>, locale));
-      items.sort((a, b) => {
-        const aT = a.createdAt ?? "";
-        const bT = b.createdAt ?? "";
-        if (aT && bT) return aT.localeCompare(bT);
-        return a.id.localeCompare(b.id);
-      });
-      setList(items);
-    });
-    return () => unsub();
-  }, [ludusId, locale]);
 
   const currentCount = list.length;
 
@@ -65,27 +45,6 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
     }
   }
 
-  // Watch latest generation job for this ludus for better error/progress messaging
-  useEffect(() => {
-    if (!ludusId) return;
-    const db = getClientDb();
-    const jobsCol = collection(db, "jobs");
-    const q = query(
-      jobsCol,
-      where("ludusId", "==", ludusId),
-      where("type", "==", "generateInitialGladiators"),
-      orderBy("createdAt", "desc"),
-      fbLimit(1)
-    );
-    const unsub = onSnapshot(q, (snap) => {
-      if (!snap.empty) {
-        const data = snap.docs[0].data() as Record<string, unknown>;
-        const status = typeof data.status === 'string' ? data.status : null;
-        setJobStatus(status);
-      }
-    });
-    return () => unsub();
-  }, [ludusId]);
 
   const handleContinue = async () => {
     setLoading(true);

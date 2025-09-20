@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { getRequestUser } from "@/lib/firebase/request-auth";
-import { adminDb } from "@/lib/firebase/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import LudusCreationClient from "./LudusCreationClient";
 import LogoutButton from "../../components/auth/LogoutButton";
 
@@ -11,20 +11,23 @@ export const dynamic = "force-dynamic";
 
 export default async function LudusCreationPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const user = await getRequestUser();
+  const supabase = createClient(await cookies());
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
 
   // Must be authenticated
   if (!user) redirect(`/${locale}/auth`);
 
   // Check if user already has a ludus
   try {
-    const ludiSnapshot = await adminDb()
-      .collection("ludi")
-      .where("userId", "==", user.uid)
+    const { data: ludus } = await supabase
+      .from("ludi")
+      .select("id")
+      .eq("userId", user.id)
       .limit(1)
-      .get();
+      .maybeSingle();
 
-    if (!ludiSnapshot.empty) {
+    if (ludus) {
       // User already has a ludus: proceed into the app
       redirect(`/${locale}/dashboard`);
     }
