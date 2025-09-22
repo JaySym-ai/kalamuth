@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 
 // Local copy of model selection used for JSON-structured generation
-export const MODEL_JSON_STRUCTURED = 'nvidia/nemotron-nano-9b-v2:free';
+export const MODEL_JSON_STRUCTURED = 'x-ai/grok-4-fast:free';
 
 function safeSerialize(value: unknown, maxLength = 4000) {
   try {

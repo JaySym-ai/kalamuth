@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
+import { useRealtimeCollection } from "@/lib/supabase/realtime";
 
 interface Props {
   gladiators: NormalizedGladiator[];
@@ -20,10 +21,40 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
   const router = useRouter();
   const [selectedGladiator, setSelectedGladiator] = useState<NormalizedGladiator | null>(null);
   const [loading, setLoading] = useState(false);
-  const [list, setList] = useState<NormalizedGladiator[]>(gladiators || []);
+
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const jobStatus: string | null = null;
+
+
+  const { data: realtimeGladiators } = useRealtimeCollection<NormalizedGladiator>({
+    table: "gladiators",
+    select:
+      "id, ludusId, serverId, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear",
+    match: { ludusId },
+    initialData: gladiators ?? [],
+    orderBy: { column: "createdAt", ascending: true },
+    primaryKey: "id",
+    transform: (row) => {
+      const raw = row as Record<string, unknown> & { id?: unknown };
+      const identifier = typeof raw.id === "string" ? raw.id : String(raw.id ?? "");
+      return normalizeGladiator(identifier, raw, locale);
+    },
+  });
+
+  const list = realtimeGladiators;
+
+  useEffect(() => {
+    if (!selectedGladiator) return;
+    const updated = list.find((g) => g.id === selectedGladiator.id);
+    if (!updated) {
+      setSelectedGladiator(null);
+      return;
+    }
+    if (updated !== selectedGladiator) {
+      setSelectedGladiator(updated);
+    }
+  }, [list, selectedGladiator]);
 
 
   const currentCount = list.length;

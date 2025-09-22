@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import { X, Heart, Swords, Brain, Star, MapPin, AlertCircle } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 import { useTranslations } from "next-intl";
 
@@ -14,7 +16,7 @@ interface Props {
 export default function GladiatorDetailModal({ gladiator, onClose }: Props) {
   const t = useTranslations("GladiatorDetail");
 
-  const statIcons: Record<string, any> = {
+  const statIcons: Record<string, LucideIcon> = {
     strength: Swords,
     agility: Star,
     dexterity: Star,

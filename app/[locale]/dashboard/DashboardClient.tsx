@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Ludus } from "@/types/ludus";
-import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
+import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
+import { useRealtimeCollection, useRealtimeRow } from "@/lib/supabase/realtime";
 import LogoutButton from "@/app/components/auth/LogoutButton";
 import GladiatorDetailModal from "./GladiatorDetailModal";
 import ArenaStatus from "./ArenaStatus";
@@ -51,33 +52,81 @@ interface Props {
 export default function DashboardClient({ ludus, gladiators, locale, translations: t }: Props) {
   const [selectedGladiator, setSelectedGladiator] = useState<NormalizedGladiator | null>(null);
 
+  const { data: realtimeLudus } = useRealtimeRow<Ludus & { id: string }>({
+    table: "ludi",
+    select:
+      "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt",
+    match: { id: ludus.id },
+    initialData: ludus,
+    primaryKey: "id",
+    transform: (row) => {
+      const record = row as Record<string, unknown>;
+      return {
+        ...(ludus as Ludus & { id: string }),
+        ...(record as Partial<Ludus>),
+        id: String(record.id ?? ludus.id),
+      } as Ludus & { id: string };
+    },
+  });
+
+  const { data: realtimeGladiators } = useRealtimeCollection<NormalizedGladiator>({
+    table: "gladiators",
+    select:
+      "id, ludusId, serverId, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear",
+    match: { ludusId: ludus.id },
+    initialData: gladiators,
+    orderBy: { column: "createdAt", ascending: true },
+    primaryKey: "id",
+    transform: (row) => {
+      const raw = row as Record<string, unknown> & { id?: unknown };
+      const identifier = typeof raw.id === "string" ? raw.id : String(raw.id ?? "");
+      return normalizeGladiator(identifier, raw, locale);
+    },
+  });
+
+  const currentLudus = realtimeLudus ?? ludus;
+  const currentGladiators = realtimeGladiators;
+
+  useEffect(() => {
+    if (!selectedGladiator) return;
+    const updated = currentGladiators.find((g) => g.id === selectedGladiator.id);
+    if (!updated) {
+      setSelectedGladiator(null);
+      return;
+    }
+    if (updated !== selectedGladiator) {
+      setSelectedGladiator(updated);
+    }
+  }, [currentGladiators, selectedGladiator]);
+
+
   return (
     <div className="relative min-h-screen">
       {/* Background Effects */}
       <div className="fixed inset-0 bg-gradient-to-b from-black via-zinc-900 to-black" />
       <div className="fixed inset-0 bg-[url('/images/arena-bg.jpg')] opacity-5 bg-cover bg-center" />
-      
+
       {/* Content Container */}
       <div className="relative z-10 px-4 pt-[max(env(safe-area-inset-top),24px)] pb-[max(env(safe-area-inset-bottom),24px)]">
         {/* Header */}
         <header className="max-w-7xl mx-auto mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <motion.h1 
+              <motion.h1
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent"
               >
-                {ludus.name}
+                {currentLudus.name}
               </motion.h1>
-              {ludus.motto && (
-                <motion.p 
+              {currentLudus.motto && (
+                <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
                   className="text-gray-400 italic mt-2"
                 >
-                  "{ludus.motto}"
+                  &ldquo;{currentLudus.motto}&rdquo;
                 </motion.p>
               )}
             </div>
@@ -93,7 +142,7 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
           <div className="lg:col-span-1 space-y-6" data-testid="dashboard-left-column">
             {/* Ludus Stats Card */}
             <LudusStats
-              ludus={ludus}
+              ludus={currentLudus}
               translations={{
                 ludusOverview: t.ludusOverview,
                 treasury: t.treasury,
@@ -136,13 +185,13 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
                   {t.gladiators}
                 </h2>
                 <span className="text-gray-400">
-                  {gladiators.length} / {ludus.maxGladiators}
+                  {currentGladiators.length} / {currentLudus.maxGladiators}
                 </span>
               </div>
 
-              {gladiators.length > 0 ? (
-                <GladiatorGrid 
-                  gladiators={gladiators}
+              {currentGladiators.length > 0 ? (
+                <GladiatorGrid
+                  gladiators={currentGladiators}
                   onGladiatorClick={setSelectedGladiator}
                   translations={{
                     health: t.health,

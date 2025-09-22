@@ -23,7 +23,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   try {
     const { data: ludus } = await supabase
       .from("ludi")
-      .select("id,name,serverId,createdAt")
+      .select(
+        "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt"
+      )
       .eq("userId", user.id)
       .limit(1)
       .maybeSingle();
@@ -32,12 +34,52 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
       redirect(`/${locale}/server-selection`);
     }
 
-    ludusData = { id: ludus.id, name: ludus.name, serverId: ludus.serverId, createdAt: ludus.createdAt } as Ludus & { id: string };
+    const treasurySource = (ludus.treasury as { currency?: string; amount?: unknown } | null) ?? {};
+    const facilitiesSource = (ludus.facilities as Record<string, unknown> | null) ?? {};
+
+    const parseNumber = (value: unknown, fallback: number) =>
+      typeof value === "number"
+        ? value
+        : Number.parseInt(typeof value === "string" ? value : `${fallback}`, 10) || fallback;
+
+    const currency =
+      treasurySource.currency === "denarii" || treasurySource.currency === "sestertii"
+        ? (treasurySource.currency as "denarii" | "sestertii")
+        : "sestertii";
+
+    ludusData = {
+      id: (ludus.id as string) ?? "",
+      userId: (ludus.userId as string) ?? user.id,
+      serverId: (ludus.serverId as string) ?? "",
+      name: (ludus.name as string) ?? "Ludus",
+      logoUrl: (ludus.logoUrl as string) ?? "🏛️",
+      treasury: {
+        currency,
+        amount: parseNumber(treasurySource.amount, 0),
+      },
+      reputation: parseNumber(ludus.reputation, 0),
+      morale: parseNumber(ludus.morale, 50),
+      facilities: {
+        infirmaryLevel: parseNumber(facilitiesSource.infirmaryLevel, 1),
+        trainingGroundLevel: parseNumber(facilitiesSource.trainingGroundLevel, 1),
+        quartersLevel: parseNumber(facilitiesSource.quartersLevel, 1),
+        kitchenLevel: parseNumber(facilitiesSource.kitchenLevel, 1),
+      },
+      maxGladiators: parseNumber(ludus.maxGladiators, 0),
+      gladiatorCount: parseNumber(ludus.gladiatorCount, 0),
+      motto: typeof ludus.motto === "string" ? ludus.motto : undefined,
+      locationCity: typeof ludus.locationCity === "string" ? ludus.locationCity : undefined,
+      createdAt: typeof ludus.createdAt === "string" ? ludus.createdAt : new Date().toISOString(),
+      updatedAt: typeof ludus.updatedAt === "string" ? ludus.updatedAt : new Date().toISOString(),
+      isDeleted: typeof ludus.isDeleted === "boolean" ? ludus.isDeleted : undefined,
+    } as Ludus & { id: string };
 
     // Fetch gladiators for this ludus
     const { data: glads } = await supabase
       .from("gladiators")
-      .select("id, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt")
+      .select(
+        "id, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, ludusId, serverId, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear"
+      )
       .eq("ludusId", ludus.id);
 
     if (glads) {

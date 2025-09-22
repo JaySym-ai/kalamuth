@@ -46,7 +46,7 @@ function parseContent<T>(content: string): T {
 }
 
 
-const MODEL_JSON_STRUCTURED = "nvidia/nemotron-nano-9b-v2:free";
+const MODEL_JSON_STRUCTURED = "x-ai/grok-4-fast:free";
 
 async function llmGenerateRaw(
   messages: { role: "system" | "user"; content: string }[],
