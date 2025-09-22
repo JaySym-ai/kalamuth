@@ -82,8 +82,24 @@ export function useRealtimeCollection<T extends object>(
     return orderBy ? { ...orderBy } : null;
   }, [orderBy]);
 
+  const isInitialMount = useRef(true);
+  const prevInitialDataRef = useRef(initialData);
+
   useEffect(() => {
-    setData(initialData);
+    // Only update if this is the initial mount or if the data has actually changed
+    if (isInitialMount.current) {
+      setData(initialData);
+      prevInitialDataRef.current = initialData;
+      isInitialMount.current = false;
+    } else if (initialData !== prevInitialDataRef.current) {
+      // Use reference comparison first for performance, then deep comparison if needed
+      const hasChanged = initialData.length !== (prevInitialDataRef.current as T[]).length ||
+                        initialData.some((item, index) => item !== (prevInitialDataRef.current as T[])[index]);
+      if (hasChanged) {
+        setData(initialData);
+        prevInitialDataRef.current = initialData;
+      }
+    }
   }, [initialData, matchKey]);
 
   const transformRow = useCallback(
