@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
@@ -59,14 +59,14 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
     match: { id: ludus.id },
     initialData: ludus,
     primaryKey: "id",
-    transform: (row) => {
+    transform: useCallback((row) => {
       const record = row as Record<string, unknown>;
       return {
         ...(ludus as Ludus & { id: string }),
         ...(record as Partial<Ludus>),
         id: String(record.id ?? ludus.id),
       } as Ludus & { id: string };
-    },
+    }, [ludus]),
   });
 
   const { data: realtimeGladiators } = useRealtimeCollection<NormalizedGladiator>({
@@ -77,11 +77,11 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
     initialData: gladiators,
     orderBy: { column: "createdAt", ascending: true },
     primaryKey: "id",
-    transform: (row) => {
+    transform: useCallback((row) => {
       const raw = row as Record<string, unknown> & { id?: unknown };
       const identifier = typeof raw.id === "string" ? raw.id : String(raw.id ?? "");
       return normalizeGladiator(identifier, raw, locale);
-    },
+    }, [locale]),
   });
 
   const currentLudus = realtimeLudus ?? ludus;

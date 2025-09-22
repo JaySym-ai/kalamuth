@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,11 +35,11 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
     initialData: gladiators ?? [],
     orderBy: { column: "createdAt", ascending: true },
     primaryKey: "id",
-    transform: (row) => {
+    transform: useCallback((row: Record<string, unknown>) => {
       const raw = row as Record<string, unknown> & { id?: unknown };
       const identifier = typeof raw.id === "string" ? raw.id : String(raw.id ?? "");
       return normalizeGladiator(identifier, raw, locale);
-    },
+    }, [locale]),
   });
 
   const list = realtimeGladiators;
