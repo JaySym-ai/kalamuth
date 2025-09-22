@@ -72,7 +72,7 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
   const { data: realtimeGladiators } = useRealtimeCollection<NormalizedGladiator>({
     table: "gladiators",
     select:
-      "id, ludusId, serverId, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear",
+      "id, ludusId, serverId, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear, physicalCondition, notableHistory, alive",
     match: { ludusId: ludus.id },
     initialData: gladiators,
     orderBy: { column: "createdAt", ascending: true },

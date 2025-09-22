@@ -113,6 +113,7 @@ export async function POST(req: Request) {
         const now = nowIso();
         const { error: insErr } = await supabase.from('gladiators').insert({
           ...g,
+          userId: user.id,
           ludusId,
           serverId: ludus.serverId || null,
           createdAt: now,

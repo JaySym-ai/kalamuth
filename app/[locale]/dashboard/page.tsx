@@ -78,7 +78,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     const { data: glads } = await supabase
       .from("gladiators")
       .select(
-        "id, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, ludusId, serverId, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear"
+        "id, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, ludusId, serverId, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear, physicalCondition, notableHistory, alive"
       )
       .eq("ludusId", ludus.id);
 
