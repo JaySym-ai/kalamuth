@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 import { useRealtimeCollection, useRealtimeRow } from "@/lib/supabase/realtime";
+import { ARENAS } from "@/data/arenas";
+
 import LogoutButton from "@/app/components/auth/LogoutButton";
 import GladiatorDetailModal from "./GladiatorDetailModal";
 import ArenaStatus from "./ArenaStatus";
@@ -19,6 +21,10 @@ interface DashboardTranslations {
   arenaClosed: string;
   arenaOpen: string;
   arenaHint: string;
+  arenaCityLabel: string;
+  arenaAllowsDeath: string;
+  arenaNoDeath: string;
+  arenaEmpty: string;
   treasury: string;
   reputation: string;
   morale: string;
@@ -162,12 +168,17 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
             {/* Arena Status Card */}
             <ArenaStatus
               isOpen={false}
+              arenas={ARENAS}
               translations={{
                 arena: t.arena,
                 arenaStatus: t.arenaStatus,
                 arenaClosed: t.arenaClosed,
                 arenaOpen: t.arenaOpen,
                 arenaHint: t.arenaHint,
+                arenaCityLabel: t.arenaCityLabel,
+                arenaAllowsDeath: t.arenaAllowsDeath,
+                arenaNoDeath: t.arenaNoDeath,
+                arenaEmpty: t.arenaEmpty,
               }}
             />
           </div>

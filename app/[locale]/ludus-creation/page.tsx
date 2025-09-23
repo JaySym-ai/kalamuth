@@ -32,6 +32,11 @@ export default async function LudusCreationPage({ params }: { params: Promise<{ 
       redirect(`/${locale}/dashboard`);
     }
   } catch (error) {
+    const redirectError = error as { digest?: string };
+    if (redirectError?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+
     console.error("Error checking ludus:", error);
   }
 
