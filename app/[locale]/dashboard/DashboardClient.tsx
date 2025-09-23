@@ -1,30 +1,32 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useCallback } from "react";
+import { motion } from "framer-motion";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 import { useRealtimeCollection, useRealtimeRow } from "@/lib/supabase/realtime";
-import { ARENAS } from "@/data/arenas";
 
 import LogoutButton from "@/app/components/auth/LogoutButton";
-import GladiatorDetailModal from "./GladiatorDetailModal";
 import ArenaStatus from "./ArenaStatus";
 import LudusStats from "./LudusStats";
 import GladiatorGrid from "./GladiatorGrid";
+
+interface TranslatedArena {
+  slug: string;
+  name: string;
+  city: string;
+  deathEnabled: boolean;
+}
 
 interface DashboardTranslations {
   title: string;
   ludusOverview: string;
   arena: string;
-  arenaStatus: string;
-  arenaClosed: string;
-  arenaOpen: string;
-  arenaHint: string;
   arenaCityLabel: string;
   arenaAllowsDeath: string;
   arenaNoDeath: string;
   arenaEmpty: string;
+  viewArena: string;
   treasury: string;
   reputation: string;
   morale: string;
@@ -51,13 +53,12 @@ interface DashboardTranslations {
 interface Props {
   ludus: Ludus & { id: string };
   gladiators: NormalizedGladiator[];
+  translatedArenas: TranslatedArena[];
   locale: string;
   translations: DashboardTranslations;
 }
 
-export default function DashboardClient({ ludus, gladiators, locale, translations: t }: Props) {
-  const [selectedGladiator, setSelectedGladiator] = useState<NormalizedGladiator | null>(null);
-
+export default function DashboardClient({ ludus, gladiators, translatedArenas, locale, translations: t }: Props) {
   const { data: realtimeLudus } = useRealtimeRow<Ludus & { id: string }>({
     table: "ludi",
     select:
@@ -92,18 +93,6 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
 
   const currentLudus = realtimeLudus ?? ludus;
   const currentGladiators = realtimeGladiators;
-
-  useEffect(() => {
-    if (!selectedGladiator) return;
-    const updated = currentGladiators.find((g) => g.id === selectedGladiator.id);
-    if (!updated) {
-      setSelectedGladiator(null);
-      return;
-    }
-    if (updated !== selectedGladiator) {
-      setSelectedGladiator(updated);
-    }
-  }, [currentGladiators, selectedGladiator]);
 
 
   return (
@@ -167,18 +156,14 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
 
             {/* Arena Status Card */}
             <ArenaStatus
-              isOpen={false}
-              arenas={ARENAS}
+              arenas={translatedArenas}
               translations={{
                 arena: t.arena,
-                arenaStatus: t.arenaStatus,
-                arenaClosed: t.arenaClosed,
-                arenaOpen: t.arenaOpen,
-                arenaHint: t.arenaHint,
                 arenaCityLabel: t.arenaCityLabel,
                 arenaAllowsDeath: t.arenaAllowsDeath,
                 arenaNoDeath: t.arenaNoDeath,
                 arenaEmpty: t.arenaEmpty,
+                viewArena: t.viewArena,
               }}
             />
           </div>
@@ -203,7 +188,7 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
               {currentGladiators.length > 0 ? (
                 <GladiatorGrid
                   gladiators={currentGladiators}
-                  onGladiatorClick={setSelectedGladiator}
+                  locale={locale}
                   translations={{
                     health: t.health,
                     injured: t.injured,
@@ -224,17 +209,6 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
           </div>
         </div>
       </div>
-
-      {/* Gladiator Detail Modal */}
-      <AnimatePresence>
-        {selectedGladiator && (
-          <GladiatorDetailModal
-            gladiator={selectedGladiator}
-            onClose={() => setSelectedGladiator(null)}
-            locale={locale}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

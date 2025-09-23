@@ -1,0 +1,25 @@
+{
+  "ArenaDetail": {
+    "backToDashboard": "Back to Dashboard",
+    "arenaDetails": "Arena Details",
+    "city": "City",
+    "population": "inhabitants",
+    "description": "About the City",
+    "historicEvent": "Historic Event",
+    "combatRules": "Combat Rules",
+    "deathEnabled": "Fatal Combat Permitted",
+    "deathDisabled": "Non-Lethal Combat Only",
+    "deathEnabledDesc": "This arena permits fights to the death. Gladiators may die in combat, and the crowd expects blood. Only the strongest survive these brutal contests.",
+    "deathDisabledDesc": "This arena enforces non-lethal combat rules. Gladiators fight until submission or incapacitation, but death is strictly forbidden. Perfect for training and building reputation safely.",
+    "enterArena": "Enter Arena",
+    "comingSoon": "Combat system coming soon"
+  },
+  "Arenas": {
+    "halicara-training-grounds": {
+      "name": "Halicara Training Grounds"
+    },
+    "velusia-grand-colosseum": {
+      "name": "Velusia Grand Colosseum"
+    }
+  }
+}

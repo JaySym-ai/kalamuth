@@ -1,12 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Heart, AlertCircle, Activity } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 
 interface Props {
   gladiators: NormalizedGladiator[];
-  onGladiatorClick: (gladiator: NormalizedGladiator) => void;
+  locale: string;
   translations: {
     health: string;
     injured: string;
@@ -16,7 +17,9 @@ interface Props {
   };
 }
 
-export default function GladiatorGrid({ gladiators, onGladiatorClick, translations: t }: Props) {
+export default function GladiatorGrid({ gladiators, locale, translations: t }: Props) {
+  const router = useRouter();
+
   const getHealthStatus = (gladiator: NormalizedGladiator) => {
     if (gladiator.injury) return { label: t.injured, color: 'text-orange-400', icon: AlertCircle };
     if (gladiator.sickness) return { label: t.sick, color: 'text-yellow-400', icon: Activity };
@@ -35,7 +38,7 @@ export default function GladiatorGrid({ gladiators, onGladiatorClick, translatio
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            onClick={() => onGladiatorClick(gladiator)}
+            onClick={() => router.push(`/${locale}/gladiator/${gladiator.id}`)}
             className="group cursor-pointer"
             data-testid={`gladiator-${gladiator.id}`}
           >

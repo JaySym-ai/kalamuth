@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/server";
 import DashboardClient from "./DashboardClient";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
+import { ARENAS } from "@/data/arenas";
+import { CITIES } from "@/data/cities";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -100,25 +102,39 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   }
 
   const t = await getTranslations("Dashboard");
+  const tArenas = await getTranslations("Arenas");
+  const tCities = await getTranslations("Cities");
+
+  // Prepare translated arena data
+  const translatedArenas = ARENAS.map(arena => {
+    const slug = arena.name.toLowerCase().replace(/\s+/g, '-');
+    const city = CITIES.find(c => c.name === arena.city);
+    const cityId = city?.id || '';
+
+    return {
+      slug,
+      name: tArenas(`${slug}.name`),
+      city: cityId ? tCities(`${cityId}.name`) : arena.city,
+      deathEnabled: arena.deathEnabled
+    };
+  });
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black">
       <DashboardClient
         ludus={ludusData!}
         gladiators={gladiators}
+        translatedArenas={translatedArenas}
         locale={locale}
         translations={{
           title: t("title"),
           ludusOverview: t("ludusOverview"),
           arena: t("arena"),
-          arenaStatus: t("arenaStatus"),
-          arenaClosed: t("arenaClosed"),
-          arenaOpen: t("arenaOpen"),
-          arenaHint: t("arenaHint"),
           arenaCityLabel: t("arenaCityLabel"),
           arenaAllowsDeath: t("arenaAllowsDeath"),
           arenaNoDeath: t("arenaNoDeath"),
           arenaEmpty: t("arenaEmpty"),
+          viewArena: t("viewArena"),
           treasury: t("treasury"),
           reputation: t("reputation"),
           morale: t("morale"),

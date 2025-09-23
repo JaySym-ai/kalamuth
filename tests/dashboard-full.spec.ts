@@ -12,13 +12,10 @@ test.describe('Dashboard Page - Full Test Suite', () => {
   test('displays ludus overview with all key information', async ({ page }) => {
     // Check main title is visible (ludus name)
     await expect(page.locator('h1').first()).toBeVisible();
-    
-    // Check arena status card
+
+    // Check arena card
     await expect(page.getByText('Arène')).toBeVisible();
-    await expect(page.getByText('Statut')).toBeVisible();
-    const arenaStatus = page.getByText(/Actuellement Fermée|Ouverte au Combat/);
-    await expect(arenaStatus).toBeVisible();
-    
+
     // Check ludus stats card
     await expect(page.getByText('Vue d\'ensemble du Ludus')).toBeVisible();
     await expect(page.getByText('Trésorerie')).toBeVisible();
@@ -84,40 +81,49 @@ test.describe('Dashboard Page - Full Test Suite', () => {
     }
   });
 
-  test('opens gladiator detail modal when clicking on card', async ({ page }) => {
+  test('navigates to gladiator detail page when clicking on card', async ({ page }) => {
     // Check if gladiators exist
     const gladiatorCards = page.locator('[data-testid^="gladiator-"]');
     const count = await gladiatorCards.count();
-    
+
     if (count > 0) {
       // Click on first gladiator
       await gladiatorCards.first().click();
-      
-      // Wait for modal to appear
-      await expect(page.locator('[data-testid="close-modal"]')).toBeVisible({ timeout: 5000 });
-      
-      // Check modal content sections
+
+      // Wait for navigation to gladiator detail page
+      await page.waitForURL(/\/fr\/gladiator\/[^/]+$/, { timeout: 5000 });
+
+      // Check detail page content sections
       await expect(page.getByText('Statistiques de Combat')).toBeVisible();
       await expect(page.getByText('Force')).toBeVisible();
       await expect(page.getByText('Agilité')).toBeVisible();
       await expect(page.getByText('Personnalité')).toBeVisible();
       await expect(page.getByText('Historique')).toBeVisible();
       await expect(page.getByText('Traits Spéciaux')).toBeVisible();
-      
-      // Close modal
-      await page.locator('[data-testid="close-modal"]').click();
-      await expect(page.locator('[data-testid="close-modal"]')).not.toBeVisible();
+
+      // Navigate back to dashboard
+      await page.locator('[data-testid="back-to-dashboard"]').click();
+      await page.waitForURL('/fr/dashboard', { timeout: 5000 });
+      await expect(page.getByText('Tableau de Bord du Ludus')).toBeVisible();
     }
   });
 
-  test('displays arena status correctly', async ({ page }) => {
-    // Check arena status card
-    const arenaSection = page.locator('text=/Arène/').locator('..').locator('..');
-    await expect(arenaSection).toBeVisible();
-    
-    // Check for status indicator
-    const statusText = arenaSection.locator('text=/Actuellement Fermée|Ouverte au Combat/');
-    await expect(statusText).toBeVisible();
+  test('displays arena cards and allows navigation', async ({ page }) => {
+    // Check arena section is visible
+    await expect(page.getByText('Arène')).toBeVisible();
+
+    // Check for arena cards (should have at least one)
+    const arenaCards = page.locator('[data-testid^="arena-card-"]');
+    await expect(arenaCards.first()).toBeVisible();
+
+    // Click on first arena card
+    await arenaCards.first().click();
+
+    // Should navigate to arena detail page
+    await expect(page).toHaveURL(/\/fr\/arena\/.+/);
+
+    // Should show arena detail page elements
+    await expect(page.getByTestId('back-to-dashboard')).toBeVisible();
   });
 
   test('displays facility levels with visual indicators', async ({ page }) => {
@@ -208,27 +214,29 @@ test.describe('Dashboard Internationalization', () => {
     await expect(page.getByText('Facilities')).toBeVisible();
   });
 
-  test('gladiator modal shows correct language', async ({ page }) => {
-    // Test English modal
+  test('gladiator detail page shows correct language', async ({ page }) => {
+    // Test English detail page
     await loginUser(page, TEST_CREDENTIALS.email, TEST_CREDENTIALS.password, 'en');
     await page.goto('/en/dashboard');
     await page.waitForLoadState('networkidle');
-    
+
     const gladiatorCards = page.locator('[data-testid^="gladiator-"]');
     const count = await gladiatorCards.count();
-    
+
     if (count > 0) {
       await gladiatorCards.first().click();
-      await expect(page.locator('[data-testid="close-modal"]')).toBeVisible({ timeout: 5000 });
-      
-      // Check English modal content
+      await page.waitForURL(/\/en\/gladiator\/[^/]+$/, { timeout: 5000 });
+
+      // Check English detail page content
       await expect(page.getByText('Combat Statistics')).toBeVisible();
       await expect(page.getByText('Strength')).toBeVisible();
       await expect(page.getByText('Personality')).toBeVisible();
       await expect(page.getByText('Background')).toBeVisible();
       await expect(page.getByText('Special Traits')).toBeVisible();
-      
-      await page.locator('[data-testid="close-modal"]').click();
+
+      // Navigate back
+      await page.locator('[data-testid="back-to-dashboard"]').click();
+      await page.waitForURL('/en/dashboard', { timeout: 5000 });
     }
   });
 });

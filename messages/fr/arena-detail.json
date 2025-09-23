@@ -1,0 +1,25 @@
+{
+  "ArenaDetail": {
+    "backToDashboard": "Retour au Tableau de Bord",
+    "arenaDetails": "Détails de l'Arène",
+    "city": "Ville",
+    "population": "habitants",
+    "description": "À Propos de la Ville",
+    "historicEvent": "Événement Historique",
+    "combatRules": "Règles de Combat",
+    "deathEnabled": "Combat Mortel Autorisé",
+    "deathDisabled": "Combat Non Létal Uniquement",
+    "deathEnabledDesc": "Cette arène autorise les combats à mort. Les gladiateurs peuvent mourir au combat, et la foule exige du sang. Seuls les plus forts survivent à ces concours brutaux.",
+    "deathDisabledDesc": "Cette arène applique des règles de combat non létales. Les gladiateurs combattent jusqu'à la soumission ou l'incapacité, mais la mort est strictement interdite. Parfait pour l'entraînement et bâtir sa réputation en toute sécurité.",
+    "enterArena": "Entrer dans l'Arène",
+    "comingSoon": "Système de combat à venir"
+  },
+  "Arenas": {
+    "halicara-training-grounds": {
+      "name": "Terrain d'Entraînement d'Halicara"
+    },
+    "velusia-grand-colosseum": {
+      "name": "Grand Colisée de Vélusie"
+    }
+  }
+}

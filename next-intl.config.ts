@@ -64,6 +64,7 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
   let initialGladiators: {default: Record<string, unknown>};
   let dashboard: {default: Record<string, unknown>};
   let cities: {default: Record<string, unknown>};
+  let arenaDetail: {default: Record<string, unknown>};
 
   try { auth = await import(`./messages/${activeLocale}/auth.json`); } catch { auth = { default: {} }; }
   try { intro = await import(`./messages/${activeLocale}/intro.json`); } catch { intro = { default: {} }; }
@@ -72,6 +73,7 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
   try { initialGladiators = await import(`./messages/${activeLocale}/initial-gladiators.json`); } catch { initialGladiators = { default: {} }; }
   try { dashboard = await import(`./messages/${activeLocale}/dashboard.json`); } catch { dashboard = { default: {} }; }
   try { cities = await import(`./messages/${activeLocale}/cities.json`); } catch { cities = { default: {} }; }
+  try { arenaDetail = await import(`./messages/${activeLocale}/arena-detail.json`); } catch { arenaDetail = { default: {} }; }
 
   const sources = [
     common.default,
@@ -88,7 +90,8 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
     ludusCreation.default,
     initialGladiators.default,
     dashboard.default,
-    cities.default
+    cities.default,
+    arenaDetail.default
   ].map((m) => deepifyMessages(m as Record<string, unknown>));
 
   const messages = Object.assign({}, ...sources);

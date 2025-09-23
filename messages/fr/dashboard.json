@@ -3,14 +3,11 @@
     "title": "Tableau de Bord du Ludus",
     "ludusOverview": "Vue d'ensemble du Ludus",
     "arena": "Arène",
-    "arenaStatus": "Statut",
-    "arenaClosed": "Actuellement Fermée",
-    "arenaOpen": "Ouverte au Combat",
-    "arenaHint": "L'arène ouvre à des heures spécifiques. Revenez plus tard pour les combats !",
     "arenaCityLabel": "Ville",
     "arenaAllowsDeath": "Combats mortels autorisés",
     "arenaNoDeath": "Combats non létaux",
     "arenaEmpty": "Aucune arène disponible pour le moment.",
+    "viewArena": "Voir l'Arène",
     "treasury": "Trésorerie",
     "reputation": "Réputation",
     "morale": "Moral",
@@ -171,6 +168,7 @@
     }
   },
   "GladiatorDetail": {
+    "backToDashboard": "Retour au Tableau de Bord",
     "from": "De",
     "combatStats": "Statistiques de Combat",
     "strength": "Force",

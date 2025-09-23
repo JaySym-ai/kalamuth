@@ -1,26 +1,37 @@
 "use client";
 
-import type { Arena } from "@/types/arena";
+import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
-import { Swords, Lock, Skull, Shield } from "lucide-react";
+import { Swords, Skull, Shield, ChevronRight } from "lucide-react";
+
+interface TranslatedArena {
+  slug: string;
+  name: string;
+  city: string;
+  deathEnabled: boolean;
+}
 
 interface Props {
-  isOpen: boolean;
-  arenas: Arena[];
+  arenas: TranslatedArena[];
   translations: {
     arena: string;
-    arenaStatus: string;
-    arenaClosed: string;
-    arenaOpen: string;
-    arenaHint: string;
     arenaCityLabel: string;
     arenaAllowsDeath: string;
     arenaNoDeath: string;
     arenaEmpty: string;
+    viewArena: string;
   };
 }
 
-export default function ArenaStatus({ isOpen, arenas, translations: t }: Props) {
+export default function ArenaStatus({ arenas, translations: t }: Props) {
+  const router = useRouter();
+  const locale = useLocale();
+
+  const handleArenaClick = (arenaSlug: string) => {
+    router.push(`/${locale}/arena/${arenaSlug}`);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -28,65 +39,53 @@ export default function ArenaStatus({ isOpen, arenas, translations: t }: Props) 
       className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
       data-testid="arena-status-card"
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-bold text-amber-400 flex items-center gap-2">
           <Swords className="w-5 h-5" />
           {t.arena}
         </h3>
       </div>
 
-      <div className={`p-4 rounded-lg ${isOpen ? "bg-green-900/20 border border-green-700/50" : "bg-red-900/20 border border-red-700/50"}`}>
-        <div className="flex items-center gap-3">
-          {isOpen ? (
-            <Swords className="w-8 h-8 text-green-400" />
-          ) : (
-            <Lock className="w-8 h-8 text-red-400" />
-          )}
-          <div>
-            <p className="text-sm text-gray-400">{t.arenaStatus}</p>
-            <p className={`font-bold ${isOpen ? "text-green-400" : "text-red-400"}`}>
-              {isOpen ? t.arenaOpen : t.arenaClosed}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {!isOpen && (
-        <div className="mt-4 rounded-lg border border-amber-700/30 bg-amber-900/10 p-3">
-          <p className="text-xs text-amber-400/80">{t.arenaHint}</p>
-        </div>
-      )}
-
-      <div className="mt-6 space-y-3">
+      <div className="space-y-3">
         {arenas.length > 0 ? (
           arenas.map((arena, index) => (
-            <motion.div
-              key={`${arena.name}-${arena.city}`}
+            <motion.button
+              key={`${arena.slug}-${arena.city}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 * index }}
-              className="flex items-start justify-between rounded-xl border border-amber-900/40 bg-black/40 p-4"
+              onClick={() => handleArenaClick(arena.slug)}
+              className="w-full text-left group relative overflow-hidden rounded-xl border border-amber-900/40 bg-black/40 p-4 transition-all duration-300 hover:border-amber-600/60 hover:bg-amber-900/10 hover:scale-[1.02]"
+              data-testid={`arena-card-${arena.slug}`}
             >
-              <div>
-                <p className="text-lg font-semibold text-white">{arena.name}</p>
-                <p className="text-sm text-gray-400">
-                  {t.arenaCityLabel}: <span className="text-amber-300">{arena.city}</span>
-                </p>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-lg font-semibold text-white group-hover:text-amber-300 transition-colors">
+                    {arena.name}
+                  </p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    {t.arenaCityLabel}: <span className="text-amber-300">{arena.city}</span>
+                  </p>
+                  <div className="flex items-center gap-2 text-sm mt-2">
+                    {arena.deathEnabled ? (
+                      <>
+                        <Skull className="h-4 w-4 text-red-400" />
+                        <span className="text-red-200">{t.arenaAllowsDeath}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="h-4 w-4 text-emerald-300" />
+                        <span className="text-emerald-200">{t.arenaNoDeath}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <ChevronRight className="h-5 w-5 text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                {arena.deathEnabled ? (
-                  <>
-                    <Skull className="h-5 w-5 text-red-400" />
-                    <span className="text-red-200">{t.arenaAllowsDeath}</span>
-                  </>
-                ) : (
-                  <>
-                    <Shield className="h-5 w-5 text-emerald-300" />
-                    <span className="text-emerald-200">{t.arenaNoDeath}</span>
-                  </>
-                )}
-              </div>
-            </motion.div>
+
+              {/* Hover effect overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-600/0 via-amber-600/5 to-amber-600/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            </motion.button>
           ))
         ) : (
           <p className="text-sm italic text-gray-400">{t.arenaEmpty}</p>

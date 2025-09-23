@@ -3,14 +3,11 @@
     "title": "Ludus Dashboard",
     "ludusOverview": "Ludus Overview",
     "arena": "Arena",
-    "arenaStatus": "Status",
-    "arenaClosed": "Currently Closed",
-    "arenaOpen": "Open for Battle",
-    "arenaHint": "The arena opens at specific times. Check back later for battles!",
     "arenaCityLabel": "City",
     "arenaAllowsDeath": "Fatal bouts permitted",
     "arenaNoDeath": "Non-lethal matches",
     "arenaEmpty": "No arenas available yet.",
+    "viewArena": "View Arena",
     "treasury": "Treasury",
     "reputation": "Reputation",
     "morale": "Morale",
@@ -171,6 +168,7 @@
     }
   },
   "GladiatorDetail": {
+    "backToDashboard": "Back to Dashboard",
     "from": "From",
     "combatStats": "Combat Statistics",
     "strength": "Strength",
