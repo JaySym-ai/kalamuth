@@ -104,27 +104,84 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, jobId: job.id, created: 0, missing: execMissing }, { status: 202 });
     }
 
+    // Fetch existing gladiator names in this ludus to avoid duplicates
+    const { data: existingGladiators } = await supabase
+      .from('gladiators')
+      .select('name, surname')
+      .eq('ludusId', ludusId);
+
+    const existingNames = new Set<string>(
+      (existingGladiators || []).map(g =>
+        `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase()
+      )
+    );
+
     let created = 0;
     const errors: string[] = [];
 
     for (let i = 0; i < toCreate; i++) {
-      try {
-        const g = await generateOneGladiator(client, { jobId: job.id, attempt: i + 1 });
-        const now = nowIso();
-        const { error: insErr } = await supabase.from('gladiators').insert({
-          ...g,
-          userId: user.id,
-          ludusId,
-          serverId: ludus.serverId || null,
-          createdAt: now,
-          updatedAt: now,
-        });
-        if (insErr) throw new Error(insErr.message);
-        created++;
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        if (process.env.NODE_ENV !== 'production') console.error('Gladiator generation attempt failed', { jobId: job.id, attempt: i + 1, error: msg });
-        errors.push(msg);
+      let retries = 3; // Allow retries if we get a duplicate name
+      let gladiatorCreated = false;
+
+      while (retries > 0 && !gladiatorCreated) {
+        try {
+          const g = await generateOneGladiator(client, {
+            jobId: job.id,
+            attempt: i + 1,
+            existingNames: Array.from(existingNames)
+          });
+
+          // Check if this name already exists
+          const fullName = `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase();
+          if (existingNames.has(fullName)) {
+            throw new Error(`Duplicate name generated: ${g.name} ${g.surname}`);
+          }
+
+          const now = nowIso();
+          const { error: insErr } = await supabase.from('gladiators').insert({
+            ...g,
+            userId: user.id,
+            ludusId,
+            serverId: ludus.serverId || null,
+            createdAt: now,
+            updatedAt: now,
+          });
+
+          if (insErr) {
+            // Check if it's a unique constraint violation
+            if (insErr.message.includes('gladiators_ludus_fullname_unique')) {
+              throw new Error(`Duplicate name in database: ${g.name} ${g.surname}`);
+            }
+            throw new Error(insErr.message);
+          }
+
+          // Success - add to our tracking set
+          existingNames.add(fullName);
+          created++;
+          gladiatorCreated = true;
+        } catch (e) {
+          retries--;
+          const msg = e instanceof Error ? e.message : String(e);
+
+          if (retries === 0) {
+            // Final failure after all retries
+            if (process.env.NODE_ENV !== 'production') {
+              console.error('Gladiator generation failed after retries', {
+                jobId: job.id,
+                attempt: i + 1,
+                error: msg
+              });
+            }
+            errors.push(msg);
+          } else if (process.env.NODE_ENV !== 'production') {
+            console.warn('Gladiator generation retry', {
+              jobId: job.id,
+              attempt: i + 1,
+              retriesLeft: retries,
+              error: msg
+            });
+          }
+        }
       }
     }
 

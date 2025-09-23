@@ -24,6 +24,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
 
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
+  const [autoStarted, setAutoStarted] = useState(false);
   const jobStatus: string | null = null;
 
 
@@ -55,6 +56,27 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
       setSelectedGladiator(updated);
     }
   }, [list, selectedGladiator]);
+
+  // Auto-start gladiator generation on mount if no gladiators exist
+  useEffect(() => {
+    if (autoStarted || list.length > 0) return;
+
+    setAutoStarted(true);
+    setGenerating(true);
+
+    fetch("/api/gladiators/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ludusId, count: minRequired })
+    })
+    .catch((err) => {
+      console.error("Auto-start gladiator generation failed:", err);
+      setGenError("error");
+    })
+    .finally(() => {
+      setGenerating(false);
+    });
+  }, [autoStarted, list.length, ludusId, minRequired]);
 
 
   const currentCount = list.length;

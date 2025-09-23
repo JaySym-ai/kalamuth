@@ -49,10 +49,10 @@ export default function LudusCreationClient() {
       setError(t("errors.noServer"));
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       // Create the ludus (logo will be added later)
       const response = await fetch("/api/ludus", {
@@ -72,22 +72,13 @@ export default function LudusCreationClient() {
         console.error("API Error:", errorData);
         throw new Error(errorData?.error || errorData?.details || "Failed to create ludus");
       }
-      
+
       const data = await response.json();
-      
+
       // Store ludus ID for the next step
       sessionStorage.setItem("ludusId", data.ludusId);
 
-      // Kick off async gladiator generation (fire-and-forget)
-      try {
-        await fetch("/api/gladiators/start", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ludusId: data.ludusId })
-        });
-      } catch {}
-
-      // Navigate to gladiator display
+      // Navigate immediately to gladiator display - generation will start there
       router.push(`/${locale}/initial-gladiators`);
     } catch (err) {
       console.error("Error creating ludus:", err);

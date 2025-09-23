@@ -25,6 +25,7 @@ Follow the provided JSON Schema exactly. Do not include any fields not in the sc
 - The uniquePower must be subtle and not overpowered; it's optional.
 - If injury is present, injuryTimeLeftHours must be an integer >= 1.
 - Use realistic ancient/mediterranean naming, but creativity is welcome.
+- Within a single generation request, each gladiator's name + surname combination must be unique.
 - avatarUrl must be a valid URL (can be placeholder).
 Return only JSON matching the schema.
 `;
@@ -44,6 +45,23 @@ function parseContent<T>(content: string): T {
     throw e;
   }
 }
+
+function assertUniqueGladiatorNames(gladiators: Gladiator[]) {
+  const seen = new Set<string>();
+  for (const gladiator of gladiators) {
+    const fullName = `${gladiator.name} ${gladiator.surname}`.replace(/\s+/g, " ").trim().toLowerCase();
+    if (!fullName) {
+      throw new Error("Each gladiator requires non-empty name and surname values.");
+    }
+    if (seen.has(fullName)) {
+      throw new Error(
+        `Duplicate gladiator names detected for "${gladiator.name} ${gladiator.surname}". Provide unique names for each gladiator.`
+      );
+    }
+    seen.add(fullName);
+  }
+}
+
 
 
 const MODEL_JSON_STRUCTURED = "x-ai/grok-4-fast:free";
@@ -85,7 +103,9 @@ export async function generateGladiator(opts: GenerateOptions = {}): Promise<Gla
     try {
       const content = await llmGenerateRaw(messages, schema, opts);
       const obj = parseContent<unknown>(content);
-      return GladiatorZ.parse(obj) as Gladiator;
+      const gladiator = GladiatorZ.parse(obj) as Gladiator;
+      assertUniqueGladiatorNames([gladiator]);
+      return gladiator;
     } catch (e) {
 
       // Provide a repair message with error summary and retry once
@@ -123,6 +143,7 @@ export async function generateGladiators(count: number, opts: GenerateOptions = 
       const parsed = (Array.isArray(arr) ? arr : [])
         .map((g) => GladiatorZ.parse(g) as Gladiator);
       if (parsed.length !== count) throw new Error("Incorrect cardinality returned");
+      assertUniqueGladiatorNames(parsed);
       return parsed;
     } catch (e) {
 

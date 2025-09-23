@@ -13,7 +13,7 @@ function safeSerialize(value: unknown, maxLength = 4000) {
   }
 }
 
-export type GenerationContext = { jobId?: string; attempt?: number };
+export type GenerationContext = { jobId?: string; attempt?: number; existingNames?: string[] };
 
 export type ApiErrorDetails = {
   status: number | null;
@@ -287,11 +287,17 @@ export async function generateOneGladiator(client: OpenAI, context?: GenerationC
   for (let generationAttempt = 1; generationAttempt <= 3; generationAttempt++) {
     let completion: OpenAI.Chat.Completions.ChatCompletion;
     try {
+      // Build user prompt with existing names constraint
+      let userPrompt = 'Create one compliant gladiator.';
+      if (context?.existingNames && context.existingNames.length > 0) {
+        userPrompt += `\n\nIMPORTANT: The following names are already taken. You MUST create a gladiator with a DIFFERENT name:\n${context.existingNames.join(', ')}`;
+      }
+
       const request = {
         model: MODEL_JSON_STRUCTURED,
         messages: [
           { role: 'system', content: systemPromptBilingual },
-          { role: 'user', content: 'Create one compliant gladiator.' }
+          { role: 'user', content: userPrompt }
         ],
         response_format: { type: 'json_object' },
         temperature: 0.7,
