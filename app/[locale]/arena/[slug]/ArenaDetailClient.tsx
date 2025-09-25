@@ -1,16 +1,25 @@
 "use client";
 
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Swords, Skull, Shield, Users, MapPin, Scroll } from "lucide-react";
+import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
+import type { CombatQueueEntry } from "@/types/combat";
+import { useRealtimeCollection } from "@/lib/supabase/realtime";
+import GladiatorSelector from "./GladiatorSelector";
+import QueueStatus from "./QueueStatus";
 
 interface Props {
+  arenaSlug: string;
   arenaName: string;
   cityName: string;
   cityDescription: string;
   cityHistoricEvent: string;
   cityInhabitants: number;
   deathEnabled: boolean;
+  serverId: string;
+  gladiators: NormalizedGladiator[];
   locale: string;
   translations: {
     backToDashboard: string;
@@ -26,20 +35,129 @@ interface Props {
     deathDisabledDesc: string;
     enterArena: string;
     comingSoon: string;
+    queueTitle: string;
+    selectGladiator: string;
+    selectGladiatorDesc: string;
+    joinQueue: string;
+    leaveQueue: string;
+    inQueue: string;
+    queuePosition: string;
+    waitingForMatch: string;
+    matchFound: string;
+    currentQueue: string;
+    noGladiatorsInQueue: string;
+    gladiatorUnavailable: string;
+    gladiatorInjured: string;
+    gladiatorSick: string;
+    gladiatorDead: string;
+    gladiatorAlreadyQueued: string;
+    rankingPoints: string;
+    healthStatus: string;
+    queuedAt: string;
+    matchmaking: string;
+    activeMatch: string;
+    viewMatch: string;
   };
 }
 
 export default function ArenaDetailClient({
+  arenaSlug,
   arenaName,
   cityName,
   cityDescription,
   cityHistoricEvent,
   cityInhabitants,
   deathEnabled,
+  serverId,
+  gladiators,
   locale,
   translations: t
 }: Props) {
   const router = useRouter();
+  const [selectedGladiatorId, setSelectedGladiatorId] = useState<string | null>(null);
+  const [isJoining, setIsJoining] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Real-time queue subscription
+  const { data: queueData } = useRealtimeCollection<CombatQueueEntry>({
+    table: "combat_queue",
+    select: "*",
+    match: { arenaSlug, serverId, status: "waiting" },
+    initialData: [],
+    orderBy: { column: "queuedAt", ascending: true },
+  });
+
+  // Enrich queue with gladiator data
+  const enrichedQueue = queueData.map(entry => {
+    const gladiator = gladiators.find(g => g.id === entry.gladiatorId);
+    return { ...entry, gladiator };
+  });
+
+  // Check if user has a gladiator in queue
+  const userQueueEntry = queueData.find(entry =>
+    gladiators.some(g => g.id === entry.gladiatorId)
+  );
+
+  const queuedGladiatorIds = new Set(queueData.map(entry => entry.gladiatorId));
+
+  const handleJoinQueue = async () => {
+    if (!selectedGladiatorId) return;
+
+    setIsJoining(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/arena/queue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          arenaSlug,
+          serverId,
+          gladiatorId: selectedGladiatorId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Failed to join queue");
+        return;
+      }
+
+      // Success - clear selection
+      setSelectedGladiatorId(null);
+    } catch (err) {
+      console.error("Error joining queue:", err);
+      setError("Network error");
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleLeaveQueue = async () => {
+    if (!userQueueEntry) return;
+
+    setIsLeaving(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/arena/queue?queueId=${userQueueEntry.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.error || "Failed to leave queue");
+        return;
+      }
+    } catch (err) {
+      console.error("Error leaving queue:", err);
+      setError("Network error");
+    } finally {
+      setIsLeaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen pb-[max(env(safe-area-inset-bottom),24px)] pt-8 px-4 max-w-6xl mx-auto">
@@ -83,12 +201,94 @@ export default function ArenaDetailClient({
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Queue System */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            {/* Gladiator Selector */}
+            {!userQueueEntry && (
+              <div className="mb-6">
+                <GladiatorSelector
+                  gladiators={gladiators}
+                  selectedGladiatorId={selectedGladiatorId}
+                  onSelect={setSelectedGladiatorId}
+                  queuedGladiatorIds={queuedGladiatorIds}
+                  translations={{
+                    selectGladiator: t.selectGladiator,
+                    selectGladiatorDesc: t.selectGladiatorDesc,
+                    rankingPoints: t.rankingPoints,
+                    healthStatus: t.healthStatus,
+                    gladiatorInjured: t.gladiatorInjured,
+                    gladiatorSick: t.gladiatorSick,
+                    gladiatorDead: t.gladiatorDead,
+                    gladiatorAlreadyQueued: t.gladiatorAlreadyQueued,
+                  }}
+                />
+
+                {/* Join Queue Button */}
+                {selectedGladiatorId && (
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={handleJoinQueue}
+                    disabled={isJoining}
+                    className="w-full mt-4 h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-900/30"
+                    data-testid="join-queue-button"
+                  >
+                    {isJoining ? t.matchmaking : t.joinQueue}
+                  </motion.button>
+                )}
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-3 p-3 bg-red-900/20 border border-red-700/50 rounded-lg text-red-300 text-sm"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+              </div>
+            )}
+
+            {/* Leave Queue Button */}
+            {userQueueEntry && (
+              <motion.button
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={handleLeaveQueue}
+                disabled={isLeaving}
+                className="w-full mb-6 h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                data-testid="leave-queue-button"
+              >
+                {isLeaving ? "Leaving..." : t.leaveQueue}
+              </motion.button>
+            )}
+
+            {/* Queue Status */}
+            <QueueStatus
+              queue={enrichedQueue}
+              userGladiatorId={userQueueEntry?.gladiatorId || null}
+              translations={{
+                currentQueue: t.currentQueue,
+                noGladiatorsInQueue: t.noGladiatorsInQueue,
+                queuePosition: t.queuePosition,
+                rankingPoints: t.rankingPoints,
+                queuedAt: t.queuedAt,
+                waitingForMatch: t.waitingForMatch,
+                matchmaking: t.matchmaking,
+              }}
+            />
+          </motion.div>
+
           {/* City Description */}
           {cityDescription && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.2 }}
               className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
             >
               <h2 className="text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2">
@@ -106,14 +306,14 @@ export default function ArenaDetailClient({
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
             className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
           >
             <h2 className="text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2">
               <Swords className="w-6 h-6" />
               {t.combatRules}
             </h2>
-            
+
             <div className={`p-6 rounded-xl border-2 ${
               deathEnabled
                 ? 'bg-red-900/20 border-red-700/50'
@@ -147,28 +347,18 @@ export default function ArenaDetailClient({
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.4 }}
             className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6 sticky top-8"
           >
             <h2 className="text-xl font-bold text-amber-400 mb-6">{t.arenaDetails}</h2>
-            
+
             {/* Arena Image Placeholder */}
             <div className="aspect-video bg-gradient-to-br from-amber-900/30 to-red-900/30 rounded-xl mb-6 flex items-center justify-center border border-amber-700/30">
               <Swords className="w-16 h-16 text-amber-600/50" />
             </div>
 
-            {/* Enter Arena Button */}
-            <button
-              disabled
-              className="w-full py-4 rounded-lg font-bold text-lg bg-gray-800 text-gray-500 cursor-not-allowed opacity-50 mb-3"
-              data-testid="enter-arena-button"
-            >
-              {t.enterArena}
-            </button>
-            <p className="text-xs text-center text-gray-500 italic">{t.comingSoon}</p>
-
             {/* Quick Stats */}
-            <div className="mt-6 pt-6 border-t border-amber-900/30 space-y-3">
+            <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-400 text-sm">{t.city}</span>
                 <span className="text-amber-300 font-semibold">{cityName}</span>

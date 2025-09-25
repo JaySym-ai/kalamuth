@@ -69,6 +69,10 @@ export interface Gladiator {
   /** Primary stats block; each value is a 1–2 sentence description for that trait. */
   stats: GladiatorStats;
 
+  // — Combat / Ranking —
+  /** Ranking points for matchmaking (default 1000). Used to match gladiators of similar skill level. */
+  rankingPoints: number;
+
   // — Narrative / flavor (all AI-generated strings) —
   /** Long-term ambition driving this gladiator. */
   lifeGoal: string;

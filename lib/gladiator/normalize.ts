@@ -112,6 +112,7 @@ export function normalizeGladiator(id: string, data: Record<string, unknown>, lo
     }),
     alive: typeof data.alive === "boolean" ? data.alive : true,
     stats,
+    rankingPoints: coerceNumber(data.rankingPoints, { min: 0, max: 999999, fallback: 1000 }),
     lifeGoal: coerceString(data.lifeGoal, "—", locale),
     personality: coerceString(data.personality, "—", locale),
     backstory: coerceString(data.backstory, "—", locale),

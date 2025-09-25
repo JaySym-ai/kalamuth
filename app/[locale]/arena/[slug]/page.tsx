@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { ARENAS } from "@/data/arenas";
 import { CITIES } from "@/data/cities";
 import ArenaDetailClient from "./ArenaDetailClient";
+import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +35,35 @@ export default async function ArenaDetailPage({
   // Find city details
   const city = CITIES.find(c => c.name === arena.city);
 
+  // Fetch user's ludus and gladiators
+  const { data: ludus } = await supabase
+    .from("ludi")
+    .select("id, serverId")
+    .eq("userId", user.id)
+    .limit(1)
+    .maybeSingle();
+
+  let gladiators: NormalizedGladiator[] = [];
+  let serverId = "";
+
+  if (ludus) {
+    serverId = ludus.serverId as string;
+
+    // Fetch user's gladiators
+    const { data: glads } = await supabase
+      .from("gladiators")
+      .select(
+        "id, name, surname, avatarUrl, birthCity, health, stats, rankingPoints, alive, injury, sickness, ludusId, serverId"
+      )
+      .eq("ludusId", ludus.id);
+
+    if (glads) {
+      gladiators = glads.map(doc =>
+        normalizeGladiator(doc.id as string, doc as unknown as Record<string, unknown>, locale)
+      );
+    }
+  }
+
   const t = await getTranslations("ArenaDetail");
   const tArenas = await getTranslations("Arenas");
   const tCities = await getTranslations("Cities");
@@ -50,12 +80,15 @@ export default async function ArenaDetailPage({
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black">
       <ArenaDetailClient
+        arenaSlug={slug}
         arenaName={arenaName}
         cityName={cityName}
         cityDescription={cityDescription}
         cityHistoricEvent={cityHistoricEvent}
         cityInhabitants={city?.inhabitants || 0}
         deathEnabled={arena.deathEnabled}
+        serverId={serverId}
+        gladiators={gladiators}
         locale={locale}
         translations={{
           backToDashboard: t("backToDashboard"),
@@ -71,6 +104,28 @@ export default async function ArenaDetailPage({
           deathDisabledDesc: t("deathDisabledDesc"),
           enterArena: t("enterArena"),
           comingSoon: t("comingSoon"),
+          queueTitle: t("queueTitle"),
+          selectGladiator: t("selectGladiator"),
+          selectGladiatorDesc: t("selectGladiatorDesc"),
+          joinQueue: t("joinQueue"),
+          leaveQueue: t("leaveQueue"),
+          inQueue: t("inQueue"),
+          queuePosition: t("queuePosition"),
+          waitingForMatch: t("waitingForMatch"),
+          matchFound: t("matchFound"),
+          currentQueue: t("currentQueue"),
+          noGladiatorsInQueue: t("noGladiatorsInQueue"),
+          gladiatorUnavailable: t("gladiatorUnavailable"),
+          gladiatorInjured: t("gladiatorInjured"),
+          gladiatorSick: t("gladiatorSick"),
+          gladiatorDead: t("gladiatorDead"),
+          gladiatorAlreadyQueued: t("gladiatorAlreadyQueued"),
+          rankingPoints: t("rankingPoints"),
+          healthStatus: t("healthStatus"),
+          queuedAt: t("queuedAt"),
+          matchmaking: t("matchmaking"),
+          activeMatch: t("activeMatch"),
+          viewMatch: t("viewMatch"),
         }}
       />
     </main>

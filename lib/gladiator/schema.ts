@@ -62,6 +62,9 @@ export const BilingualGladiatorZ = z
     // Attributes (bilingual)
     stats: BilingualStatsZ,
 
+    // Combat / Ranking
+    rankingPoints: z.number().int().min(0).default(1000),
+
     // Narrative (bilingual)
     lifeGoal: BilingualTextZ,
     personality: BilingualTextZ,
@@ -107,6 +110,9 @@ export const GladiatorZ = z
 
     // Attributes
     stats: StatsZ,
+
+    // Combat / Ranking
+    rankingPoints: z.number().int().min(0).default(1000),
 
     // Narrative
     lifeGoal: NonEmpty,
