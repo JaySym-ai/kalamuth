@@ -14,7 +14,7 @@ export default async function AuthPage({ params }: { params: Promise<{ locale: s
 
   if (user) {
     try {
-      const { data: ludi, error } = await supabase
+      const { data: ludi } = await supabase
         .from("ludi")
         .select("id")
         .eq("userId", user.id)

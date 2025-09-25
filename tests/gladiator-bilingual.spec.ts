@@ -147,7 +147,7 @@ test.describe('Bilingual Gladiator Display', () => {
     }
   });
 
-  test('switches gladiator content language when locale is changed', async ({ page }) => {
+  test('switches gladiator content language when locale is changed', async () => {
     // This test would verify that switching languages updates the gladiator content
     // However, this requires implementing a language switcher on the gladiators page
     // For now, we'll mark this as TODO

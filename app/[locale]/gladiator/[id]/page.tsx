@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect, notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
-import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
+import { normalizeGladiator } from "@/lib/gladiator/normalize";
 import GladiatorDetailClient from "./GladiatorDetailClient";
 
 export const runtime = "nodejs";

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Users, Clock, Swords, Trophy } from "lucide-react";
+import { Users, Clock, Swords, Trophy, Heart } from "lucide-react";
 import type { CombatQueueEntry } from "@/types/combat";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 

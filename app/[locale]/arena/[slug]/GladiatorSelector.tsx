@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, AlertCircle, Activity, Trophy, Skull, ChevronDown, ChevronUp } from "lucide-react";
+import { Heart, Trophy, Skull, ChevronDown, ChevronUp } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 
 interface Props {
@@ -13,6 +13,10 @@ interface Props {
   translations: {
     selectGladiator: string;
     selectGladiatorDesc: string;
+    showGladiators: string;
+    hideGladiators: string;
+    availableGladiators: string;
+    noAvailableGladiators: string;
     rankingPoints: string;
     healthStatus: string;
     gladiatorInjured: string;
@@ -82,7 +86,7 @@ export default function GladiatorSelector({
         </motion.div>
       ) : (
         <div className="mb-4 p-4 bg-black/40 border border-gray-700/40 rounded-xl text-center text-gray-500">
-          {availableGladiators.length > 0 ? t.selectGladiatorDesc : "No available gladiators"}
+          {availableGladiators.length > 0 ? t.selectGladiatorDesc : t.noAvailableGladiators}
         </div>
       )}
 
@@ -94,7 +98,7 @@ export default function GladiatorSelector({
           data-testid="toggle-gladiator-list"
         >
           <span className="text-amber-300 font-medium">
-            {isExpanded ? "Hide" : "Show"} Gladiators ({availableGladiators.length} available)
+            {isExpanded ? t.hideGladiators : t.showGladiators} Gladiators ({availableGladiators.length} {t.availableGladiators})
           </span>
           {isExpanded ? (
             <ChevronUp className="w-5 h-5 text-amber-400" />

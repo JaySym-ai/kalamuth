@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Swords, Skull, Shield, Users, MapPin, Scroll } from "lucide-react";
@@ -38,6 +38,10 @@ interface Props {
     queueTitle: string;
     selectGladiator: string;
     selectGladiatorDesc: string;
+    showGladiators: string;
+    hideGladiators: string;
+    availableGladiators: string;
+    noAvailableGladiators: string;
     joinQueue: string;
     leaveQueue: string;
     inQueue: string;
@@ -218,6 +222,10 @@ export default function ArenaDetailClient({
                   translations={{
                     selectGladiator: t.selectGladiator,
                     selectGladiatorDesc: t.selectGladiatorDesc,
+                    showGladiators: t.showGladiators,
+                    hideGladiators: t.hideGladiators,
+                    availableGladiators: t.availableGladiators,
+                    noAvailableGladiators: t.noAvailableGladiators,
                     rankingPoints: t.rankingPoints,
                     healthStatus: t.healthStatus,
                     gladiatorInjured: t.gladiatorInjured,
