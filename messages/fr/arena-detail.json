@@ -38,7 +38,11 @@
     "queuedAt": "En file depuis",
     "matchmaking": "Recherche d'adversaire...",
     "activeMatch": "Combat en Direct",
-    "viewMatch": "Regarder le Combat"
+    "viewMatch": "Regarder le Combat",
+    "failedToJoinQueue": "Échec de l'entrée dans la file",
+    "joinedQueueSuccess": "Vous avez rejoint la file avec succès !",
+    "networkError": "Erreur réseau. Veuillez réessayer.",
+    "leftQueueSuccess": "Vous avez quitté la file avec succès"
   },
   "Arenas": {
     "halicara-training-grounds": {

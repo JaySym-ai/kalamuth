@@ -38,7 +38,11 @@
     "queuedAt": "Queued",
     "matchmaking": "Matchmaking in progress...",
     "activeMatch": "Live Combat",
-    "viewMatch": "Watch Fight"
+    "viewMatch": "Watch Fight",
+    "failedToJoinQueue": "Failed to join queue",
+    "joinedQueueSuccess": "Successfully joined the queue!",
+    "networkError": "Network error. Please try again.",
+    "leftQueueSuccess": "Successfully left the queue"
   },
   "Arenas": {
     "halicara-training-grounds": {

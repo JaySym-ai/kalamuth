@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import ServerSelectionClient from "./ServerSelectionClient";
 import { SERVERS } from "@/data/servers";
+import { hasTestServerAccess } from "@/lib/server/test-users";
 import LogoutButton from "../../components/auth/LogoutButton";
 
 export const runtime = "nodejs";
@@ -12,7 +13,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ServerSelectionPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const supabase = createClient(await cookies());
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
   const { data } = await supabase.auth.getUser();
   const user = data.user;
 
@@ -38,6 +40,16 @@ export default async function ServerSelectionPage({ params }: { params: Promise<
   }
 
   const t = await getTranslations("ServerSelection");
+
+  // Filter servers based on user access
+  const userEmail = user.email;
+  const hasTestAccess = hasTestServerAccess(userEmail);
+  const availableServers = SERVERS.filter(server => {
+    // If it's not a testing server, everyone can see it
+    if (!server.testingServer) return true;
+    // If it's a testing server, only authorized users can see it
+    return hasTestAccess;
+  });
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
@@ -81,7 +93,7 @@ export default async function ServerSelectionPage({ params }: { params: Promise<
           </div>
 
           {/* Server Selection Component */}
-          <ServerSelectionClient servers={SERVERS} />
+          <ServerSelectionClient servers={availableServers} />
         </div>
       </div>
     </div>

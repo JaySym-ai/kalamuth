@@ -55,7 +55,7 @@ export function useRealtimeCollection<T extends object>(
     primaryKey = "id",
   } = options;
 
-  const supabaseRef = useRef<ReturnType<typeof createClient>>();
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
   if (!supabaseRef.current) {
     supabaseRef.current = createClient();
   }
@@ -166,7 +166,9 @@ export function useRealtimeCollection<T extends object>(
       setError(fetchError);
     } else {
       setError(null);
-      const mapped = Array.isArray(rows) ? rows.map(transformRow) : [];
+      const mapped = Array.isArray(rows) && rows.every(row => typeof row === 'object' && row !== null && !('error' in row))
+        ? rows.map(transformRow)
+        : [];
       setData(applyOrder(mapped));
     }
     setLoading(false);
@@ -205,10 +207,13 @@ export function useRealtimeCollection<T extends object>(
 
   const channelFilter = useMemo(() => {
     if (!normalizedMatch) return undefined;
-    const entries = Object.entries(normalizedMatch);
-    if (entries.length !== 1) return undefined;
+    const entries = Object.entries(normalizedMatch).filter(([, value]) => value !== null);
+    if (entries.length === 0) return undefined;
+    // Supabase Realtime only supports single filter per channel
+    // If we have multiple conditions, don't use server-side filter
+    // and rely on client-side rowMatches instead
+    if (entries.length > 1) return undefined;
     const [key, value] = entries[0];
-    if (value === null) return undefined;
     return `${key}=eq.${value}`;
   }, [normalizedMatch]);
 

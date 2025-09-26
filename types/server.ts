@@ -41,6 +41,8 @@ export interface GameServer {
   paidOnly?: boolean;
   /** Whether gladiators can die in arena fights (optional). If true, death is possible; if false, no gladiator will ever die. */
   hardcore?: boolean;
+  /** Whether this server is only accessible to specific test users (optional). */
+  testingServer?: boolean;
   /** Gameplay configuration for this world. */
   config: ServerConfig;
   /** ISO timestamp strings (optional metadata). */

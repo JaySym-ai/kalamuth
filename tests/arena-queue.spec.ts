@@ -51,21 +51,32 @@ test.describe('Arena Queue System', () => {
     // Expand and select gladiator
     await page.getByTestId('toggle-gladiator-list').click();
     await page.waitForTimeout(500);
-    
-    const firstGladiator = page.locator('[data-testid^="gladiator-option-"]').first();
-    await firstGladiator.click();
+
+    // Find a healthy gladiator (not injured, sick, or already queued)
+    const healthyGladiator = page.locator('[data-testid^="gladiator-option-"]').filter({
+      hasNot: page.locator(':disabled')
+    }).first();
+
+    await expect(healthyGladiator).toBeVisible();
+    await healthyGladiator.click();
 
     // Join queue
     const joinButton = page.getByTestId('join-queue-button');
     await expect(joinButton).toBeVisible();
     await joinButton.click();
 
-    // Wait for queue update
-    await page.waitForTimeout(1000);
+    // Wait for success message or queue update
+    await page.waitForSelector('text=/Successfully joined the queue|Position in Queue/', {
+      timeout: 5000
+    });
 
     // Verify gladiator appears in queue
-    await expect(page.getByText('Position in Queue')).toBeVisible();
-    await expect(page.getByTestId('leave-queue-button')).toBeVisible();
+    const leaveButton = page.getByTestId('leave-queue-button');
+    await expect(leaveButton).toBeVisible();
+
+    // Verify queue shows at least one entry
+    const queueEntry = page.locator('[data-testid^="queue-entry-"]').first();
+    await expect(queueEntry).toBeVisible();
   });
 
   test('can leave the queue', async ({ page }) => {
@@ -75,17 +86,29 @@ test.describe('Arena Queue System', () => {
     // Join queue first
     await page.getByTestId('toggle-gladiator-list').click();
     await page.waitForTimeout(500);
-    await page.locator('[data-testid^="gladiator-option-"]').first().click();
+
+    // Find a healthy gladiator
+    const healthyGladiator = page.locator('[data-testid^="gladiator-option-"]').filter({
+      hasNot: page.locator(':disabled')
+    }).first();
+    await healthyGladiator.click();
+
     await page.getByTestId('join-queue-button').click();
-    await page.waitForTimeout(1000);
+
+    // Wait for join to complete
+    await page.waitForSelector('[data-testid="leave-queue-button"]', {
+      timeout: 5000
+    });
 
     // Leave queue
     const leaveButton = page.getByTestId('leave-queue-button');
     await expect(leaveButton).toBeVisible();
     await leaveButton.click();
 
-    // Wait for queue update
-    await page.waitForTimeout(1000);
+    // Wait for success message or button change
+    await page.waitForSelector('text=/Successfully left the queue|Select Your Gladiator/', {
+      timeout: 5000
+    });
 
     // Verify back to selection state
     await expect(page.getByText('Select Your Gladiator')).toBeVisible();
@@ -99,13 +122,27 @@ test.describe('Arena Queue System', () => {
     // Join queue
     await page.getByTestId('toggle-gladiator-list').click();
     await page.waitForTimeout(500);
-    await page.locator('[data-testid^="gladiator-option-"]').first().click();
-    await page.getByTestId('join-queue-button').click();
-    await page.waitForTimeout(1000);
 
-    // Check position is displayed
-    const positionText = page.getByText('Position in Queue');
-    await expect(positionText).toBeVisible();
+    // Find a healthy gladiator
+    const healthyGladiator = page.locator('[data-testid^="gladiator-option-"]').filter({
+      hasNot: page.locator(':disabled')
+    }).first();
+    await healthyGladiator.click();
+
+    await page.getByTestId('join-queue-button').click();
+
+    // Wait for queue entry to appear
+    await page.waitForSelector('[data-testid^="queue-entry-"]', {
+      timeout: 5000
+    });
+
+    // Check that queue entry is visible with position number
+    const queueEntry = page.locator('[data-testid^="queue-entry-"]').first();
+    await expect(queueEntry).toBeVisible();
+
+    // The position badge should show "1" for first in queue
+    const positionBadge = queueEntry.locator('div').filter({ hasText: /^1$/ });
+    await expect(positionBadge).toBeVisible();
     
     // Should show position number
     await expect(page.locator('text=/#[0-9]+/')).toBeVisible();

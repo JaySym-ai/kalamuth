@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Swords, Skull, Shield, Users, MapPin, Scroll } from "lucide-react";
@@ -61,6 +61,10 @@ interface Props {
     matchmaking: string;
     activeMatch: string;
     viewMatch: string;
+    failedToJoinQueue: string;
+    joinedQueueSuccess: string;
+    networkError: string;
+    leftQueueSuccess: string;
   };
 }
 
@@ -82,9 +86,10 @@ export default function ArenaDetailClient({
   const [isJoining, setIsJoining] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Real-time queue subscription
-  const { data: queueData } = useRealtimeCollection<CombatQueueEntry>({
+  const { data: queueData, refresh: refreshQueue } = useRealtimeCollection<CombatQueueEntry>({
     table: "combat_queue",
     select: "*",
     match: { arenaSlug, serverId, status: "waiting" },
@@ -105,11 +110,27 @@ export default function ArenaDetailClient({
 
   const queuedGladiatorIds = new Set(queueData.map(entry => entry.gladiatorId));
 
+  // Clear messages after a delay
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   const handleJoinQueue = async () => {
     if (!selectedGladiatorId) return;
 
     setIsJoining(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const response = await fetch("/api/arena/queue", {
@@ -125,15 +146,19 @@ export default function ArenaDetailClient({
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Failed to join queue");
+        setError(data.error || t.failedToJoinQueue);
         return;
       }
 
-      // Success - clear selection
+      // Success - clear selection and show success message
       setSelectedGladiatorId(null);
+      setSuccessMessage(t.joinedQueueSuccess);
+
+      // Refresh the queue to ensure we have the latest data
+      await refreshQueue();
     } catch (err) {
       console.error("Error joining queue:", err);
-      setError("Network error");
+      setError(t.networkError);
     } finally {
       setIsJoining(false);
     }
@@ -144,6 +169,7 @@ export default function ArenaDetailClient({
 
     setIsLeaving(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const response = await fetch(`/api/arena/queue?queueId=${userQueueEntry.id}`, {
@@ -152,12 +178,18 @@ export default function ArenaDetailClient({
 
       if (!response.ok) {
         const data = await response.json();
-        setError(data.error || "Failed to leave queue");
+        setError(data.error || t.failedToJoinQueue);
         return;
       }
+
+      // Success - show success message
+      setSuccessMessage(t.leftQueueSuccess);
+
+      // Refresh the queue to ensure we have the latest data
+      await refreshQueue();
     } catch (err) {
       console.error("Error leaving queue:", err);
-      setError("Network error");
+      setError(t.networkError);
     } finally {
       setIsLeaving(false);
     }
@@ -258,21 +290,53 @@ export default function ArenaDetailClient({
                     {error}
                   </motion.div>
                 )}
+
+                {successMessage && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-3 p-3 bg-green-900/20 border border-green-700/50 rounded-lg text-green-300 text-sm"
+                  >
+                    {successMessage}
+                  </motion.div>
+                )}
               </div>
             )}
 
             {/* Leave Queue Button */}
             {userQueueEntry && (
-              <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={handleLeaveQueue}
-                disabled={isLeaving}
-                className="w-full mb-6 h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                data-testid="leave-queue-button"
-              >
-                {isLeaving ? "Leaving..." : t.leaveQueue}
-              </motion.button>
+              <div className="mb-6">
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  onClick={handleLeaveQueue}
+                  disabled={isLeaving}
+                  className="w-full h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  data-testid="leave-queue-button"
+                >
+                  {isLeaving ? t.matchmaking : t.leaveQueue}
+                </motion.button>
+
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-3 p-3 bg-red-900/20 border border-red-700/50 rounded-lg text-red-300 text-sm"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+
+                {successMessage && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="mt-3 p-3 bg-green-900/20 border border-green-700/50 rounded-lg text-green-300 text-sm"
+                  >
+                    {successMessage}
+                  </motion.div>
+                )}
+              </div>
             )}
 
             {/* Queue Status */}

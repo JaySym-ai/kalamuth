@@ -42,6 +42,25 @@ export const SERVERS: GameServer[] = [
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
+  {
+    id: "test-server-1",
+    name: "Test Server 1", // Will be replaced by translation key
+    description: "Restricted testing environment for authorized users only.", // Will be replaced by translation key
+    status: "new",
+    paidOnly: false,
+    hardcore: false,
+    testingServer: true,
+    config: {
+      gladiatorHealthMin: 50,
+      gladiatorHealthMax: 500,
+      gladiatorStatMin: 20,
+      gladiatorStatMax: 200,
+      ludusMaxGladiators: 10,
+      initialGladiatorsPerLudus: 5,
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
 ];
 
 /**

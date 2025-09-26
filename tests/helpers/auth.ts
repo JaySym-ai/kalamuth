@@ -194,7 +194,7 @@ export async function waitForAuthState(page: Page, authenticated: boolean = true
  */
 export async function testApiAuthentication(page: Page, shouldBeAuthenticated: boolean = true) {
   const response = await page.request.get('/api/user');
-  
+
   if (shouldBeAuthenticated) {
     expect(response.status()).toBe(200);
     const data = await response.json();
@@ -202,4 +202,20 @@ export async function testApiAuthentication(page: Page, shouldBeAuthenticated: b
   } else {
     expect(response.status()).toBe(401);
   }
+}
+
+/**
+ * Helper function to setup test user (alias for loginUser)
+ */
+export async function setupTestUser(page: Page, email: string, password: string) {
+  await loginUser(page, email, password);
+}
+
+/**
+ * Helper function to cleanup test user (currently just logs out)
+ */
+export async function cleanupTestUser(page: Page) {
+  // For now, we just clear the auth state
+  // In the future, we might want to delete the test user from the database
+  await clearAuthState(page);
 }

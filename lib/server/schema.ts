@@ -30,6 +30,7 @@ export const GameServerZ = z
     description: z.string().trim().optional(),
     region: z.string().trim().optional(),
     status: z.enum(["online", "maintenance", "offline"]).optional(),
+    testingServer: z.boolean().optional(),
     config: ServerConfigZ,
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
