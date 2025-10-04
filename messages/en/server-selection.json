@@ -27,6 +27,10 @@
       "alpha-2": {
         "name": "Alpha 2",
         "description": "Safe testing world where gladiators cannot die in combat."
+      },
+      "test-server-1": {
+        "name": "Test Server 1",
+        "description": "Restricted testing environment for authorized users only."
       }
     }
   }

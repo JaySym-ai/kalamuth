@@ -4,6 +4,15 @@
  */
 export const TEST_USER_EMAILS = [
   "test1@hotmail.com",
+  "test2@hotmail.com",
+  "test3@hotmail.com",
+  "test4@hotmail.com",
+  "test5@hotmail.com",
+  "test6@hotmail.com",
+  "test7@hotmail.com",
+  "test8@hotmail.com",
+  "test9@hotmail.com",
+  "test10@hotmail.com",
   "testplay@kalamuth.com",
 ] as const;
 

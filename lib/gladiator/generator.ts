@@ -64,7 +64,7 @@ function assertUniqueGladiatorNames(gladiators: Gladiator[]) {
 
 
 
-const MODEL_JSON_STRUCTURED = "x-ai/grok-4-fast:free";
+const MODEL_JSON_STRUCTURED = "google/gemini-2.5-flash-lite";
 
 async function llmGenerateRaw(
   messages: { role: "system" | "user"; content: string }[],
