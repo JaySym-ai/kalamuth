@@ -19,7 +19,10 @@ interface Props {
   cityInhabitants: number;
   deathEnabled: boolean;
   serverId: string;
+  ludusId: string | null;
   gladiators: NormalizedGladiator[];
+  initialArenaQueue: CombatQueueEntry[];
+  initialUserQueue: CombatQueueEntry[];
   locale: string;
   translations: {
     backToDashboard: string;
@@ -77,7 +80,10 @@ export default function ArenaDetailClient({
   cityInhabitants,
   deathEnabled,
   serverId,
+  ludusId,
   gladiators,
+  initialArenaQueue,
+  initialUserQueue,
   locale,
   translations: t
 }: Props) {
@@ -89,12 +95,33 @@ export default function ArenaDetailClient({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Real-time queue subscription
-  const { data: queueData, refresh: refreshQueue } = useRealtimeCollection<CombatQueueEntry>({
+  const {
+    data: queueData,
+    refresh: refreshQueue,
+    mutate: mutateQueue,
+  } = useRealtimeCollection<CombatQueueEntry>({
     table: "combat_queue",
     select: "*",
     match: { arenaSlug, serverId, status: "waiting" },
-    initialData: [],
+    initialData: initialArenaQueue,
     orderBy: { column: "queuedAt", ascending: true },
+  });
+
+  const userQueueMatch = ludusId
+    ? { serverId, status: "waiting", ludusId }
+    : undefined;
+
+  const {
+    data: userQueueData,
+    refresh: refreshUserQueue,
+    mutate: mutateUserQueue,
+  } = useRealtimeCollection<CombatQueueEntry>({
+    table: "combat_queue",
+    select: "*",
+    match: userQueueMatch,
+    initialData: ludusId ? initialUserQueue : [],
+    orderBy: { column: "queuedAt", ascending: true },
+    fetchOnMount: Boolean(ludusId),
   });
 
   // Enrich queue with gladiator data
@@ -105,10 +132,14 @@ export default function ArenaDetailClient({
 
   // Check if user has a gladiator in queue
   const userQueueEntry = queueData.find(entry =>
-    gladiators.some(g => g.id === entry.gladiatorId)
+    entry.arenaSlug === arenaSlug && gladiators.some(g => g.id === entry.gladiatorId)
+  ) ?? userQueueData.find(entry =>
+    entry.arenaSlug === arenaSlug && gladiators.some(g => g.id === entry.gladiatorId)
   );
 
-  const queuedGladiatorIds = new Set(queueData.map(entry => entry.gladiatorId));
+  const queuedGladiatorIds = new Set(
+    [...queueData, ...userQueueData].map(entry => entry.gladiatorId)
+  );
 
   // Clear messages after a delay
   useEffect(() => {
@@ -154,8 +185,35 @@ export default function ArenaDetailClient({
       setSelectedGladiatorId(null);
       setSuccessMessage(t.joinedQueueSuccess);
 
+      if (data.queueEntry) {
+        mutateQueue((current) => {
+          const idx = current.findIndex(entry => entry.id === data.queueEntry.id);
+          if (idx >= 0) {
+            current[idx] = data.queueEntry;
+            return current;
+          }
+          current.push(data.queueEntry);
+          return current;
+        });
+
+        if (ludusId) {
+          mutateUserQueue((current) => {
+            const idx = current.findIndex(entry => entry.id === data.queueEntry.id);
+            if (idx >= 0) {
+              current[idx] = data.queueEntry;
+              return current;
+            }
+            current.push(data.queueEntry);
+            return current;
+          });
+        }
+      }
+
       // Refresh the queue to ensure we have the latest data
       await refreshQueue();
+      if (ludusId) {
+        await refreshUserQueue();
+      }
     } catch (err) {
       console.error("Error joining queue:", err);
       setError(t.networkError);
@@ -185,8 +243,16 @@ export default function ArenaDetailClient({
       // Success - show success message
       setSuccessMessage(t.leftQueueSuccess);
 
+      mutateQueue((current) => current.filter(entry => entry.id !== userQueueEntry.id));
+      if (ludusId) {
+        mutateUserQueue((current) => current.filter(entry => entry.id !== userQueueEntry.id));
+      }
+
       // Refresh the queue to ensure we have the latest data
       await refreshQueue();
+      if (ludusId) {
+        await refreshUserQueue();
+      }
     } catch (err) {
       console.error("Error leaving queue:", err);
       setError(t.networkError);

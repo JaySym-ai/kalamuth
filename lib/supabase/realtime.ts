@@ -33,6 +33,7 @@ interface RealtimeCollectionResult<T extends object> {
   loading: boolean;
   error: Error | null;
   refresh: () => Promise<void>;
+  mutate: (updater: (collection: T[]) => T[]) => void;
 }
 
 interface RealtimeRowOptions<T extends object>
@@ -182,6 +183,17 @@ export function useRealtimeCollection<T extends object>(
     refresh();
   }, [fetchOnMount, refresh, matchKey, orderKey]);
 
+  const mutate = useCallback(
+    (updater: (collection: T[]) => T[]) => {
+      setData((current) => {
+        const base = Array.isArray(current) ? [...current] : [];
+        const next = updater(base);
+        return applyOrder(next);
+      });
+    },
+    [applyOrder]
+  );
+
   const getPrimaryKeyValue = useCallback(
     (row: RowRecord | null | undefined) => {
       if (!row) return undefined;
@@ -280,6 +292,7 @@ export function useRealtimeCollection<T extends object>(
     loading,
     error,
     refresh,
+    mutate,
   };
 }
 
@@ -297,4 +310,3 @@ export function useRealtimeRow<T extends object>(options: RealtimeRowOptions<T>)
     refresh,
   };
 }
-

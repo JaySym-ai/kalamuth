@@ -6,6 +6,7 @@ import { ARENAS } from "@/data/arenas";
 import { CITIES } from "@/data/cities";
 import ArenaDetailClient from "./ArenaDetailClient";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
+import type { CombatQueueEntry } from "@/types/combat";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,9 +46,13 @@ export default async function ArenaDetailPage({
 
   let gladiators: NormalizedGladiator[] = [];
   let serverId = "";
+  let ludusId: string | null = null;
+  let initialArenaQueue: CombatQueueEntry[] = [];
+  let initialUserQueue: CombatQueueEntry[] = [];
 
   if (ludus) {
     serverId = ludus.serverId as string;
+    ludusId = ludus.id as string;
 
     // Fetch user's gladiators
     const { data: glads } = await supabase
@@ -61,6 +66,30 @@ export default async function ArenaDetailPage({
       gladiators = glads.map(doc =>
         normalizeGladiator(doc.id as string, doc as unknown as Record<string, unknown>, locale)
       );
+    }
+
+    const { data: arenaQueue } = await supabase
+      .from("combat_queue")
+      .select("*")
+      .eq("arenaSlug", slug)
+      .eq("serverId", serverId)
+      .eq("status", "waiting")
+      .order("queuedAt", { ascending: true });
+
+    if (arenaQueue) {
+      initialArenaQueue = arenaQueue as CombatQueueEntry[];
+    }
+
+    const { data: userQueue } = await supabase
+      .from("combat_queue")
+      .select("*")
+      .eq("ludusId", ludus.id)
+      .eq("serverId", serverId)
+      .eq("status", "waiting")
+      .order("queuedAt", { ascending: true });
+
+    if (userQueue) {
+      initialUserQueue = userQueue as CombatQueueEntry[];
     }
   }
 
@@ -88,7 +117,10 @@ export default async function ArenaDetailPage({
         cityInhabitants={city?.inhabitants || 0}
         deathEnabled={arena.deathEnabled}
         serverId={serverId}
+        ludusId={ludusId}
         gladiators={gladiators}
+        initialArenaQueue={initialArenaQueue}
+        initialUserQueue={initialUserQueue}
         locale={locale}
         translations={{
           backToDashboard: t("backToDashboard"),
@@ -130,6 +162,10 @@ export default async function ArenaDetailPage({
           matchmaking: t("matchmaking"),
           activeMatch: t("activeMatch"),
           viewMatch: t("viewMatch"),
+          failedToJoinQueue: t("failedToJoinQueue"),
+          joinedQueueSuccess: t("joinedQueueSuccess"),
+          networkError: t("networkError"),
+          leftQueueSuccess: t("leftQueueSuccess"),
         }}
       />
     </main>
