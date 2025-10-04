@@ -6,7 +6,7 @@ import { ARENAS } from "@/data/arenas";
 import { CITIES } from "@/data/cities";
 import ArenaDetailClient from "./ArenaDetailClient";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
-import type { CombatQueueEntry } from "@/types/combat";
+import type { CombatQueueEntry, CombatMatch } from "@/types/combat";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,6 +49,8 @@ export default async function ArenaDetailPage({
   let ludusId: string | null = null;
   let initialArenaQueue: CombatQueueEntry[] = [];
   let initialUserQueue: CombatQueueEntry[] = [];
+  let initialActiveMatches: CombatMatch[] = [];
+
 
   if (ludus) {
     serverId = ludus.serverId as string;
@@ -88,6 +90,18 @@ export default async function ArenaDetailPage({
       .eq("status", "waiting")
       .order("queuedAt", { ascending: true });
 
+
+    const { data: activeMatches } = await supabase
+      .from("combat_matches")
+      .select("*")
+      .eq("arenaSlug", slug)
+      .eq("serverId", serverId)
+      .in("status", ["pending", "in_progress"]);
+
+    if (activeMatches) {
+      initialActiveMatches = activeMatches as CombatMatch[];
+    }
+
     if (userQueue) {
       initialUserQueue = userQueue as CombatQueueEntry[];
     }
@@ -121,6 +135,7 @@ export default async function ArenaDetailPage({
         gladiators={gladiators}
         initialArenaQueue={initialArenaQueue}
         initialUserQueue={initialUserQueue}
+        initialActiveMatches={initialActiveMatches}
         locale={locale}
         translations={{
           backToDashboard: t("backToDashboard"),

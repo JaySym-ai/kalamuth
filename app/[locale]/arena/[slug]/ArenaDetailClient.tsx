@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Swords, Skull, Shield, Users, MapPin, Scroll } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
-import type { CombatQueueEntry } from "@/types/combat";
+import type { CombatQueueEntry, CombatMatch } from "@/types/combat";
 import { useRealtimeCollection } from "@/lib/supabase/realtime";
 import GladiatorSelector from "./GladiatorSelector";
 import QueueStatus from "./QueueStatus";
@@ -23,6 +23,8 @@ interface Props {
   gladiators: NormalizedGladiator[];
   initialArenaQueue: CombatQueueEntry[];
   initialUserQueue: CombatQueueEntry[];
+  initialActiveMatches: CombatMatch[];
+
   locale: string;
   translations: {
     backToDashboard: string;
@@ -84,6 +86,7 @@ export default function ArenaDetailClient({
   gladiators,
   initialArenaQueue,
   initialUserQueue,
+  initialActiveMatches,
   locale,
   translations: t
 }: Props) {
@@ -91,6 +94,17 @@ export default function ArenaDetailClient({
   const [selectedGladiatorId, setSelectedGladiatorId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+
+  const userGladiatorIds = useMemo(
+    () => new Set(gladiators.map((g) => g.id)),
+    [gladiators],
+  );
+
+  const matchFilters = useMemo(
+    () => (serverId ? { arenaSlug, serverId } : { id: "__never__" }),
+    [arenaSlug, serverId],
+  );
+
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -124,6 +138,21 @@ export default function ArenaDetailClient({
     fetchOnMount: Boolean(ludusId),
   });
 
+  const { data: matchesData } = useRealtimeCollection<CombatMatch>({
+    table: "combat_matches",
+    select: "*",
+    match: matchFilters,
+    initialData: initialActiveMatches,
+    orderBy: { column: "matchedAt", ascending: false },
+    fetchOnMount: Boolean(serverId),
+  });
+
+  const userHasActiveMatch = matchesData.some(
+    (match) =>
+      (match.status === "pending" || match.status === "in_progress") &&
+      (userGladiatorIds.has(match.gladiator1Id) || userGladiatorIds.has(match.gladiator2Id)),
+  );
+
   // Enrich queue with gladiator data
   const enrichedQueue = queueData.map(entry => {
     const gladiator = gladiators.find(g => g.id === entry.gladiatorId);
@@ -140,6 +169,9 @@ export default function ArenaDetailClient({
   const queuedGladiatorIds = new Set(
     [...queueData, ...userQueueData].map(entry => entry.gladiatorId)
   );
+
+  const shouldAutoExpandGladiatorList =
+    !userQueueEntry && !userHasActiveMatch && gladiators.length > 0;
 
   // Clear messages after a delay
   useEffect(() => {
@@ -317,6 +349,7 @@ export default function ArenaDetailClient({
                   selectedGladiatorId={selectedGladiatorId}
                   onSelect={setSelectedGladiatorId}
                   queuedGladiatorIds={queuedGladiatorIds}
+                  initiallyExpanded={shouldAutoExpandGladiatorList}
                   translations={{
                     selectGladiator: t.selectGladiator,
                     selectGladiatorDesc: t.selectGladiatorDesc,

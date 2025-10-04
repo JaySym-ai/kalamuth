@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Trophy, Skull, ChevronDown, ChevronUp } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
@@ -34,6 +34,8 @@ interface Props {
     gladiatorDead: string;
     gladiatorAlreadyQueued: string;
   };
+  initiallyExpanded?: boolean;
+
 }
 
 export default function GladiatorSelector({
@@ -42,8 +44,15 @@ export default function GladiatorSelector({
   onSelect,
   queuedGladiatorIds,
   translations: t,
+  initiallyExpanded = false,
 }: Props) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
+
+  useEffect(() => {
+    if (initiallyExpanded && !isExpanded) {
+      setIsExpanded(true);
+    }
+  }, [initiallyExpanded, isExpanded]);
 
   const getGladiatorStatus = (gladiator: NormalizedGladiator): GladiatorStatus => {
     if (!gladiator.alive) {
