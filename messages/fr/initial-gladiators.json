@@ -47,6 +47,9 @@
     "stillNeed": "Il en manque {count}",
     "startFailed": "Échec de la génération. Réessayer ?",
     "jobInProgress": "Génération en cours...",
-    "jobError": "Certains gladiateurs n'ont pas pu être générés. Vous pouvez réessayer."
+    "jobError": "Certains gladiateurs n'ont pas pu être générés. Vous pouvez réessayer.",
+    "progressLabel": "Progression de la génération",
+    "progressStatus": "{current} sur {total} prêts",
+    "streamingHint": "Les gladiateurs apparaissent dès qu'ils sont forgés."
   }
 }

@@ -96,17 +96,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verify gladiator is alive and healthy enough to fight
+    // Verify gladiator is alive
     if (!gladiator.alive) {
       return NextResponse.json(
         { error: "Gladiator is not alive" },
-        { status: 400 }
-      );
-    }
-
-    if (gladiator.injury || gladiator.sickness) {
-      return NextResponse.json(
-        { error: "Gladiator is injured or sick" },
         { status: 400 }
       );
     }

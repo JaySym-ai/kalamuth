@@ -47,6 +47,9 @@
     "stillNeed": "Still need {count}",
     "startFailed": "Generation failed. Retry?",
     "jobInProgress": "Generation in progress...",
-    "jobError": "Some gladiators failed to generate. You can try again."
+    "jobError": "Some gladiators failed to generate. You can try again.",
+    "progressLabel": "Generation progress",
+    "progressStatus": "{current} of {total} ready",
+    "streamingHint": "New gladiators appear the moment they're forged."
   }
 }

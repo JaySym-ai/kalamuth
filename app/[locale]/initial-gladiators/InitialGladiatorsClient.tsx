@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,6 +26,8 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
   const [genError, setGenError] = useState<string | null>(null);
   const [autoStarted, setAutoStarted] = useState(false);
   const jobStatus: string | null = null;
+  const [recentlyAddedIds, setRecentlyAddedIds] = useState<string[]>([]);
+  const seenIdsRef = useRef<Set<string>>(new Set(gladiators.map((g) => g.id)));
 
 
   const { data: realtimeGladiators } = useRealtimeCollection<NormalizedGladiator>({
@@ -57,6 +59,39 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
     }
   }, [list, selectedGladiator]);
 
+  useEffect(() => {
+    if (!list.length) return;
+
+    const known = seenIdsRef.current;
+    const newlyAdded = list.filter((gladiator) => !known.has(gladiator.id));
+    if (!newlyAdded.length) return;
+
+    const timers: Array<ReturnType<typeof setTimeout>> = [];
+
+    setRecentlyAddedIds((prev) => {
+      const next = [...prev];
+      newlyAdded.forEach((glad) => {
+        if (!next.includes(glad.id)) {
+          next.push(glad.id);
+        }
+      });
+      return next;
+    });
+
+    newlyAdded.forEach((glad) => {
+      known.add(glad.id);
+      timers.push(
+        setTimeout(() => {
+          setRecentlyAddedIds((prev) => prev.filter((id) => id !== glad.id));
+        }, 2600)
+      );
+    });
+
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+    };
+  }, [list]);
+
   // Auto-start gladiator generation on mount if no gladiators exist
   useEffect(() => {
     if (autoStarted || list.length > 0) return;
@@ -80,6 +115,8 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
 
 
   const currentCount = list.length;
+  const progress = minRequired > 0 ? Math.min(1, currentCount / minRequired) : 1;
+  const progressPercent = Math.max(0, Math.min(100, progress * 100));
 
   async function handleGenerateMissing() {
     try {
@@ -127,8 +164,8 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
           className="px-4 pb-[max(env(safe-area-inset-bottom),16px)] pt-4 max-w-screen-sm mx-auto mb-6 bg-amber-900/10 border border-amber-700/30 rounded-lg"
           data-testid="generating-indicator"
         >
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex-1">
               <p className="text-sm text-amber-300 font-medium flex items-center gap-2" role="status" aria-live="polite">
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -146,11 +183,33 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
               {genError && (
                 <p className="text-xs text-red-400 mt-1">{t("startFailed")}</p>
               )}
+              <div className="mt-4" data-testid="generation-progress">
+                <div className="flex items-center justify-between text-[11px] text-amber-100/80 mb-1">
+                  <span>{t("progressLabel")}</span>
+                  <span className="font-semibold text-amber-100">{t("progressStatus", { current: currentCount, total: minRequired })}</span>
+                </div>
+                <div
+                  className="h-2 w-full rounded-full bg-amber-900/30 overflow-hidden"
+                  role="progressbar"
+                  aria-label={t("progressLabel")}
+                  aria-valuemin={0}
+                  aria-valuemax={minRequired}
+                  aria-valuenow={currentCount}
+                >
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-amber-500 via-red-500 to-red-600"
+                    initial={false}
+                    animate={{ width: `${progressPercent}%` }}
+                    transition={{ type: "spring", stiffness: 150, damping: 20 }}
+                  />
+                </div>
+                <p className="mt-2 text-[11px] text-amber-100/70">{t("streamingHint")}</p>
+              </div>
             </div>
             <button
               onClick={handleGenerateMissing}
               disabled={generating || jobStatus === 'pending'}
-              className="h-12 px-4 rounded-md bg-gradient-to-r from-amber-600 to-red-600 text-white text-sm font-semibold disabled:opacity-60"
+              className="h-12 px-4 rounded-md bg-gradient-to-r from-amber-600 to-red-600 text-white text-sm font-semibold disabled:opacity-60 self-start sm:self-auto"
               data-testid="generate-remaining"
             >
               {t("generateRemaining")}
@@ -196,21 +255,29 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
             );
           }
 
+          const isRecentlyAdded = recentlyAddedIds.includes(gladiator.id);
+
           // Render gladiator card for filled slot
           return (
             <motion.div
               key={gladiator.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.2 }}
-              className="relative"
+              layout
+              layoutId={gladiator.id}
+              initial={{ opacity: 0, y: 16, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: "spring", stiffness: 140, damping: 18, delay: isRecentlyAdded ? 0 : idx * 0.08 }}
+              className={`relative ${isRecentlyAdded ? "animate-[pulse_1.8s_ease-in-out_1] drop-shadow-[0_0_18px_rgba(251,191,36,0.25)]" : ""}`}
             >
               <button
                 onClick={() => setSelectedGladiator(gladiator)}
                 className="w-full text-left group"
                 data-testid={`gladiator-${gladiator.id}`}
               >
-                <div className="bg-gradient-to-b from-zinc-900/90 to-black/90 backdrop-blur-sm border border-red-900/30 rounded-xl overflow-hidden hover:border-amber-600/50 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-900/20">
+                <div
+                  className={`bg-gradient-to-b from-zinc-900/90 to-black/90 backdrop-blur-sm rounded-xl overflow-hidden transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-900/20 border hover:border-amber-600/50 ${
+                    isRecentlyAdded ? "border-amber-400/70 shadow-[0_0_24px_rgba(248,191,73,0.2)]" : "border-red-900/30"
+                  }`}
+                >
                   {/* Card Header with Avatar */}
                   <div className="relative bg-gradient-to-r from-red-900/20 to-amber-900/20 p-4 border-b border-red-900/20">
                     <div className="flex items-start justify-between">

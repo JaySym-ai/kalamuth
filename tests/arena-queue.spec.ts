@@ -148,7 +148,7 @@ test.describe('Arena Queue System', () => {
     await expect(page.locator('text=/#[0-9]+/')).toBeVisible();
   });
 
-  test('prevents queueing injured gladiators', async ({ page }) => {
+  test('allows queueing injured or sick gladiators', async ({ page }) => {
     await page.goto('/en/arena/halicara-training-grounds');
     await page.waitForLoadState('networkidle');
 
@@ -156,14 +156,30 @@ test.describe('Arena Queue System', () => {
     await page.getByTestId('toggle-gladiator-list').click();
     await page.waitForTimeout(500);
 
-    // Look for injured gladiator (if any)
-    const injuredGladiator = page.locator('[data-testid^="gladiator-option-"]', {
-      has: page.locator('text=Injured')
+    // Look for injured or sick gladiator (if any)
+    const injuredOrSickGladiator = page.locator('[data-testid^="gladiator-option-"]', {
+      has: page.locator('text=/Injured|Sick/')
     }).first();
 
-    if (await injuredGladiator.count() > 0) {
-      // Verify it's disabled
-      await expect(injuredGladiator).toBeDisabled();
+    if (await injuredOrSickGladiator.count() > 0) {
+      await expect(injuredOrSickGladiator).toBeEnabled();
+      await injuredOrSickGladiator.click();
+
+      const joinButton = page.getByTestId('join-queue-button');
+      await expect(joinButton).toBeVisible();
+      await joinButton.click();
+
+      await page.waitForSelector('[data-testid="leave-queue-button"]', {
+        timeout: 5000
+      });
+
+      const leaveButton = page.getByTestId('leave-queue-button');
+      await expect(leaveButton).toBeVisible();
+      await leaveButton.click();
+
+      await page.waitForSelector('text=/Successfully left the queue|Select Your Gladiator/', {
+        timeout: 5000
+      });
     }
   });
 

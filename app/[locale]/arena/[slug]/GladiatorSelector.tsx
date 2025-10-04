@@ -5,6 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Trophy, Skull, ChevronDown, ChevronUp } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 
+
+type GladiatorStatus = {
+  label: string;
+  color: string;
+  badgeClass: string;
+  borderClass: string;
+  disabled: boolean;
+  variant: "healthy" | "injured" | "sick" | "queued" | "critical";
+};
+
 interface Props {
   gladiators: NormalizedGladiator[];
   selectedGladiatorId: string | null;
@@ -35,12 +45,59 @@ export default function GladiatorSelector({
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getGladiatorStatus = (gladiator: NormalizedGladiator) => {
-    if (!gladiator.alive) return { label: t.gladiatorDead, color: 'text-gray-500', disabled: true };
-    if (queuedGladiatorIds.has(gladiator.id)) return { label: t.gladiatorAlreadyQueued, color: 'text-blue-400', disabled: true };
-    if (gladiator.injury) return { label: t.gladiatorInjured, color: 'text-orange-400', disabled: true };
-    if (gladiator.sickness) return { label: t.gladiatorSick, color: 'text-yellow-400', disabled: true };
-    return { label: t.healthStatus, color: 'text-green-400', disabled: false };
+  const getGladiatorStatus = (gladiator: NormalizedGladiator): GladiatorStatus => {
+    if (!gladiator.alive) {
+      return {
+        label: t.gladiatorDead,
+        color: "text-gray-300",
+        badgeClass: "bg-gray-800/60",
+        borderClass: "border-gray-700/50",
+        disabled: true,
+        variant: "critical",
+      };
+    }
+
+    if (queuedGladiatorIds.has(gladiator.id)) {
+      return {
+        label: t.gladiatorAlreadyQueued,
+        color: "text-blue-300",
+        badgeClass: "bg-blue-900/40",
+        borderClass: "border-blue-800/40",
+        disabled: true,
+        variant: "queued",
+      };
+    }
+
+    if (gladiator.injury) {
+      return {
+        label: t.gladiatorInjured,
+        color: "text-red-300",
+        badgeClass: "bg-red-900/30",
+        borderClass: "border-red-600/60 hover:border-red-500/80 focus-visible:border-red-400/80",
+        disabled: false,
+        variant: "injured",
+      };
+    }
+
+    if (gladiator.sickness) {
+      return {
+        label: t.gladiatorSick,
+        color: "text-blue-300",
+        badgeClass: "bg-blue-900/30",
+        borderClass: "border-blue-600/60 hover:border-blue-500/80 focus-visible:border-blue-400/80",
+        disabled: false,
+        variant: "sick",
+      };
+    }
+
+    return {
+      label: t.healthStatus,
+      color: "text-emerald-300",
+      badgeClass: "bg-emerald-900/20",
+      borderClass: "border-emerald-600/40 hover:border-emerald-500/60 focus-visible:border-emerald-400/80",
+      disabled: false,
+      variant: "healthy",
+    };
   };
 
   const selectedGladiator = gladiators.find(g => g.id === selectedGladiatorId);
@@ -122,6 +179,30 @@ export default function GladiatorSelector({
               {gladiators.map((gladiator) => {
                 const status = getGladiatorStatus(gladiator);
                 const isSelected = gladiator.id === selectedGladiatorId;
+                const buttonStateClasses = (() => {
+                  if (isSelected) {
+                    return "bg-amber-900/30 border-amber-600/60 shadow-lg shadow-amber-900/20";
+                  }
+
+                  if (status.variant === "critical") {
+                    return `bg-gray-900/20 ${status.borderClass} opacity-50 cursor-not-allowed`;
+                  }
+
+                  if (status.variant === "queued") {
+                    return `bg-gray-900/20 ${status.borderClass} opacity-50 cursor-not-allowed`;
+                  }
+
+                  if (status.variant === "injured") {
+                    return `bg-black/40 ${status.borderClass} hover:bg-red-950/20`;
+                  }
+
+                  if (status.variant === "sick") {
+                    return `bg-black/40 ${status.borderClass} hover:bg-blue-950/20`;
+                  }
+
+                  return `bg-black/40 ${status.borderClass} hover:bg-emerald-900/10`;
+                })();
+                const showBadge = status.variant !== "healthy";
 
                 return (
                   <motion.button
@@ -130,13 +211,7 @@ export default function GladiatorSelector({
                     animate={{ opacity: 1, x: 0 }}
                     onClick={() => !status.disabled && onSelect(gladiator.id)}
                     disabled={status.disabled}
-                    className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${
-                      isSelected
-                        ? "bg-amber-900/30 border-amber-600/60 shadow-lg shadow-amber-900/20"
-                        : status.disabled
-                        ? "bg-gray-900/20 border-gray-700/30 opacity-50 cursor-not-allowed"
-                        : "bg-black/40 border-gray-700/40 hover:border-amber-700/50 hover:bg-amber-900/10"
-                    }`}
+                    className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${buttonStateClasses}`}
                     data-testid={`gladiator-option-${gladiator.id}`}
                   >
                     <div className="flex items-center gap-3">
@@ -170,8 +245,8 @@ export default function GladiatorSelector({
                       </div>
 
                       {/* Status Badge */}
-                      {status.disabled && (
-                        <div className={`text-xs px-2 py-1 rounded ${status.color} bg-black/40`}>
+                      {showBadge && (
+                        <div className={`text-xs px-2 py-1 rounded ${status.color} ${status.badgeClass}`}>
                           {status.label}
                         </div>
                       )}
