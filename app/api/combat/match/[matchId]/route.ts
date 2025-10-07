@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { matchId: string } },
+  { params }: { params: Promise<{ matchId: string }> },
 ) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
@@ -18,7 +18,7 @@ export async function GET(
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const matchId = params.matchId;
+  const { matchId } = await params;
 
   if (!matchId) {
     return NextResponse.json({ error: "missing matchId" }, { status: 400 });
