@@ -5,7 +5,6 @@ import { createClient } from "@/utils/supabase/server";
 import { LudusZ, type LudusFromZod } from "@/lib/ludus/schema";
 import type { Ludus } from "@/types/ludus";
 import { DEFAULT_SERVER_ID, SERVERS } from "@/data/servers";
-import { generateGladiators } from "@/lib/gladiator/generator";
 
 function nowIso() {
   return new Date().toISOString();
@@ -14,11 +13,6 @@ function nowIso() {
 function getLudusMaxGladiators(serverId: string): number {
   const s = SERVERS.find((s) => s.id === serverId) ?? SERVERS.find((s) => s.id === DEFAULT_SERVER_ID);
   return s?.config.ludusMaxGladiators ?? 5;
-}
-
-function getInitialGladiatorsPerLudus(serverId: string): number {
-  const s = SERVERS.find((s) => s.id === serverId) ?? SERVERS.find((s) => s.id === DEFAULT_SERVER_ID);
-  return s?.config.initialGladiatorsPerLudus ?? 0;
 }
 
 function withDefaults(input: Partial<Ludus> & { userId: string; serverId: string; name: string; logoUrl: string }): LudusFromZod {
@@ -79,33 +73,8 @@ export async function createLudus(input: Partial<Ludus> & { userId: string; serv
   if (error) throw error;
   const created = inserted as Ludus & { id: string };
 
-  try {
-    const initialCount = Math.min(getInitialGladiatorsPerLudus(created.serverId), created.maxGladiators);
-    if (initialCount > 0) {
-      const gladiators = await generateGladiators(initialCount);
-      const rows = gladiators.map((g) => ({
-        ...g,
-        userId: created.userId,
-        serverId: created.serverId,
-        ludusId: created.id,
-        createdAt: nowIso(),
-        updatedAt: nowIso(),
-      }));
-      await s.from("gladiators").insert(rows);
-      const { data: upd } = await s
-        .from("ludi")
-        .update({ gladiatorCount: initialCount, updatedAt: nowIso() })
-        .eq("id", created.id)
-        .select("*")
-        .single();
-      if (upd) {
-        created.gladiatorCount = upd.gladiatorCount;
-        created.updatedAt = upd.updatedAt;
-      }
-    }
-  } catch (err) {
-    if (process.env.NODE_ENV !== "production") console.error("[ludi] failed to seed initial gladiators", err);
-  }
+  // NOTE: Initial gladiators are now generated asynchronously via /api/gladiators/start
+  // called from the initial-gladiators page. This prevents duplicate creation.
 
   return created;
 }

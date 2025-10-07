@@ -105,5 +105,7 @@ create policy combat_matches_select_all on public.combat_matches for select
 
 -- Only system/API can create matches (no direct user insert)
 -- We'll handle match creation through API endpoints with proper validation
+-- NOTE: INSERT policy is missing here - this causes RLS errors!
+-- Fixed in migration 0006_fix_combat_matches_rls.sql
 
 commit;

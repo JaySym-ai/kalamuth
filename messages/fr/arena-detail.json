@@ -42,7 +42,20 @@
     "failedToJoinQueue": "Échec de l'entrée dans la file",
     "joinedQueueSuccess": "Vous avez rejoint la file avec succès !",
     "networkError": "Erreur réseau. Veuillez réessayer.",
-    "leftQueueSuccess": "Vous avez quitté la file avec succès"
+    "leftQueueSuccess": "Vous avez quitté la file avec succès",
+    "yourGladiator": "Votre Gladiateur",
+    "opponentGladiator": "Adversaire",
+    "combatLog": "Journal de Combat",
+    "awaitingCombat": "Préparation au combat...",
+    "noLogEntries": "Aucun événement de combat pour le moment",
+    "matchStatusPending": "En attente",
+    "matchStatusInProgress": "En cours",
+    "matchStatusCompleted": "Terminé",
+    "matchStatusCancelled": "Annulé",
+    "loadingMatch": "Synchronisation des données du combat...",
+    "failedToLoadMatch": "Impossible de charger les détails du combat.",
+    "statusReady": "Prêt",
+    "statusIncapacitated": "Incapacité"
   },
   "Arenas": {
     "halicara-training-grounds": {

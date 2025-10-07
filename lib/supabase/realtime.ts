@@ -174,14 +174,18 @@ export function useRealtimeCollection<T extends object>(
     }
     setLoading(false);
   }, [supabase, table, select, normalizedMatch, orderMemo, transformRow, applyOrder]);
+  const refreshRef = useRef(refresh);
+  useEffect(() => {
+    refreshRef.current = refresh;
+  }, [refresh]);
 
   useEffect(() => {
     if (!fetchOnMount) {
       setLoading(false);
       return;
     }
-    refresh();
-  }, [fetchOnMount, refresh, matchKey, orderKey]);
+    refreshRef.current();
+  }, [fetchOnMount, table, select, matchKey, orderKey]);
 
   const mutate = useCallback(
     (updater: (collection: T[]) => T[]) => {

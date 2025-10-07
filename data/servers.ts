@@ -56,7 +56,7 @@ export const SERVERS: GameServer[] = [
       gladiatorStatMin: 20,
       gladiatorStatMax: 200,
       ludusMaxGladiators: 10,
-      initialGladiatorsPerLudus: 5,
+      initialGladiatorsPerLudus: 1,
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

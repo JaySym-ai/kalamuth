@@ -203,7 +203,6 @@ async function attemptMatchmaking(
   serverId: string
 ) {
   try {
-    // Check if there's already an active match for this arena
     const { data: activeMatch } = await supabase
       .from("combat_matches")
       .select("id")
@@ -212,12 +211,10 @@ async function attemptMatchmaking(
       .in("status", ["pending", "in_progress"])
       .maybeSingle();
 
-    // Only one match at a time per arena
     if (activeMatch) {
       return;
     }
 
-    // Get all waiting gladiators in queue, ordered by queue time
     const { data: queueEntries } = await supabase
       .from("combat_queue")
       .select("*")
@@ -227,30 +224,67 @@ async function attemptMatchmaking(
       .order("queuedAt", { ascending: true });
 
     if (!queueEntries || queueEntries.length < 2) {
-      return; // Need at least 2 gladiators to match
+      return;
     }
 
-    // Simple matchmaking: take the first two gladiators with closest ranking
-    // Sort by ranking points to find best matches
-    const sorted = [...queueEntries].sort((a, b) => a.rankingPoints - b.rankingPoints);
-    
-    // Find the pair with smallest ranking difference
-    let bestPair: [typeof sorted[0], typeof sorted[0]] | null = null;
-    let smallestDiff = Infinity;
+    const ranked = [...queueEntries].sort((a, b) => {
+      if (a.rankingPoints === b.rankingPoints) {
+        return new Date(a.queuedAt).getTime() - new Date(b.queuedAt).getTime();
+      }
+      return a.rankingPoints - b.rankingPoints;
+    });
 
-    for (let i = 0; i < sorted.length - 1; i++) {
-      const diff = Math.abs(sorted[i].rankingPoints - sorted[i + 1].rankingPoints);
-      if (diff < smallestDiff) {
-        smallestDiff = diff;
-        bestPair = [sorted[i], sorted[i + 1]];
+    type PairCandidate = {
+      entries: [typeof ranked[number], typeof ranked[number]];
+      diff: number;
+      earliestQueuedAt: number;
+    };
+
+    let bestPair: PairCandidate | null = null;
+
+    for (let i = 0; i < ranked.length - 1; i++) {
+      for (let j = i + 1; j < ranked.length; j++) {
+        const first = ranked[i];
+        const second = ranked[j];
+
+        if (first.userId === second.userId) continue;
+        if (first.ludusId === second.ludusId) continue;
+
+        const diff = Math.abs(first.rankingPoints - second.rankingPoints);
+        const earliestQueuedAt = Math.min(
+          new Date(first.queuedAt).getTime(),
+          new Date(second.queuedAt).getTime(),
+        );
+
+        if (
+          !bestPair ||
+          diff < bestPair.diff ||
+          (diff === bestPair.diff && earliestQueuedAt < bestPair.earliestQueuedAt)
+        ) {
+          bestPair = {
+            entries: [first, second],
+            diff,
+            earliestQueuedAt,
+          };
+        }
+
+        if (diff === 0) {
+          break;
+        }
+      }
+
+      if (bestPair?.diff === 0) {
+        break;
       }
     }
 
-    if (!bestPair) return;
+    if (!bestPair) {
+      return;
+    }
 
-    const [entry1, entry2] = bestPair;
+    const [entry1, entry2] = bestPair.entries;
+    const matchedAt = new Date().toISOString();
 
-    // Create the match
     const { data: match, error: matchError } = await supabase
       .from("combat_matches")
       .insert({
@@ -259,21 +293,26 @@ async function attemptMatchmaking(
         gladiator1Id: entry1.gladiatorId,
         gladiator2Id: entry2.gladiatorId,
         status: "pending",
+        matchedAt,
       })
-      .select("id")
+      .select("*")
       .single();
 
-    if (matchError) {
+    if (matchError || !match) {
       console.error("Error creating match:", matchError);
       return;
     }
 
-    // Update queue entries to matched status
-    await supabase
+    const { error: updateError } = await supabase
       .from("combat_queue")
       .update({ status: "matched", matchId: match.id })
-      .in("id", [entry1.id, entry2.id]);
+      .in("id", [entry1.id, entry2.id])
+      .eq("status", "waiting");
 
+    if (updateError) {
+      console.error("Error updating queue status:", updateError);
+      await supabase.from("combat_matches").delete().eq("id", match.id);
+    }
   } catch (error) {
     console.error("Matchmaking error:", error);
   }

@@ -42,7 +42,21 @@
     "failedToJoinQueue": "Failed to join queue",
     "joinedQueueSuccess": "Successfully joined the queue!",
     "networkError": "Network error. Please try again.",
-    "leftQueueSuccess": "Successfully left the queue"
+    "leftQueueSuccess": "Successfully left the queue",
+    "yourGladiator": "Your Gladiator",
+    "opponentGladiator": "Opponent",
+    "combatLog": "Combat Log",
+    "awaitingCombat": "Preparing for battle...",
+    "noLogEntries": "No combat events yet",
+    "matchStatusPending": "Pending",
+    "matchStatusInProgress": "In Progress",
+    "matchStatusCompleted": "Completed",
+    "matchStatusCancelled": "Cancelled",
+    "loadingMatch": "Synchronizing match data...",
+    "failedToLoadMatch": "Unable to load match details.",
+    "statusReady": "Ready",
+    "statusIncapacitated": "Incapacitated"
+
   },
   "Arenas": {
     "halicara-training-grounds": {

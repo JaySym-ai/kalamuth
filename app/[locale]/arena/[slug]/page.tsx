@@ -181,6 +181,20 @@ export default async function ArenaDetailPage({
           joinedQueueSuccess: t("joinedQueueSuccess"),
           networkError: t("networkError"),
           leftQueueSuccess: t("leftQueueSuccess"),
+          yourGladiator: t("yourGladiator"),
+          opponentGladiator: t("opponentGladiator"),
+          combatLog: t("combatLog"),
+          awaitingCombat: t("awaitingCombat"),
+          noLogEntries: t("noLogEntries"),
+          matchStatusPending: t("matchStatusPending"),
+          matchStatusInProgress: t("matchStatusInProgress"),
+          matchStatusCompleted: t("matchStatusCompleted"),
+          matchStatusCancelled: t("matchStatusCancelled"),
+          loadingMatch: t("loadingMatch"),
+          failedToLoadMatch: t("failedToLoadMatch"),
+          statusReady: t("statusReady"),
+          statusIncapacitated: t("statusIncapacitated"),
+
         }}
       />
     </main>

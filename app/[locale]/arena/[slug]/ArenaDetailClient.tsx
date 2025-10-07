@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Swords, Skull, Shield, Users, MapPin, Scroll } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
-import type { CombatQueueEntry, CombatMatch } from "@/types/combat";
+import type { CombatQueueEntry, CombatMatch, CombatMatchDetails, CombatantSummary } from "@/types/combat";
 import { useRealtimeCollection } from "@/lib/supabase/realtime";
 import GladiatorSelector from "./GladiatorSelector";
+import ActiveMatchPanel from "./ActiveMatchPanel";
+
 import QueueStatus from "./QueueStatus";
 
 interface Props {
@@ -70,6 +72,20 @@ interface Props {
     joinedQueueSuccess: string;
     networkError: string;
     leftQueueSuccess: string;
+    yourGladiator: string;
+    opponentGladiator: string;
+    combatLog: string;
+    awaitingCombat: string;
+    noLogEntries: string;
+    matchStatusPending: string;
+    matchStatusInProgress: string;
+    matchStatusCompleted: string;
+    matchStatusCancelled: string;
+    loadingMatch: string;
+    failedToLoadMatch: string;
+    statusReady: string;
+    statusIncapacitated: string;
+
   };
 }
 
@@ -94,6 +110,10 @@ export default function ArenaDetailClient({
   const [selectedGladiatorId, setSelectedGladiatorId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const [activeMatchDetails, setActiveMatchDetails] = useState<CombatMatchDetails | null>(null);
+  const [isMatchLoading, setIsMatchLoading] = useState(false);
+  const [matchDetailsError, setMatchDetailsError] = useState<string | null>(null);
+
 
   const userGladiatorIds = useMemo(
     () => new Set(gladiators.map((g) => g.id)),
@@ -147,11 +167,16 @@ export default function ArenaDetailClient({
     fetchOnMount: Boolean(serverId),
   });
 
-  const userHasActiveMatch = matchesData.some(
-    (match) =>
-      (match.status === "pending" || match.status === "in_progress") &&
-      (userGladiatorIds.has(match.gladiator1Id) || userGladiatorIds.has(match.gladiator2Id)),
-  );
+  const activeMatch = useMemo(() => {
+    const found = matchesData.find(
+      (match) =>
+        (match.status === "pending" || match.status === "in_progress") &&
+        (userGladiatorIds.has(match.gladiator1Id) || userGladiatorIds.has(match.gladiator2Id)),
+    );
+    return found ?? null;
+  }, [matchesData, userGladiatorIds]);
+
+  const userHasActiveMatch = Boolean(activeMatch);
 
   // Enrich queue with gladiator data
   const enrichedQueue = queueData.map(entry => {
@@ -165,6 +190,55 @@ export default function ArenaDetailClient({
   ) ?? userQueueData.find(entry =>
     entry.arenaSlug === arenaSlug && gladiators.some(g => g.id === entry.gladiatorId)
   );
+  const toCombatantSummary = useCallback(
+    (gladiator: NormalizedGladiator): CombatantSummary => ({
+      id: gladiator.id,
+      name: gladiator.name,
+      surname: gladiator.surname,
+      avatarUrl: gladiator.avatarUrl ?? null,
+      rankingPoints: gladiator.rankingPoints,
+      health: gladiator.health,
+      userId: null,
+      ludusId: gladiator.ludusId ?? null,
+      alive: gladiator.alive,
+    }),
+    [],
+  );
+
+
+  const playerGladiatorSummary = useMemo(() => {
+    if (!activeMatch) return null;
+
+    const playerId = userGladiatorIds.has(activeMatch.gladiator1Id)
+      ? activeMatch.gladiator1Id
+      : activeMatch.gladiator2Id;
+
+    if (!playerId) return null;
+
+    const detailed = activeMatchDetails?.gladiators.find((gladiator) => gladiator.id === playerId);
+    if (detailed) return detailed;
+
+    const fallbackGladiator = gladiators.find((gladiator) => gladiator.id === playerId);
+    return fallbackGladiator ? toCombatantSummary(fallbackGladiator) : null;
+  }, [activeMatch, activeMatchDetails?.gladiators, gladiators, toCombatantSummary, userGladiatorIds]);
+
+  const opponentGladiatorSummary = useMemo(() => {
+    if (!activeMatch) return null;
+
+    const opponentId = userGladiatorIds.has(activeMatch.gladiator1Id)
+      ? activeMatch.gladiator2Id
+      : activeMatch.gladiator1Id;
+
+    if (!opponentId) return null;
+
+    const detailed = activeMatchDetails?.gladiators.find((gladiator) => gladiator.id === opponentId);
+    if (detailed) return detailed;
+
+    return null;
+  }, [activeMatch, activeMatchDetails?.gladiators, userGladiatorIds]);
+
+  const matchLogs = activeMatchDetails?.logs ?? [];
+  const resolvedMatch = activeMatchDetails?.match ?? activeMatch ?? null;
 
   const queuedGladiatorIds = new Set(
     [...queueData, ...userQueueData].map(entry => entry.gladiatorId)
@@ -187,6 +261,58 @@ export default function ArenaDetailClient({
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  const activeMatchId = activeMatch?.id ?? null;
+
+  useEffect(() => {
+
+    if (!activeMatchId) {
+      setActiveMatchDetails(null);
+      setMatchDetailsError(null);
+      setIsMatchLoading(false);
+      return;
+    }
+
+    let isCancelled = false;
+    const controller = new AbortController();
+
+    const loadMatchDetails = async () => {
+      setIsMatchLoading(true);
+      setMatchDetailsError(null);
+
+      try {
+        const response = await fetch(`/api/combat/match/${activeMatchId}`, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          const fallback = await response.text().catch(() => null);
+          throw new Error(fallback || "Failed to fetch match details");
+        }
+
+        const data = (await response.json()) as CombatMatchDetails;
+        if (!isCancelled) {
+          setActiveMatchDetails(data);
+        }
+      } catch (err) {
+        if (isCancelled) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("Failed to load match details", err);
+        setMatchDetailsError(t.failedToLoadMatch);
+      } finally {
+        if (!isCancelled) {
+          setIsMatchLoading(false);
+        }
+      }
+    };
+
+    loadMatchDetails();
+
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, [activeMatchId, activeMatch?.status, t.failedToLoadMatch]);
 
   const handleJoinQueue = async () => {
     if (!selectedGladiatorId) return;
@@ -341,117 +467,144 @@ export default function ArenaDetailClient({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            {/* Gladiator Selector */}
-            {!userQueueEntry && (
-              <div className="mb-6">
-                <GladiatorSelector
-                  gladiators={gladiators}
-                  selectedGladiatorId={selectedGladiatorId}
-                  onSelect={setSelectedGladiatorId}
-                  queuedGladiatorIds={queuedGladiatorIds}
-                  initiallyExpanded={shouldAutoExpandGladiatorList}
+            {activeMatch && resolvedMatch ? (
+              <ActiveMatchPanel
+                match={resolvedMatch}
+                player={playerGladiatorSummary}
+                opponent={opponentGladiatorSummary}
+                logs={matchLogs}
+                loading={isMatchLoading}
+                error={matchDetailsError}
+                translations={{
+                  fightPanelTitle: t.activeMatch,
+                  yourGladiator: t.yourGladiator,
+                  opponentGladiator: t.opponentGladiator,
+                  combatLog: t.combatLog,
+                  awaitingCombat: t.awaitingCombat,
+                  noLogEntries: t.noLogEntries,
+                  matchStatusPending: t.matchStatusPending,
+                  matchStatusInProgress: t.matchStatusInProgress,
+                  matchStatusCompleted: t.matchStatusCompleted,
+                  matchStatusCancelled: t.matchStatusCancelled,
+                  loadingMatch: t.loadingMatch,
+                  failedToLoadMatch: t.failedToLoadMatch,
+                  healthStatus: t.healthStatus,
+                  rankingPoints: t.rankingPoints,
+                  statusReady: t.statusReady,
+                  statusIncapacitated: t.statusIncapacitated,
+                }}
+              />
+            ) : (
+              <>
+                {!userQueueEntry && (
+                  <div className="mb-6">
+                    <GladiatorSelector
+                      gladiators={gladiators}
+                      selectedGladiatorId={selectedGladiatorId}
+                      onSelect={setSelectedGladiatorId}
+                      queuedGladiatorIds={queuedGladiatorIds}
+                      initiallyExpanded={shouldAutoExpandGladiatorList}
+                      translations={{
+                        selectGladiator: t.selectGladiator,
+                        selectGladiatorDesc: t.selectGladiatorDesc,
+                        showGladiators: t.showGladiators,
+                        hideGladiators: t.hideGladiators,
+                        availableGladiators: t.availableGladiators,
+                        noAvailableGladiators: t.noAvailableGladiators,
+                        rankingPoints: t.rankingPoints,
+                        healthStatus: t.healthStatus,
+                        gladiatorInjured: t.gladiatorInjured,
+                        gladiatorSick: t.gladiatorSick,
+                        gladiatorDead: t.gladiatorDead,
+                        gladiatorAlreadyQueued: t.gladiatorAlreadyQueued,
+                      }}
+                    />
+
+                    {selectedGladiatorId && (
+                      <motion.button
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onClick={handleJoinQueue}
+                        disabled={isJoining}
+                        className="w-full mt-4 h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-900/30"
+                        data-testid="join-queue-button"
+                      >
+                        {isJoining ? t.matchmaking : t.joinQueue}
+                      </motion.button>
+                    )}
+
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="mt-3 p-3 bg-red-900/20 border border-red-700/50 rounded-lg text-red-300 text-sm"
+                      >
+                        {error}
+                      </motion.div>
+                    )}
+
+                    {successMessage && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="mt-3 p-3 bg-green-900/20 border border-green-700/50 rounded-lg text-green-300 text-sm"
+                      >
+                        {successMessage}
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+
+                {userQueueEntry && (
+                  <div className="mb-6">
+                    <motion.button
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      onClick={handleLeaveQueue}
+                      disabled={isLeaving}
+                      className="w-full h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      data-testid="leave-queue-button"
+                    >
+                      {isLeaving ? t.matchmaking : t.leaveQueue}
+                    </motion.button>
+
+                    {error && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="mt-3 p-3 bg-red-900/20 border border-red-700/50 rounded-lg text-red-300 text-sm"
+                      >
+                        {error}
+                      </motion.div>
+                    )}
+
+                    {successMessage && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="mt-3 p-3 bg-green-900/20 border border-green-700/50 rounded-lg text-green-300 text-sm"
+                      >
+                        {successMessage}
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+
+                <QueueStatus
+                  queue={enrichedQueue}
+                  userGladiatorId={userQueueEntry?.gladiatorId || null}
                   translations={{
-                    selectGladiator: t.selectGladiator,
-                    selectGladiatorDesc: t.selectGladiatorDesc,
-                    showGladiators: t.showGladiators,
-                    hideGladiators: t.hideGladiators,
-                    availableGladiators: t.availableGladiators,
-                    noAvailableGladiators: t.noAvailableGladiators,
+                    currentQueue: t.currentQueue,
+                    noGladiatorsInQueue: t.noGladiatorsInQueue,
+                    queuePosition: t.queuePosition,
                     rankingPoints: t.rankingPoints,
-                    healthStatus: t.healthStatus,
-                    gladiatorInjured: t.gladiatorInjured,
-                    gladiatorSick: t.gladiatorSick,
-                    gladiatorDead: t.gladiatorDead,
-                    gladiatorAlreadyQueued: t.gladiatorAlreadyQueued,
+                    queuedAt: t.queuedAt,
+                    waitingForMatch: t.waitingForMatch,
+                    matchmaking: t.matchmaking,
                   }}
                 />
-
-                {/* Join Queue Button */}
-                {selectedGladiatorId && (
-                  <motion.button
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    onClick={handleJoinQueue}
-                    disabled={isJoining}
-                    className="w-full mt-4 h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-900/30"
-                    data-testid="join-queue-button"
-                  >
-                    {isJoining ? t.matchmaking : t.joinQueue}
-                  </motion.button>
-                )}
-
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="mt-3 p-3 bg-red-900/20 border border-red-700/50 rounded-lg text-red-300 text-sm"
-                  >
-                    {error}
-                  </motion.div>
-                )}
-
-                {successMessage && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="mt-3 p-3 bg-green-900/20 border border-green-700/50 rounded-lg text-green-300 text-sm"
-                  >
-                    {successMessage}
-                  </motion.div>
-                )}
-              </div>
+              </>
             )}
-
-            {/* Leave Queue Button */}
-            {userQueueEntry && (
-              <div className="mb-6">
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  onClick={handleLeaveQueue}
-                  disabled={isLeaving}
-                  className="w-full h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                  data-testid="leave-queue-button"
-                >
-                  {isLeaving ? t.matchmaking : t.leaveQueue}
-                </motion.button>
-
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="mt-3 p-3 bg-red-900/20 border border-red-700/50 rounded-lg text-red-300 text-sm"
-                  >
-                    {error}
-                  </motion.div>
-                )}
-
-                {successMessage && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="mt-3 p-3 bg-green-900/20 border border-green-700/50 rounded-lg text-green-300 text-sm"
-                  >
-                    {successMessage}
-                  </motion.div>
-                )}
-              </div>
-            )}
-
-            {/* Queue Status */}
-            <QueueStatus
-              queue={enrichedQueue}
-              userGladiatorId={userQueueEntry?.gladiatorId || null}
-              translations={{
-                currentQueue: t.currentQueue,
-                noGladiatorsInQueue: t.noGladiatorsInQueue,
-                queuePosition: t.queuePosition,
-                rankingPoints: t.rankingPoints,
-                queuedAt: t.queuedAt,
-                waitingForMatch: t.waitingForMatch,
-                matchmaking: t.matchmaking,
-              }}
-            />
           </motion.div>
 
           {/* City Description */}
