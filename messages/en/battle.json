@@ -17,6 +17,49 @@
       "duration": "Duration"
     },
     "hpLabel": "HP"
+  },
+  "Combat": {
+    "title": "Arena Combat",
+    "backToArena": "Back to Arena",
+    "startBattle": "Start Battle",
+    "pauseBattle": "Pause",
+    "resumeBattle": "Resume",
+    "resetBattle": "Reset",
+    "loading": "Loading...",
+    "error": "Error",
+    "combatLog": "Combat Log",
+    "live": "LIVE",
+    "versus": "VS",
+    "arena": "Arena",
+    "health": "Health",
+    "ranking": "Ranking",
+    "birthplace": "Birthplace",
+    "personality": "Personality",
+    "weakness": "Weakness",
+    "action": "Action",
+    "elapsed": "Elapsed",
+    "status": "Status",
+    "statusInProgress": "In Progress",
+    "statusComplete": "Complete",
+    "winner": "Winner",
+    "introduction": {
+      "title": "The Gladiators Enter",
+      "subtitle": "Prepare for battle"
+    },
+    "victory": {
+      "title": "Victory!",
+      "subtitle": "The battle is won"
+    },
+    "defeat": {
+      "title": "Defeat",
+      "subtitle": "Your gladiator has fallen"
+    },
+    "methods": {
+      "submission": "Submission",
+      "knockout": "Knockout",
+      "death": "Death",
+      "forfeit": "Forfeit"
+    }
   }
 }
 

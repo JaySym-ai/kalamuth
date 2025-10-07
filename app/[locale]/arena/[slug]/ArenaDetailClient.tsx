@@ -475,6 +475,7 @@ export default function ArenaDetailClient({
                 logs={matchLogs}
                 loading={isMatchLoading}
                 error={matchDetailsError}
+                locale={locale}
                 translations={{
                   fightPanelTitle: t.activeMatch,
                   yourGladiator: t.yourGladiator,
@@ -492,6 +493,8 @@ export default function ArenaDetailClient({
                   rankingPoints: t.rankingPoints,
                   statusReady: t.statusReady,
                   statusIncapacitated: t.statusIncapacitated,
+                  startCombat: t.enterArena,
+                  viewCombat: t.viewMatch,
                 }}
               />
             ) : (

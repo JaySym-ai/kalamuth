@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Swords, Heart, Trophy, Shield, Activity, Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Swords, Heart, Trophy, Shield, Activity, Clock, Play } from "lucide-react";
 import type { CombatMatch, CombatantSummary, CombatLogEntry } from "@/types/combat";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
   logs: CombatLogEntry[];
   loading: boolean;
   error?: string | null;
+  locale: string;
   translations: {
     fightPanelTitle: string;
     yourGladiator: string;
@@ -28,6 +30,8 @@ interface Props {
     rankingPoints: string;
     statusReady: string;
     statusIncapacitated: string;
+    startCombat: string;
+    viewCombat: string;
   };
 }
 
@@ -132,8 +136,11 @@ export default function ActiveMatchPanel({
   logs,
   loading,
   error,
+  locale,
   translations: t,
 }: Props) {
+  const router = useRouter();
+
   const statusConfig: Record<CombatMatch["status"], { label: string; className: string }> = {
     pending: { label: t.matchStatusPending, className: "bg-yellow-500/20 text-yellow-200" },
     in_progress: { label: t.matchStatusInProgress, className: "bg-orange-500/20 text-orange-200" },
@@ -151,6 +158,10 @@ export default function ActiveMatchPanel({
     const right = new Date(b.createdAt).getTime();
     return left - right;
   });
+
+  const handleNavigateToCombat = () => {
+    router.push(`/${locale}/combat/${match.id}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -199,9 +210,34 @@ export default function ActiveMatchPanel({
           />
         </div>
 
-        <div className="mt-6 flex items-center gap-3 text-sm text-gray-400">
-          <Clock className="h-4 w-4" />
-          <span>{formatTime(match.matchedAt)}</span>
+        <div className="mt-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 text-sm text-gray-400">
+            <Clock className="h-4 w-4" />
+            <span>{formatTime(match.matchedAt)}</span>
+          </div>
+
+          {/* Combat button */}
+          {match.status === "pending" && (
+            <button
+              onClick={handleNavigateToCombat}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-red-600 text-white font-semibold hover:from-amber-500 hover:to-red-500 transition-all shadow-lg shadow-amber-500/30"
+              data-testid="start-combat-button"
+            >
+              <Play className="w-4 h-4" />
+              {t.startCombat}
+            </button>
+          )}
+
+          {match.status === "in_progress" && (
+            <button
+              onClick={handleNavigateToCombat}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-500 hover:to-purple-500 transition-all"
+              data-testid="view-combat-button"
+            >
+              <Activity className="w-4 h-4" />
+              {t.viewCombat}
+            </button>
+          )}
         </div>
       </motion.div>
 

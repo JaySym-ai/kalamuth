@@ -82,9 +82,11 @@ export async function GET(
     {
       id: `${matchId}-ready`,
       matchId,
+      actionNumber: 0,
       message: "Matchmaking complete. Combatants are preparing for battle.",
       createdAt: match.matchedAt ?? new Date().toISOString(),
       type: "system",
+      locale: "en",
     },
   ];
 

@@ -17,6 +17,49 @@
       "duration": "Durée"
     },
     "hpLabel": "PV"
+  },
+  "Combat": {
+    "title": "Combat d'arène",
+    "backToArena": "Retour à l'arène",
+    "startBattle": "Lancer le combat",
+    "pauseBattle": "Pause",
+    "resumeBattle": "Reprendre",
+    "resetBattle": "Réinitialiser",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "combatLog": "Journal de combat",
+    "live": "DIRECT",
+    "versus": "VS",
+    "arena": "Arène",
+    "health": "Santé",
+    "ranking": "Classement",
+    "birthplace": "Lieu de naissance",
+    "personality": "Personnalité",
+    "weakness": "Faiblesse",
+    "action": "Action",
+    "elapsed": "Écoulé",
+    "status": "Statut",
+    "statusInProgress": "En cours",
+    "statusComplete": "Terminé",
+    "winner": "Vainqueur",
+    "introduction": {
+      "title": "Les gladiateurs entrent",
+      "subtitle": "Préparez-vous au combat"
+    },
+    "victory": {
+      "title": "Victoire !",
+      "subtitle": "Le combat est gagné"
+    },
+    "defeat": {
+      "title": "Défaite",
+      "subtitle": "Votre gladiateur est tombé"
+    },
+    "methods": {
+      "submission": "Soumission",
+      "knockout": "K.O.",
+      "death": "Mort",
+      "forfeit": "Abandon"
+    }
   }
 }
 

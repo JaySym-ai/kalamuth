@@ -73,14 +73,20 @@ export interface CombatMatch {
 }
 
 
-export type CombatLogType = "system" | "action";
+export type CombatLogType = "introduction" | "action" | "injury" | "death" | "victory" | "system";
+export type WinnerMethod = "submission" | "knockout" | "death" | "forfeit";
 
 export interface CombatLogEntry {
   id: string;
   matchId: string;
+  actionNumber: number;
   message: string;
   createdAt: string;
   type: CombatLogType;
+  locale: string;
+  gladiator1Health?: number;
+  gladiator2Health?: number;
+  metadata?: Record<string, unknown>;
 }
 
 export interface CombatantSummary {
@@ -99,4 +105,76 @@ export interface CombatMatchDetails {
   match: CombatMatch;
   gladiators: CombatantSummary[];
   logs: CombatLogEntry[];
+}
+
+/**
+ * Combat configuration for a match
+ */
+export interface CombatConfig {
+  /** Maximum number of actions in the battle (default: 20) */
+  maxActions: number;
+  /** Seconds between each action (default: 4) */
+  actionIntervalSeconds: number;
+  /** Percentage chance of death (0-100, default: 0 for training arenas) */
+  deathChancePercent: number;
+  /** Percentage chance of injury per action (0-100, default: 15) */
+  injuryChancePercent: number;
+}
+
+/**
+ * Extended match with combat configuration
+ */
+export interface CombatMatchWithConfig extends CombatMatch {
+  maxActions: number;
+  actionIntervalSeconds: number;
+  deathChancePercent: number;
+  injuryChancePercent: number;
+  winnerId?: string;
+  winnerMethod?: WinnerMethod;
+  totalActions: number;
+  durationSeconds?: number;
+}
+
+/**
+ * Full gladiator data for combat (includes all traits for AI context)
+ */
+export interface CombatGladiator extends CombatantSummary {
+  injury?: string;
+  injuryTimeLeftHours?: number;
+  sickness?: string;
+  stats: {
+    strength: string;
+    agility: string;
+    dexterity: string;
+    speed: string;
+    chance: string;
+    intelligence: string;
+    charisma: string;
+    loyalty: string;
+  };
+  lifeGoal: string;
+  personality: string;
+  backstory: string;
+  weakness: string;
+  fear: string;
+  likes: string;
+  dislikes: string;
+  birthCity: string;
+  handicap?: string;
+  uniquePower?: string;
+  physicalCondition: string;
+  notableHistory: string;
+}
+
+/**
+ * Battle state during combat
+ */
+export interface BattleState {
+  matchId: string;
+  actionNumber: number;
+  gladiator1Health: number;
+  gladiator2Health: number;
+  isComplete: boolean;
+  winnerId?: string;
+  winnerMethod?: WinnerMethod;
 }
