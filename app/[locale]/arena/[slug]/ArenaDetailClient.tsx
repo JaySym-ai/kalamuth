@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, Swords, Skull, Shield, Users, MapPin, Scroll } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
-import type { CombatQueueEntry, CombatMatch, CombatMatchDetails, CombatantSummary } from "@/types/combat";
+import type {
+  CombatQueueEntry,
+  CombatMatch,
+  CombatMatchDetails,
+  CombatantSummary,
+  CombatMatchAcceptance,
+} from "@/types/combat";
 import { useRealtimeCollection } from "@/lib/supabase/realtime";
 import { createClient } from "@/utils/supabase/clients";
 import GladiatorSelector from "./GladiatorSelector";
@@ -195,14 +201,45 @@ export default function ArenaDetailClient({
   const userHasActiveMatch = Boolean(activeMatch);
 
   // Subscribe to match acceptances for real-time updates
-  const { data: acceptancesData } = useRealtimeCollection({
+  const { data: acceptancesData } = useRealtimeCollection<CombatMatchAcceptance>({
     table: "combat_match_acceptances",
     select: "*",
     match: activeMatch ? { matchId: activeMatch.id } : { id: "__never__" },
-    initialData: [],
+    initialData:
+      activeMatch?.status === "pending_acceptance"
+        ? activeMatchDetails?.acceptances ?? []
+        : [],
     orderBy: { column: "createdAt", ascending: true },
     fetchOnMount: Boolean(activeMatch),
   });
+
+  const acceptanceRecords = useMemo(() => {
+    if (!activeMatch) return [] as CombatMatchAcceptance[];
+
+    const merged = new Map<string, CombatMatchAcceptance>();
+
+    for (const acceptance of activeMatchDetails?.acceptances ?? []) {
+      if (acceptance?.id) {
+        merged.set(acceptance.id, acceptance);
+      }
+    }
+
+    for (const acceptance of acceptancesData) {
+      if (acceptance?.id) {
+        merged.set(acceptance.id, acceptance);
+      }
+    }
+
+    const result = Array.from(merged.values());
+
+    result.sort((a, b) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return aTime - bTime;
+    });
+
+    return result;
+  }, [activeMatch, activeMatchDetails?.acceptances, acceptancesData]);
 
   // Debug: Log acceptances data changes
   useEffect(() => {
@@ -210,7 +247,7 @@ export default function ArenaDetailClient({
       console.log('📡 ArenaDetailClient - Acceptances from realtime:', {
         matchId: activeMatch.id,
         acceptancesCount: acceptancesData.length,
-        acceptances: acceptancesData.map((a: any) => ({
+        acceptances: acceptancesData.map((a) => ({
           id: a.id,
           gladiatorId: a.gladiatorId,
           status: a.status,
@@ -264,7 +301,7 @@ export default function ArenaDetailClient({
     };
 
     fetchOpponent();
-  }, [activeMatch, activeMatchDetails?.gladiators, userGladiatorIds]);
+  }, [activeMatch, activeMatchDetails?.gladiators, supabase, userGladiatorIds]);
 
   // Enrich queue with gladiator data
   const enrichedQueue = queueData.map(entry => {
@@ -577,7 +614,7 @@ export default function ArenaDetailClient({
                   match={resolvedMatch}
                   player={playerGladiatorSummary}
                   opponent={opponentGladiatorSummary}
-                  acceptances={acceptancesData}
+                  acceptances={acceptanceRecords}
                   locale={locale}
                   translations={{
                     matchAcceptanceTitle: t.matchAcceptanceTitle,

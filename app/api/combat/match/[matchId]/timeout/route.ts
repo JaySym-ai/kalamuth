@@ -54,7 +54,21 @@ export async function POST(
       return NextResponse.json({ error: "failed_to_cancel" }, { status: 500 });
     }
 
-    // Get acceptance records to see who didn't respond
+    // Remove both gladiators from the queue
+    // When timeout happens, both players should be removed from queue
+    const gladiatorIds = [match.gladiator1Id, match.gladiator2Id];
+
+    const { error: queueDeleteError } = await supabase
+      .from("combat_queue")
+      .delete()
+      .in("gladiatorId", gladiatorIds)
+      .eq("matchId", matchId);
+
+    if (queueDeleteError) {
+      console.error("Error removing gladiators from queue:", queueDeleteError);
+    }
+
+    // Get acceptance records for logging
     const { data: acceptances, error: acceptanceError } = await supabase
       .from("combat_match_acceptances")
       .select("*")
@@ -62,33 +76,6 @@ export async function POST(
 
     if (acceptanceError) {
       console.error("Error fetching acceptances:", acceptanceError);
-    }
-
-    // Re-queue gladiators who are still waiting (those who accepted)
-    if (acceptances) {
-      const acceptedGladiators = acceptances
-        .filter(a => a.status === "accepted")
-        .map(a => a.gladiatorId);
-
-      if (acceptedGladiators.length > 0) {
-        // Find the queue entries for these gladiators
-        const { data: queueEntries } = await supabase
-          .from("combat_queue")
-          .select("*")
-          .in("gladiatorId", acceptedGladiators)
-          .eq("status", "matched");
-
-        if (queueEntries) {
-          // Reset them to waiting status
-          await supabase
-            .from("combat_queue")
-            .update({ 
-              status: "waiting",
-              matchId: null
-            })
-            .in("id", queueEntries.map(e => e.id));
-        }
-      }
     }
 
     return NextResponse.json({

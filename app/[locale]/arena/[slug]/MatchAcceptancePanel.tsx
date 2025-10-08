@@ -46,6 +46,21 @@ export default function MatchAcceptancePanel({
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Check if match has timed out
+  const checkTimeout = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/combat/match/${match.id}/timeout`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        setError(t.acceptanceTimeout);
+      }
+    } catch (err) {
+      console.error("Error checking timeout:", err);
+    }
+  }, [match.id, t.acceptanceTimeout]);
+
   // Calculate time left until deadline
   useEffect(() => {
     if (!match.acceptanceDeadline) return;
@@ -54,7 +69,7 @@ export default function MatchAcceptancePanel({
       const now = new Date().getTime();
       const deadline = new Date(match.acceptanceDeadline!).getTime();
       const difference = deadline - now;
-      
+
       if (difference > 0) {
         setTimeLeft(Math.floor(difference / 1000));
       } else {
@@ -68,7 +83,7 @@ export default function MatchAcceptancePanel({
     const interval = setInterval(calculateTimeLeft, 1000);
 
     return () => clearInterval(interval);
-  }, [match.acceptanceDeadline]);
+  }, [match.acceptanceDeadline, checkTimeout]);
 
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
@@ -112,21 +127,6 @@ export default function MatchAcceptancePanel({
       })),
     });
   }, [acceptances, player, opponent, userAcceptance, opponentAcceptance]);
-
-  // Check if match has timed out
-  const checkTimeout = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/combat/match/${match.id}/timeout`, {
-        method: "POST",
-      });
-      
-      if (response.ok) {
-        setError(t.acceptanceTimeout);
-      }
-    } catch (err) {
-      console.error("Error checking timeout:", err);
-    }
-  }, [match.id, t.acceptanceTimeout]);
 
   // Handle accept match
   const handleAccept = async () => {
