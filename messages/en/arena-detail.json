@@ -33,7 +33,7 @@
     "hideGladiators": "Hide",
     "availableGladiators": "available",
     "noAvailableGladiators": "No available gladiators",
-    "rankingPoints": "Ranking",
+    "rankingPoints": "",
     "healthStatus": "Health",
     "queuedAt": "Queued",
     "matchmaking": "Matchmaking in progress...",
@@ -55,7 +55,20 @@
     "loadingMatch": "Synchronizing match data...",
     "failedToLoadMatch": "Unable to load match details.",
     "statusReady": "Ready",
-    "statusIncapacitated": "Incapacitated"
+    "statusIncapacitated": "Incapacitated",
+    "matchAcceptanceTitle": "Combat Request",
+    "opponentFound": "Opponent Found",
+    "waitingForAcceptance": "Waiting for opponent to accept...",
+    "acceptMatch": "Accept Combat",
+    "declineMatch": "Decline Combat",
+    "acceptanceTimeout": "Combat request expired",
+    "opponentDeclined": "Opponent declined combat",
+    "timeRemaining": "Time remaining",
+    "youAccepted": "You accepted the combat",
+    "youDeclined": "You declined the combat",
+    "opponentAccepted": "Opponent accepted",
+    "opponentDeclinedLabel": "Opponent declined",
+    "preparingCombat": "Preparing..."
 
   },
   "Arenas": {

@@ -128,10 +128,6 @@ export default function QueueStatus({
                         </h4>
                         <div className="flex items-center gap-3 mt-1">
                           <div className="flex items-center gap-1 text-xs">
-                            <Trophy className="w-3 h-3 text-amber-400" />
-                            <span className="text-gray-400">{entry.rankingPoints}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs">
                             <Heart className="w-3 h-3 text-red-400" />
                             <span className="text-gray-400">{gladiator.health}</span>
                           </div>
@@ -140,10 +136,6 @@ export default function QueueStatus({
                     ) : (
                       <>
                         <h4 className="font-semibold text-gray-400">Unknown Gladiator</h4>
-                        <div className="flex items-center gap-1 text-xs mt-1">
-                          <Trophy className="w-3 h-3 text-amber-400" />
-                          <span className="text-gray-400">{entry.rankingPoints}</span>
-                        </div>
                       </>
                     )}
                   </div>

@@ -33,7 +33,7 @@
     "hideGladiators": "Masquer",
     "availableGladiators": "disponibles",
     "noAvailableGladiators": "Aucun gladiateur disponible",
-    "rankingPoints": "Classement",
+    "rankingPoints": "",
     "healthStatus": "Santé",
     "queuedAt": "En file depuis",
     "matchmaking": "Recherche d'adversaire...",
@@ -55,7 +55,20 @@
     "loadingMatch": "Synchronisation des données du combat...",
     "failedToLoadMatch": "Impossible de charger les détails du combat.",
     "statusReady": "Prêt",
-    "statusIncapacitated": "Incapacité"
+    "statusIncapacitated": "Incapacité",
+    "matchAcceptanceTitle": "Demande de Combat",
+    "opponentFound": "Adversaire Trouvé",
+    "waitingForAcceptance": "En attente de la réponse de l'adversaire...",
+    "acceptMatch": "Accepter le Combat",
+    "declineMatch": "Refuser le Combat",
+    "acceptanceTimeout": "La demande de combat a expiré",
+    "opponentDeclined": "L'adversaire a refusé le combat",
+    "timeRemaining": "Temps restant",
+    "youAccepted": "Vous avez accepté le combat",
+    "youDeclined": "Vous avez refusé le combat",
+    "opponentAccepted": "L'adversaire a accepté",
+    "opponentDeclinedLabel": "L'adversaire a refusé",
+    "preparingCombat": "Préparation..."
   },
   "Arenas": {
     "halicara-training-grounds": {

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
-import type { CombatantSummary, CombatLogEntry } from "@/types/combat";
+import type { CombatantSummary, CombatLogEntry, CombatMatchAcceptance } from "@/types/combat";
 
 export const runtime = "nodejs";
 
@@ -78,6 +78,21 @@ export async function GET(
     alive: typeof row.alive === "boolean" ? row.alive : false,
   }));
 
+  // Fetch acceptance records if match is in pending_acceptance status
+  let acceptances: CombatMatchAcceptance[] = [];
+  if (match.status === "pending_acceptance") {
+    const { data: acceptanceData, error: acceptanceError } = await supabase
+      .from("combat_match_acceptances")
+      .select("*")
+      .eq("matchId", matchId);
+
+    if (acceptanceError) {
+      console.error("Failed to fetch acceptances:", acceptanceError);
+    } else {
+      acceptances = acceptanceData || [];
+    }
+  }
+
   const logs: CombatLogEntry[] = [
     {
       id: `${matchId}-ready`,
@@ -93,6 +108,7 @@ export async function GET(
   return NextResponse.json({
     match,
     gladiators,
+    acceptances,
     logs,
   });
 }

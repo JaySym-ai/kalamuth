@@ -83,24 +83,13 @@ function GladiatorCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div className="flex items-center gap-2 text-gray-300">
-          <Trophy className="h-4 w-4 text-amber-300" />
-          <div>
-            <p className="text-xs uppercase text-gray-400">{t.rankingPoints}</p>
-            <p className="text-lg font-semibold text-white">
-              {gladiator ? gladiator.rankingPoints : "—"}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 text-gray-300">
-          <Heart className="h-4 w-4 text-red-300" />
-          <div>
-            <p className="text-xs uppercase text-gray-400">{t.healthStatus}</p>
-            <p className="text-lg font-semibold text-white">
-              {gladiator ? gladiator.health : "—"}
-            </p>
-          </div>
+      <div className="flex items-center gap-2 text-gray-300">
+        <Heart className="h-4 w-4 text-red-300" />
+        <div>
+          <p className="text-xs uppercase text-gray-400">{t.healthStatus}</p>
+          <p className="text-lg font-semibold text-white">
+            {gladiator ? gladiator.health : "—"}
+          </p>
         </div>
       </div>
 
@@ -142,6 +131,7 @@ export default function ActiveMatchPanel({
   const router = useRouter();
 
   const statusConfig: Record<CombatMatch["status"], { label: string; className: string }> = {
+    pending_acceptance: { label: "Awaiting Acceptance", className: "bg-blue-500/20 text-blue-200" },
     pending: { label: t.matchStatusPending, className: "bg-yellow-500/20 text-yellow-200" },
     in_progress: { label: t.matchStatusInProgress, className: "bg-orange-500/20 text-orange-200" },
     completed: { label: t.matchStatusCompleted, className: "bg-emerald-500/20 text-emerald-200" },

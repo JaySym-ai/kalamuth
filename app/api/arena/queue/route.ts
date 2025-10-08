@@ -195,7 +195,7 @@ export async function DELETE(req: Request) {
 
 /**
  * Matchmaking logic: Find two gladiators with similar ranking points
- * and create a match if possible.
+ * and create a match that requires mutual acceptance.
  */
 async function attemptMatchmaking(
   supabase: ReturnType<typeof createClient>,
@@ -203,12 +203,13 @@ async function attemptMatchmaking(
   serverId: string
 ) {
   try {
+    // Check for existing active or pending acceptance matches
     const { data: activeMatch } = await supabase
       .from("combat_matches")
       .select("id")
       .eq("arenaSlug", arenaSlug)
       .eq("serverId", serverId)
-      .in("status", ["pending", "in_progress"])
+      .in("status", ["pending_acceptance", "pending", "in_progress"])
       .maybeSingle();
 
     if (activeMatch) {
@@ -284,7 +285,9 @@ async function attemptMatchmaking(
 
     const [entry1, entry2] = bestPair.entries;
     const matchedAt = new Date().toISOString();
+    const acceptanceDeadline = new Date(Date.now() + 60 * 1000).toISOString(); // 1 minute from now
 
+    // Create match with pending_acceptance status
     const { data: match, error: matchError } = await supabase
       .from("combat_matches")
       .insert({
@@ -292,8 +295,9 @@ async function attemptMatchmaking(
         serverId,
         gladiator1Id: entry1.gladiatorId,
         gladiator2Id: entry2.gladiatorId,
-        status: "pending",
+        status: "pending_acceptance",
         matchedAt,
+        acceptanceDeadline,
       })
       .select("*")
       .single();
@@ -303,6 +307,7 @@ async function attemptMatchmaking(
       return;
     }
 
+    // Update queue entries to matched status
     const { error: updateError } = await supabase
       .from("combat_queue")
       .update({ status: "matched", matchId: match.id })
@@ -312,6 +317,37 @@ async function attemptMatchmaking(
     if (updateError) {
       console.error("Error updating queue status:", updateError);
       await supabase.from("combat_matches").delete().eq("id", match.id);
+      return;
+    }
+
+    // Create acceptance records for both players
+    const acceptances = [
+      {
+        matchId: match.id,
+        gladiatorId: entry1.gladiatorId,
+        userId: entry1.userId,
+        status: "pending",
+      },
+      {
+        matchId: match.id,
+        gladiatorId: entry2.gladiatorId,
+        userId: entry2.userId,
+        status: "pending",
+      },
+    ];
+
+    const { error: acceptanceError } = await supabase
+      .from("combat_match_acceptances")
+      .insert(acceptances);
+
+    if (acceptanceError) {
+      console.error("Error creating acceptances:", acceptanceError);
+      // Clean up the match and queue entries
+      await supabase.from("combat_matches").delete().eq("id", match.id);
+      await supabase
+        .from("combat_queue")
+        .update({ status: "waiting", matchId: null })
+        .in("id", [entry1.id, entry2.id]);
     }
   } catch (error) {
     console.error("Matchmaking error:", error);

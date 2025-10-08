@@ -7,8 +7,10 @@ import { ArrowLeft, Swords, Skull, Shield, Users, MapPin, Scroll } from "lucide-
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 import type { CombatQueueEntry, CombatMatch, CombatMatchDetails, CombatantSummary } from "@/types/combat";
 import { useRealtimeCollection } from "@/lib/supabase/realtime";
+import { createClient } from "@/utils/supabase/clients";
 import GladiatorSelector from "./GladiatorSelector";
 import ActiveMatchPanel from "./ActiveMatchPanel";
+import MatchAcceptancePanel from "./MatchAcceptancePanel";
 
 import QueueStatus from "./QueueStatus";
 
@@ -85,6 +87,19 @@ interface Props {
     failedToLoadMatch: string;
     statusReady: string;
     statusIncapacitated: string;
+    matchAcceptanceTitle: string;
+    opponentFound: string;
+    waitingForAcceptance: string;
+    acceptMatch: string;
+    declineMatch: string;
+    acceptanceTimeout: string;
+    opponentDeclined: string;
+    timeRemaining: string;
+    youAccepted: string;
+    youDeclined: string;
+    opponentAccepted: string;
+    opponentDeclinedLabel: string;
+    preparingCombat: string;
 
   };
 }
@@ -107,6 +122,7 @@ export default function ArenaDetailClient({
   translations: t
 }: Props) {
   const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
   const [selectedGladiatorId, setSelectedGladiatorId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -170,13 +186,85 @@ export default function ArenaDetailClient({
   const activeMatch = useMemo(() => {
     const found = matchesData.find(
       (match) =>
-        (match.status === "pending" || match.status === "in_progress") &&
+        (match.status === "pending_acceptance" || match.status === "pending" || match.status === "in_progress") &&
         (userGladiatorIds.has(match.gladiator1Id) || userGladiatorIds.has(match.gladiator2Id)),
     );
     return found ?? null;
   }, [matchesData, userGladiatorIds]);
 
   const userHasActiveMatch = Boolean(activeMatch);
+
+  // Subscribe to match acceptances for real-time updates
+  const { data: acceptancesData } = useRealtimeCollection({
+    table: "combat_match_acceptances",
+    select: "*",
+    match: activeMatch ? { matchId: activeMatch.id } : { id: "__never__" },
+    initialData: [],
+    orderBy: { column: "createdAt", ascending: true },
+    fetchOnMount: Boolean(activeMatch),
+  });
+
+  // Debug: Log acceptances data changes
+  useEffect(() => {
+    if (activeMatch?.status === "pending_acceptance") {
+      console.log('📡 ArenaDetailClient - Acceptances from realtime:', {
+        matchId: activeMatch.id,
+        acceptancesCount: acceptancesData.length,
+        acceptances: acceptancesData.map((a: any) => ({
+          id: a.id,
+          gladiatorId: a.gladiatorId,
+          status: a.status,
+        })),
+      });
+    }
+  }, [acceptancesData, activeMatch]);
+
+  // Fetch opponent gladiator data during acceptance phase
+  const [opponentGladiatorData, setOpponentGladiatorData] = useState<NormalizedGladiator | null>(null);
+
+  useEffect(() => {
+    if (!activeMatch || activeMatch.status !== "pending_acceptance") {
+      setOpponentGladiatorData(null);
+      return;
+    }
+
+    const opponentId = userGladiatorIds.has(activeMatch.gladiator1Id)
+      ? activeMatch.gladiator2Id
+      : activeMatch.gladiator1Id;
+
+    if (!opponentId) return;
+
+    // Check if we already have the opponent in activeMatchDetails
+    const existingOpponent = activeMatchDetails?.gladiators.find(g => g.id === opponentId);
+    if (existingOpponent) {
+      setOpponentGladiatorData(null); // We have it in activeMatchDetails
+      return;
+    }
+
+    // Fetch opponent data from Supabase
+    const fetchOpponent = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("gladiators")
+          .select("*")
+          .eq("id", opponentId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching opponent:", error);
+          return;
+        }
+
+        if (data) {
+          setOpponentGladiatorData(data as NormalizedGladiator);
+        }
+      } catch (error) {
+        console.error("Error fetching opponent data:", error);
+      }
+    };
+
+    fetchOpponent();
+  }, [activeMatch, activeMatchDetails?.gladiators, userGladiatorIds]);
 
   // Enrich queue with gladiator data
   const enrichedQueue = queueData.map(entry => {
@@ -231,11 +319,27 @@ export default function ArenaDetailClient({
 
     if (!opponentId) return null;
 
+    // First check activeMatchDetails
     const detailed = activeMatchDetails?.gladiators.find((gladiator) => gladiator.id === opponentId);
     if (detailed) return detailed;
 
-    return null;
-  }, [activeMatch, activeMatchDetails?.gladiators, userGladiatorIds]);
+    // During acceptance phase, use fetched opponent data
+    if (opponentGladiatorData && opponentGladiatorData.id === opponentId) {
+      return toCombatantSummary(opponentGladiatorData);
+    }
+
+    // Fallback: create minimal opponent summary
+    return {
+      id: opponentId,
+      name: "Unknown",
+      surname: "Opponent",
+      userId: null,
+      rankingPoints: 1000,
+      health: 100,
+      ludusId: null,
+      alive: true,
+    } as CombatantSummary;
+  }, [activeMatch, activeMatchDetails?.gladiators, opponentGladiatorData, toCombatantSummary, userGladiatorIds]);
 
   const matchLogs = activeMatchDetails?.logs ?? [];
   const resolvedMatch = activeMatchDetails?.match ?? activeMatch ?? null;
@@ -468,35 +572,62 @@ export default function ArenaDetailClient({
             transition={{ delay: 0.1 }}
           >
             {activeMatch && resolvedMatch ? (
-              <ActiveMatchPanel
-                match={resolvedMatch}
-                player={playerGladiatorSummary}
-                opponent={opponentGladiatorSummary}
-                logs={matchLogs}
-                loading={isMatchLoading}
-                error={matchDetailsError}
-                locale={locale}
-                translations={{
-                  fightPanelTitle: t.activeMatch,
-                  yourGladiator: t.yourGladiator,
-                  opponentGladiator: t.opponentGladiator,
-                  combatLog: t.combatLog,
-                  awaitingCombat: t.awaitingCombat,
-                  noLogEntries: t.noLogEntries,
-                  matchStatusPending: t.matchStatusPending,
-                  matchStatusInProgress: t.matchStatusInProgress,
-                  matchStatusCompleted: t.matchStatusCompleted,
-                  matchStatusCancelled: t.matchStatusCancelled,
-                  loadingMatch: t.loadingMatch,
-                  failedToLoadMatch: t.failedToLoadMatch,
-                  healthStatus: t.healthStatus,
-                  rankingPoints: t.rankingPoints,
-                  statusReady: t.statusReady,
-                  statusIncapacitated: t.statusIncapacitated,
-                  startCombat: t.enterArena,
-                  viewCombat: t.viewMatch,
-                }}
-              />
+              activeMatch.status === "pending_acceptance" ? (
+                <MatchAcceptancePanel
+                  match={resolvedMatch}
+                  player={playerGladiatorSummary}
+                  opponent={opponentGladiatorSummary}
+                  acceptances={acceptancesData}
+                  locale={locale}
+                  translations={{
+                    matchAcceptanceTitle: t.matchAcceptanceTitle,
+                    opponentFound: t.opponentFound,
+                    waitingForAcceptance: t.waitingForAcceptance,
+                    acceptMatch: t.acceptMatch,
+                    declineMatch: t.declineMatch,
+                    acceptanceTimeout: t.acceptanceTimeout,
+                    opponentDeclined: t.opponentDeclined,
+                    timeRemaining: t.timeRemaining,
+                    yourGladiator: t.yourGladiator,
+                    opponentGladiator: t.opponentGladiator,
+                    youAccepted: t.youAccepted,
+                    youDeclined: t.youDeclined,
+                    opponentAccepted: t.opponentAccepted,
+                    opponentDeclinedLabel: t.opponentDeclinedLabel,
+                    preparingCombat: t.preparingCombat,
+                  }}
+                />
+              ) : (
+                <ActiveMatchPanel
+                  match={resolvedMatch}
+                  player={playerGladiatorSummary}
+                  opponent={opponentGladiatorSummary}
+                  logs={matchLogs}
+                  loading={isMatchLoading}
+                  error={matchDetailsError}
+                  locale={locale}
+                  translations={{
+                    fightPanelTitle: t.activeMatch,
+                    yourGladiator: t.yourGladiator,
+                    opponentGladiator: t.opponentGladiator,
+                    combatLog: t.combatLog,
+                    awaitingCombat: t.awaitingCombat,
+                    noLogEntries: t.noLogEntries,
+                    matchStatusPending: t.matchStatusPending,
+                    matchStatusInProgress: t.matchStatusInProgress,
+                    matchStatusCompleted: t.matchStatusCompleted,
+                    matchStatusCancelled: t.matchStatusCancelled,
+                    loadingMatch: t.loadingMatch,
+                    failedToLoadMatch: t.failedToLoadMatch,
+                    healthStatus: t.healthStatus,
+                    rankingPoints: t.rankingPoints,
+                    statusReady: t.statusReady,
+                    statusIncapacitated: t.statusIncapacitated,
+                    startCombat: t.enterArena,
+                    viewCombat: t.viewMatch,
+                  }}
+                />
+              )
             ) : (
               <>
                 {!userQueueEntry && (
@@ -600,7 +731,7 @@ export default function ArenaDetailClient({
                     currentQueue: t.currentQueue,
                     noGladiatorsInQueue: t.noGladiatorsInQueue,
                     queuePosition: t.queuePosition,
-                    rankingPoints: t.rankingPoints,
+                    rankingPoints: "", // Empty string to hide ranking points
                     queuedAt: t.queuedAt,
                     waitingForMatch: t.waitingForMatch,
                     matchmaking: t.matchmaking,

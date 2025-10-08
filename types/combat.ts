@@ -3,7 +3,8 @@
  */
 
 export type QueueStatus = 'waiting' | 'matched' | 'cancelled';
-export type MatchStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
+export type MatchStatus = 'pending_acceptance' | 'pending' | 'in_progress' | 'completed' | 'cancelled';
+export type AcceptanceStatus = 'pending' | 'accepted' | 'declined';
 
 /**
  * Represents a gladiator in the combat queue for a specific arena.
@@ -70,6 +71,35 @@ export interface CombatMatch {
 
   /** When combat ended (if completed) */
   completedAt?: string;
+
+  /** Deadline for match acceptance (for pending_acceptance status) */
+  acceptanceDeadline?: string;
+}
+
+/**
+ * Represents a player's response to a match request
+ */
+export interface CombatMatchAcceptance {
+  /** Unique acceptance ID */
+  id: string;
+
+  /** Match ID this acceptance belongs to */
+  matchId: string;
+
+  /** Gladiator ID that needs to respond */
+  gladiatorId: string;
+
+  /** User ID that owns the gladiator */
+  userId: string;
+
+  /** Current acceptance status */
+  status: AcceptanceStatus;
+
+  /** When the user responded (if accepted or declined) */
+  respondedAt?: string;
+
+  /** When this acceptance was created */
+  createdAt: string;
 }
 
 
@@ -105,6 +135,7 @@ export interface CombatMatchDetails {
   match: CombatMatch;
   gladiators: CombatantSummary[];
   logs: CombatLogEntry[];
+  acceptances?: CombatMatchAcceptance[];
 }
 
 /**
