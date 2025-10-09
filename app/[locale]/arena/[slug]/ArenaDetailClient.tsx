@@ -149,6 +149,7 @@ export default function ArenaDetailClient({
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [initialAcceptances, setInitialAcceptances] = useState<CombatMatchAcceptance[]>([]);
 
   // Real-time queue subscription
   const {
@@ -199,18 +200,65 @@ export default function ArenaDetailClient({
   }, [matchesData, userGladiatorIds]);
 
   const userHasActiveMatch = Boolean(activeMatch);
+  const activeMatchId = activeMatch?.id ?? null;
 
-  // Subscribe to match acceptances for real-time updates
+  // Fetch initial acceptance data when match is detected
+  useEffect(() => {
+    if (!activeMatchId || activeMatch?.status !== "pending_acceptance") {
+      setInitialAcceptances([]);
+      return;
+    }
+
+    let isCancelled = false;
+    const controller = new AbortController();
+
+    const fetchAcceptances = async () => {
+      try {
+        const response = await fetch(`/api/combat/match/${activeMatchId}/acceptances`, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          console.error("Failed to fetch acceptances");
+          return;
+        }
+
+        const data = await response.json();
+        if (!isCancelled && data.acceptances) {
+          setInitialAcceptances(data.acceptances);
+          console.log('📥 Loaded initial acceptances:', {
+            matchId: activeMatchId,
+            count: data.acceptances.length,
+            acceptances: data.acceptances.map((a: CombatMatchAcceptance) => ({
+              id: a.id,
+              gladiatorId: a.gladiatorId,
+              status: a.status,
+            })),
+          });
+        }
+      } catch (err) {
+        if (isCancelled) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("Error fetching acceptances:", err);
+      }
+    };
+
+    fetchAcceptances();
+
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
+  }, [activeMatchId, activeMatch?.status]);
+
+  // Subscribe to match acceptances for real-time updates with proper filtering
   const { data: acceptancesData } = useRealtimeCollection<CombatMatchAcceptance>({
     table: "combat_match_acceptances",
     select: "*",
-    match: activeMatch ? { matchId: activeMatch.id } : { id: "__never__" },
-    initialData:
-      activeMatch?.status === "pending_acceptance"
-        ? activeMatchDetails?.acceptances ?? []
-        : [],
+    match: activeMatchId ? { matchId: activeMatchId } : undefined,
+    initialData: initialAcceptances,
     orderBy: { column: "createdAt", ascending: true },
-    fetchOnMount: Boolean(activeMatch),
+    fetchOnMount: false, // We handle initial loading manually
   });
 
   const acceptanceRecords = useMemo(() => {
@@ -218,14 +266,23 @@ export default function ArenaDetailClient({
 
     const merged = new Map<string, CombatMatchAcceptance>();
 
+    // Add acceptances from match details (if available)
     for (const acceptance of activeMatchDetails?.acceptances ?? []) {
       if (acceptance?.id) {
         merged.set(acceptance.id, acceptance);
       }
     }
 
-    for (const acceptance of acceptancesData) {
+    // Add initial acceptances loaded from API
+    for (const acceptance of initialAcceptances) {
       if (acceptance?.id) {
+        merged.set(acceptance.id, acceptance);
+      }
+    }
+
+    // Add realtime acceptances, but only filter for current match
+    for (const acceptance of acceptancesData) {
+      if (acceptance?.id && acceptance.matchId === activeMatch.id) {
         merged.set(acceptance.id, acceptance);
       }
     }
@@ -239,22 +296,31 @@ export default function ArenaDetailClient({
     });
 
     return result;
-  }, [activeMatch, activeMatchDetails?.acceptances, acceptancesData]);
+  }, [activeMatch, activeMatchDetails?.acceptances, initialAcceptances, acceptancesData]);
+
+  // Enhanced error handling for realtime connection issues
+  useEffect(() => {
+    if (acceptancesData.length > 0) {
+      console.log('📡 Realtime acceptances data received:', acceptancesData.length);
+    }
+  }, [acceptancesData]);
 
   // Debug: Log acceptances data changes
   useEffect(() => {
     if (activeMatch?.status === "pending_acceptance") {
-      console.log('📡 ArenaDetailClient - Acceptances from realtime:', {
+      console.log('📡 ArenaDetailClient - Acceptances updated:', {
         matchId: activeMatch.id,
-        acceptancesCount: acceptancesData.length,
-        acceptances: acceptancesData.map((a) => ({
+        totalAcceptances: acceptanceRecords.length,
+        initialAcceptances: initialAcceptances.length,
+        realtimeAcceptances: acceptancesData.length,
+        acceptances: acceptanceRecords.map((a) => ({
           id: a.id,
           gladiatorId: a.gladiatorId,
           status: a.status,
         })),
       });
     }
-  }, [acceptancesData, activeMatch]);
+  }, [acceptanceRecords, activeMatch, initialAcceptances.length, acceptancesData.length]);
 
   // Fetch opponent gladiator data during acceptance phase
   const [opponentGladiatorData, setOpponentGladiatorData] = useState<NormalizedGladiator | null>(null);
@@ -402,8 +468,6 @@ export default function ArenaDetailClient({
       return () => clearTimeout(timer);
     }
   }, [error]);
-
-  const activeMatchId = activeMatch?.id ?? null;
 
   useEffect(() => {
 

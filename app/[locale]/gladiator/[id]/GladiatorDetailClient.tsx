@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Heart, Swords, Brain, Star, MapPin, AlertCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
+import { useRealtimeRow } from "@/lib/supabase/realtime";
 
 interface Props {
   gladiator: NormalizedGladiator;
@@ -40,6 +41,17 @@ interface Props {
 
 export default function GladiatorDetailClient({ gladiator, locale, translations: t }: Props) {
   const router = useRouter();
+
+  // Real-time gladiator data updates
+  const { data: realtimeGladiator } = useRealtimeRow<NormalizedGladiator>({
+    table: "gladiators",
+    select: "*",
+    match: { id: gladiator.id },
+    initialData: gladiator,
+    primaryKey: "id",
+  });
+
+  const currentGladiator = realtimeGladiator ?? gladiator;
 
   const statIcons: Record<string, LucideIcon> = {
     strength: Swords,
@@ -78,9 +90,9 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
             {/* Avatar */}
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-600 to-red-600 flex items-center justify-center text-4xl font-bold text-white">
-                {gladiator.name.charAt(0)}
+                {currentGladiator.name.charAt(0)}
               </div>
-              {!gladiator.alive && (
+              {!currentGladiator.alive && (
                 <div className="absolute inset-0 bg-black/80 rounded-full flex items-center justify-center">
                   <span className="text-red-500 text-2xl">✝</span>
                 </div>
@@ -90,31 +102,31 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
             {/* Basic Info */}
             <div className="flex-1">
               <h1 className="text-3xl font-black text-amber-400">
-                {gladiator.name} {gladiator.surname}
+                {currentGladiator.name} {currentGladiator.surname}
               </h1>
               <div className="flex items-center gap-4 mt-2 text-gray-400">
                 <div className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
-                  <span>{t.from} {gladiator.birthCity}</span>
+                  <span>{t.from} {currentGladiator.birthCity}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Heart className="w-4 h-4" />
-                  <span>{gladiator.health} HP</span>
+                  <span>{currentGladiator.health} HP</span>
                 </div>
               </div>
 
               {/* Status Indicators */}
               <div className="flex gap-2 mt-3">
-                {gladiator.injury && (
+                {currentGladiator.injury && (
                   <div className="flex items-center gap-1 px-3 py-1 bg-orange-900/30 border border-orange-700/50 rounded-full text-orange-400 text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    <span>{gladiator.injury}</span>
+                    <span>{currentGladiator.injury}</span>
                   </div>
                 )}
-                {gladiator.sickness && (
+                {currentGladiator.sickness && (
                   <div className="flex items-center gap-1 px-3 py-1 bg-yellow-900/30 border border-yellow-700/50 rounded-full text-yellow-400 text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    <span>{gladiator.sickness}</span>
+                    <span>{currentGladiator.sickness}</span>
                   </div>
                 )}
               </div>
@@ -128,7 +140,7 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
           <section>
             <h2 className="text-xl font-bold text-amber-400 mb-4">{t.combatStats}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(gladiator.stats).map(([stat, description]) => {
+              {Object.entries(currentGladiator.stats).map(([stat, description]) => {
                 const Icon = statIcons[stat] || Star;
                 return (
                   <div key={stat} className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
@@ -150,19 +162,19 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
               <div className="space-y-3">
                 <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.lifeGoal}</h3>
-                  <p className="text-sm text-gray-300">{gladiator.lifeGoal}</p>
+                  <p className="text-sm text-gray-300">{currentGladiator.lifeGoal}</p>
                 </div>
                 <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.personalityTrait}</h3>
-                  <p className="text-sm text-gray-300">{gladiator.personality}</p>
+                  <p className="text-sm text-gray-300">{currentGladiator.personality}</p>
                 </div>
                 <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.likes}</h3>
-                  <p className="text-sm text-gray-300">{gladiator.likes}</p>
+                  <p className="text-sm text-gray-300">{currentGladiator.likes}</p>
                 </div>
                 <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.dislikes}</h3>
-                  <p className="text-sm text-gray-300">{gladiator.dislikes}</p>
+                  <p className="text-sm text-gray-300">{currentGladiator.dislikes}</p>
                 </div>
               </div>
             </div>
@@ -172,18 +184,18 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
               <div className="space-y-3">
                 <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.backstory}</h3>
-                  <p className="text-sm text-gray-300">{gladiator.backstory}</p>
+                  <p className="text-sm text-gray-300">{currentGladiator.backstory}</p>
                 </div>
-                {gladiator.notableHistory && (
+                {currentGladiator.notableHistory && (
                   <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                     <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.notableHistory}</h3>
-                    <p className="text-sm text-gray-300">{gladiator.notableHistory}</p>
+                    <p className="text-sm text-gray-300">{currentGladiator.notableHistory}</p>
                   </div>
                 )}
-                {gladiator.physicalCondition && (
+                {currentGladiator.physicalCondition && (
                   <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                     <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.physicalCondition}</h3>
-                    <p className="text-sm text-gray-300">{gladiator.physicalCondition}</p>
+                    <p className="text-sm text-gray-300">{currentGladiator.physicalCondition}</p>
                   </div>
                 )}
               </div>
@@ -194,28 +206,28 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
           <section>
             <h2 className="text-xl font-bold text-amber-400 mb-4">{t.specialTraits}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {gladiator.weakness && (
+              {currentGladiator.weakness && (
                 <div className="bg-black/40 border border-red-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-red-400 mb-1">{t.weakness}</h3>
-                  <p className="text-sm text-gray-300">{gladiator.weakness}</p>
+                  <p className="text-sm text-gray-300">{currentGladiator.weakness}</p>
                 </div>
               )}
-              {gladiator.fear && (
+              {currentGladiator.fear && (
                 <div className="bg-black/40 border border-purple-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-purple-400 mb-1">{t.fear}</h3>
-                  <p className="text-sm text-gray-300">{gladiator.fear}</p>
+                  <p className="text-sm text-gray-300">{currentGladiator.fear}</p>
                 </div>
               )}
-              {gladiator.handicap && (
+              {currentGladiator.handicap && (
                 <div className="bg-black/40 border border-orange-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-orange-400 mb-1">{t.handicap}</h3>
-                  <p className="text-sm text-gray-300">{gladiator.handicap}</p>
+                  <p className="text-sm text-gray-300">{currentGladiator.handicap}</p>
                 </div>
               )}
-              {gladiator.uniquePower && (
+              {currentGladiator.uniquePower && (
                 <div className="bg-black/40 border border-green-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-green-400 mb-1">{t.uniquePower}</h3>
-                  <p className="text-sm text-gray-300">{gladiator.uniquePower}</p>
+                  <p className="text-sm text-gray-300">{currentGladiator.uniquePower}</p>
                 </div>
               )}
             </div>

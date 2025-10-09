@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { Ludus } from "@/types/ludus";
 import { SERVERS } from "@/data/servers";
 
@@ -65,7 +65,9 @@ export async function POST(req: Request) {
       updatedAt: now,
     };
 
-    const { data: inserted, error } = await supabase
+    // Use service role for system operations
+    const serviceRole = createServiceRoleClient();
+    const { data: inserted, error } = await serviceRole
       .from("ludi")
       .insert(newLudus)
       .select("id")

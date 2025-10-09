@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -20,8 +20,11 @@ export async function POST(
   }
 
   try {
+    // Use service role for system operations
+    const serviceRole = createServiceRoleClient();
+    
     // Fetch match
-    const { data: match, error: matchError } = await supabase
+    const { data: match, error: matchError } = await serviceRole
       .from("combat_matches")
       .select("*")
       .eq("id", matchId)
@@ -41,7 +44,7 @@ export async function POST(
     }
 
     // Cancel the match
-    const { error: updateError } = await supabase
+    const { error: updateError } = await serviceRole
       .from("combat_matches")
       .update({ 
         status: "cancelled",
@@ -58,7 +61,7 @@ export async function POST(
     // When timeout happens, both players should be removed from queue
     const gladiatorIds = [match.gladiator1Id, match.gladiator2Id];
 
-    const { error: queueDeleteError } = await supabase
+    const { error: queueDeleteError } = await serviceRole
       .from("combat_queue")
       .delete()
       .in("gladiatorId", gladiatorIds)
@@ -69,7 +72,7 @@ export async function POST(
     }
 
     // Get acceptance records for logging
-    const { data: acceptances, error: acceptanceError } = await supabase
+    const { data: acceptances, error: acceptanceError } = await serviceRole
       .from("combat_match_acceptances")
       .select("*")
       .eq("matchId", matchId);

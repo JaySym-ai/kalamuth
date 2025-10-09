@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { SERVERS } from "@/data/servers";
 import OpenAI from "openai";
 import { generateOneGladiator } from "@/lib/generation/generateGladiator";
@@ -62,7 +62,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, jobId: pendingJob.id, pending: true, missing }, { status: 202 });
     }
 
-    const { data: job, error: jobErr } = await supabase
+    // Use service role for job operations
+    const serviceRole = createServiceRoleClient();
+    const { data: job, error: jobErr } = await serviceRole
       .from('jobs')
       .insert({
         type: 'generateInitialGladiators',
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
     // From here on, we process the job directly in Next.js
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      await supabase
+      await serviceRole
         .from('jobs')
         .update({ status: 'completed_with_errors', created: 0, errors: ['missing_openrouter_api_key'], finishedAt: nowIso() })
         .eq('id', job.id);
@@ -100,7 +102,7 @@ export async function POST(req: Request) {
     const toCreate = Math.min(count, execMissing);
 
     if (toCreate <= 0) {
-      await supabase.from('jobs').update({ status: 'completed', created: 0, errors: [], finishedAt: nowIso() }).eq('id', job.id);
+      await serviceRole.from('jobs').update({ status: 'completed', created: 0, errors: [], finishedAt: nowIso() }).eq('id', job.id);
       return NextResponse.json({ ok: true, jobId: job.id, created: 0, missing: execMissing }, { status: 202 });
     }
 
@@ -188,7 +190,7 @@ export async function POST(req: Request) {
     // Update ludus gladiatorCount approximately (existing + created)
     try {
       if (created > 0) {
-        const { error: updErr } = await supabase
+        const { error: updErr } = await serviceRole
           .from('ludi')
           .update({ gladiatorCount: (execExistingCount ?? 0) + created, updatedAt: nowIso() })
           .eq('id', ludusId);
@@ -200,7 +202,7 @@ export async function POST(req: Request) {
     }
 
     const finalStatus = errors.length ? 'completed_with_errors' : 'completed';
-    await supabase
+    await serviceRole
       .from('jobs')
       .update({ status: finalStatus, created, errors, finishedAt: nowIso() })
       .eq('id', job.id);

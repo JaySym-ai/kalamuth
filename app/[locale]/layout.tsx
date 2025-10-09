@@ -5,6 +5,8 @@ import RegisterSW from '../components/pwa/RegisterSW';
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages} from 'next-intl/server';
 import {locales} from '../../i18n';
+import { RealtimeConnectionProvider } from '../../components/providers/RealtimeConnectionProvider';
+import ConnectionIndicator from '../../components/ui/ConnectionIndicator';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -52,13 +54,17 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} data-scroll-behavior="smooth">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
-          {children}
-          {/* PWA service worker registration */}
-          <div suppressHydrationWarning>
-            <RegisterSW />
-          </div>
+          <RealtimeConnectionProvider>
+            {children}
+            {/* PWA service worker registration */}
+            <div suppressHydrationWarning>
+              <RegisterSW />
+            </div>
+            {/* Connection status indicator */}
+            <ConnectionIndicator />
+          </RealtimeConnectionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

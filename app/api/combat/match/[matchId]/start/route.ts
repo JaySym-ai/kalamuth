@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
 import { ARENAS } from "@/data/arenas";
 import { getCombatConfigForArena } from "@/lib/combat/config";
@@ -50,13 +50,20 @@ export async function GET(
     return new Response("Forbidden", { status: 403 });
   }
 
+  // Use service role for system operations
+  const serviceRole = createServiceRoleClient();
+
   // Check if match is already in progress or completed
   if (match.status !== "pending") {
-    return new Response("Match already started or completed", { status: 400 });
+    // Match already started - redirect to watch endpoint to get existing logs
+    // This handles the case where both users try to start simultaneously
+    const watchUrl = new URL(req.url);
+    watchUrl.pathname = `/api/combat/match/${matchId}/watch`;
+    return fetch(watchUrl.toString());
   }
 
   // Update match status to in_progress
-  await supabase
+  await serviceRole
     .from("combat_matches")
     .update({ status: "in_progress", startedAt: new Date().toISOString() })
     .eq("id", matchId);
@@ -170,7 +177,7 @@ export async function GET(
           sendEvent({ type: "log", log: victoryLog });
 
           // Update match with winner
-          await supabase
+          await serviceRole
             .from("combat_matches")
             .update({
               status: "completed",
@@ -182,7 +189,7 @@ export async function GET(
             .eq("id", matchId);
 
           // Remove both gladiators from the queue
-          await supabase
+          await serviceRole
             .from("combat_queue")
             .delete()
             .in("gladiatorId", [match.gladiator1Id, match.gladiator2Id]);
@@ -268,7 +275,7 @@ function normalizeGladiator(row: Record<string, unknown>, locale: string): Comba
 }
 
 async function saveLog(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   matchId: string,
   actionNumber: number,
   type: string,
@@ -276,7 +283,9 @@ async function saveLog(
   locale: string,
   state: BattleState
 ): Promise<CombatLogEntry> {
-  const { data, error } = await supabase
+  // Use service role for system operations
+  const serviceRole = createServiceRoleClient();
+  const { data, error } = await serviceRole
     .from("combat_logs")
     .insert({
       matchId,

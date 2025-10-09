@@ -53,9 +53,6 @@ export default function CombatClient({
         locale={locale}
         translations={{
           startBattle: t("startBattle"),
-          pauseBattle: t("pauseBattle"),
-          resumeBattle: t("resumeBattle"),
-          resetBattle: t("resetBattle"),
           loading: t("loading"),
           error: t("error"),
           combatLog: t("combatLog"),

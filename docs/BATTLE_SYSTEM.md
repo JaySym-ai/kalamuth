@@ -43,7 +43,7 @@ The battle system provides live-streamed, AI-narrated gladiator combat with full
 
 ### API Routes
 
-#### `POST /api/combat/match/[matchId]/start`
+#### `GET /api/combat/match/[matchId]/start`
 Starts a combat match and streams actions via SSE.
 
 **Query Parameters:**
@@ -61,6 +61,27 @@ Starts a combat match and streams actions via SSE.
 - Calculates damage and health updates
 - Handles victory conditions (submission, knockout, death)
 - Saves all logs to database for replay
+
+**Note:** Only the user who starts the battle can use this endpoint. If the match is already in progress, the client will automatically fall back to the watch endpoint.
+
+#### `GET /api/combat/match/[matchId]/watch`
+Allows spectators to view an ongoing or completed fight.
+
+**Query Parameters:**
+- `locale` - Language for narration (en/fr)
+
+**Response:** Server-Sent Events stream
+- `type: "log"` - Combat action log entry (existing logs sent first, then new ones via polling)
+- `type: "complete"` - Battle finished
+- `type: "error"` - Error occurred
+
+**Features:**
+- Validates user is a participant in the match
+- Sends all existing logs from the database
+- Polls for new logs every 1 second
+- Works for both ongoing and completed fights
+- Allows multiple spectators to watch simultaneously
+- Automatically closes when match is completed
 
 #### `GET /api/combat/match/[matchId]/config`
 Retrieves combat configuration for a match.

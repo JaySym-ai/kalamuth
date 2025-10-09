@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { CombatQueueEntry } from "@/types/combat";
 
 export const runtime = "nodejs";
@@ -137,7 +137,8 @@ export async function POST(req: Request) {
     if (queueError) throw queueError;
 
     // After adding to queue, attempt matchmaking
-    await attemptMatchmaking(supabase, arenaSlug, serverId);
+    const serviceRole = createServiceRoleClient();
+    await attemptMatchmaking(serviceRole, arenaSlug, serverId);
 
     return NextResponse.json({
       success: true,
@@ -288,7 +289,9 @@ async function attemptMatchmaking(
     const acceptanceDeadline = new Date(Date.now() + 60 * 1000).toISOString(); // 1 minute from now
 
     // Create match with pending_acceptance status
-    const { data: match, error: matchError } = await supabase
+    // Use service role for system operations
+    const serviceRole = createServiceRoleClient();
+    const { data: match, error: matchError } = await serviceRole
       .from("combat_matches")
       .insert({
         arenaSlug,
@@ -308,7 +311,7 @@ async function attemptMatchmaking(
     }
 
     // Update queue entries to matched status
-    const { error: updateError } = await supabase
+    const { error: updateError } = await serviceRole
       .from("combat_queue")
       .update({ status: "matched", matchId: match.id })
       .in("id", [entry1.id, entry2.id])
@@ -316,7 +319,7 @@ async function attemptMatchmaking(
 
     if (updateError) {
       console.error("Error updating queue status:", updateError);
-      await supabase.from("combat_matches").delete().eq("id", match.id);
+      await serviceRole.from("combat_matches").delete().eq("id", match.id);
       return;
     }
 
@@ -336,15 +339,16 @@ async function attemptMatchmaking(
       },
     ];
 
-    const { error: acceptanceError } = await supabase
+    // Use service role client to bypass RLS for system-created acceptances
+    const { error: acceptanceError } = await serviceRole
       .from("combat_match_acceptances")
       .insert(acceptances);
 
     if (acceptanceError) {
       console.error("Error creating acceptances:", acceptanceError);
-      // Clean up the match and queue entries
-      await supabase.from("combat_matches").delete().eq("id", match.id);
-      await supabase
+      // Clean up the match and queue entries using service role
+      await serviceRole.from("combat_matches").delete().eq("id", match.id);
+      await serviceRole
         .from("combat_queue")
         .update({ status: "waiting", matchId: null })
         .in("id", [entry1.id, entry2.id]);

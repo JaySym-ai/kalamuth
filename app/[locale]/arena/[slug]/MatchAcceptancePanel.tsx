@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Swords, Clock, User, Check, X, AlertCircle } from "lucide-react";
+import { Swords, Clock, Check, X, AlertCircle } from "lucide-react";
 import type { CombatMatch, CombatMatchAcceptance, CombatantSummary } from "@/types/combat";
 
 interface Props {
@@ -153,12 +153,10 @@ export default function MatchAcceptancePanel({
       }
 
       setSuccessMessage(t.youAccepted);
-      
-      // If both accepted, navigate to combat
+
+      // If both accepted, navigate to combat immediately
       if (data.bothAccepted) {
-        setTimeout(() => {
-          router.push(`/${locale}/combat/${match.id}`);
-        }, 1500);
+        router.push(`/${locale}/combat/${match.id}`);
       }
     } catch (err) {
       console.error("Error accepting match:", err);
@@ -218,13 +216,10 @@ export default function MatchAcceptancePanel({
       userAcceptance?.status === "accepted" &&
       opponentAcceptance?.status === "accepted"
     ) {
-      console.log('✅ Both accepted! Navigating to combat in 1.5s...');
-      // Both accepted, navigate to combat after a short delay
-      const timer = setTimeout(() => {
-        console.log('🎯 Navigating to:', `/${locale}/combat/${match.id}`);
-        router.push(`/${locale}/combat/${match.id}`);
-      }, 1500);
-      return () => clearTimeout(timer);
+      console.log('✅ Both accepted! Navigating to combat immediately...');
+      // Both accepted, navigate to combat immediately
+      console.log('🎯 Navigating to:', `/${locale}/combat/${match.id}`);
+      router.push(`/${locale}/combat/${match.id}`);
     }
   }, [userAcceptance?.status, opponentAcceptance?.status, router, locale, match.id]);
 

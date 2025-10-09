@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { CombatMatchAcceptance } from "@/types/combat";
 
 export const runtime = "nodejs";
@@ -24,8 +24,11 @@ export async function POST(
   }
 
   try {
+    // Use service role client to bypass RLS temporarily
+    const serviceRole = createServiceRoleClient();
+
     // Fetch match and verify user is a participant
-    const { data: match, error: matchError } = await supabase
+    const { data: match, error: matchError } = await serviceRole
       .from("combat_matches")
       .select("*")
       .eq("id", matchId)
@@ -37,7 +40,7 @@ export async function POST(
     }
 
     // Verify user owns one of the gladiators
-    const { data: participant, error: participantError } = await supabase
+    const { data: participant, error: participantError } = await serviceRole
       .from("gladiators")
       .select("id")
       .in("id", [match.gladiator1Id, match.gladiator2Id])
@@ -49,7 +52,7 @@ export async function POST(
     }
 
     // Update the existing acceptance record
-    const { data: acceptance, error: acceptanceError } = await supabase
+    const { data: acceptance, error: acceptanceError } = await serviceRole
       .from("combat_match_acceptances")
       .update({
         status: "declined",
@@ -66,7 +69,7 @@ export async function POST(
     }
 
     // Cancel the match since one player declined
-    const { error: updateError } = await supabase
+    const { error: updateError } = await serviceRole
       .from("combat_matches")
       .update({ 
         status: "cancelled",
@@ -80,7 +83,7 @@ export async function POST(
     }
 
     // Remove the other gladiator from the queue if they're still there
-    const { data: otherGladiatorId } = await supabase
+    const { data: otherGladiatorId } = await serviceRole
       .from("gladiators")
       .select("id")
       .in("id", [match.gladiator1Id, match.gladiator2Id])
@@ -88,7 +91,7 @@ export async function POST(
       .single();
 
     if (otherGladiatorId) {
-      await supabase
+      await serviceRole
         .from("combat_queue")
         .update({ status: "cancelled" })
         .eq("gladiatorId", otherGladiatorId)

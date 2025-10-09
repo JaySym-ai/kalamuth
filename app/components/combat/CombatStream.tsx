@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, RotateCcw, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import CombatAction from "./CombatAction";
 import CombatHealthBar from "./CombatHealthBar";
 import CombatStats from "./CombatStats";
@@ -18,9 +18,6 @@ interface CombatStreamProps {
   locale: string;
   translations: {
     startBattle: string;
-    pauseBattle: string;
-    resumeBattle: string;
-    resetBattle: string;
     loading: string;
     error: string;
     combatLog: string;
@@ -53,10 +50,10 @@ export default function CombatStream({
     isComplete: false,
   });
   const [isStreaming, setIsStreaming] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [latestLogId, setLatestLogId] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(5);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -69,9 +66,11 @@ export default function CombatStream({
     }
   }, [logs]);
 
+
+
   // Timer for elapsed time
   useEffect(() => {
-    if (isStreaming && !isPaused && !battleState.isComplete) {
+    if (isStreaming && !battleState.isComplete) {
       timerRef.current = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1);
       }, 1000);
@@ -87,27 +86,39 @@ export default function CombatStream({
         clearInterval(timerRef.current);
       }
     };
-  }, [isStreaming, isPaused, battleState.isComplete]);
+  }, [isStreaming, battleState.isComplete]);
 
-  const startBattle = () => {
+  const startBattle = useCallback(() => {
     if (isStreaming) return;
 
     setIsStreaming(true);
-    setIsPaused(false);
     setError(null);
 
-    // Create EventSource for SSE
-    const eventSource = new EventSource(
-      `/api/combat/match/${matchId}/start?locale=${locale}`
-    );
+    // Try to start the battle, but if it's already in progress, watch instead
+    const startUrl = `/api/combat/match/${matchId}/start?locale=${locale}`;
+    const watchUrl = `/api/combat/match/${matchId}/watch?locale=${locale}`;
 
-    eventSource.onmessage = (event) => {
+    const eventSource = new EventSource(startUrl);
+    let isWatching = false;
+
+    const handleMessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data);
 
+        // Ignore ping messages
+        if (data.type === "ping") {
+          return;
+        }
+
         if (data.type === "log") {
           const log: CombatLogEntry = data.log;
-          setLogs((prev) => [...prev, log]);
+          setLogs((prev) => {
+            // Avoid duplicates
+            if (prev.some((l) => l.id === log.id)) {
+              return prev;
+            }
+            return [...prev, log];
+          });
           setLatestLogId(log.id);
 
           // Update battle state if health data is provided
@@ -138,42 +149,50 @@ export default function CombatStream({
       }
     };
 
+    eventSource.onmessage = handleMessage;
+
     eventSource.onerror = () => {
-      setError("Connection lost. Please refresh the page.");
-      setIsStreaming(false);
-      eventSource.close();
+      // If start fails, try watching instead
+      if (!isWatching) {
+        isWatching = true;
+        eventSource.close();
+        const watchSource = new EventSource(watchUrl);
+        watchSource.onmessage = handleMessage;
+        watchSource.onerror = () => {
+          setError("Connection lost. Please refresh the page.");
+          setIsStreaming(false);
+          watchSource.close();
+        };
+        eventSourceRef.current = watchSource;
+      } else {
+        setError("Connection lost. Please refresh the page.");
+        setIsStreaming(false);
+        eventSource.close();
+      }
     };
 
     eventSourceRef.current = eventSource;
-  };
+  }, [isStreaming, matchId, locale]);
 
-  const pauseBattle = () => {
-    setIsPaused(true);
-    // Note: We can't actually pause the server-side stream, but we can pause the UI updates
-  };
-
-  const resumeBattle = () => {
-    setIsPaused(false);
-  };
-
-  const resetBattle = () => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
+  // Auto-start battle 5 seconds after component mounts with countdown
+  useEffect(() => {
+    // Don't countdown if battle is already streaming or complete
+    if (isStreaming || battleState.isComplete) {
+      return;
     }
-    setLogs([]);
-    setBattleState({
-      matchId,
-      actionNumber: 0,
-      gladiator1Health: gladiator1MaxHealth,
-      gladiator2Health: gladiator2MaxHealth,
-      isComplete: false,
-    });
-    setIsStreaming(false);
-    setIsPaused(false);
-    setError(null);
-    setElapsedSeconds(0);
-    setLatestLogId(null);
-  };
+
+    if (countdown > 0) {
+      const countdownTimer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+
+      return () => {
+        clearTimeout(countdownTimer);
+      };
+    } else if (countdown === 0 && !isStreaming) {
+      startBattle();
+    }
+  }, [countdown, isStreaming, battleState.isComplete, startBattle]);
 
   return (
     <div className="space-y-6">
@@ -204,41 +223,67 @@ export default function CombatStream({
         translations={t}
       />
 
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-3">
-        {!isStreaming && !battleState.isComplete && (
-          <button
-            onClick={startBattle}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-amber-600 to-red-600 text-white font-semibold hover:from-amber-500 hover:to-red-500 transition-all shadow-lg shadow-amber-500/30"
-            data-testid="start-battle"
-          >
-            <Play className="w-5 h-5" />
-            {t.startBattle}
-          </button>
-        )}
+      {/* Countdown Display */}
+      {!isStreaming && !battleState.isComplete && countdown > 0 && (
+        <motion.div
+          className="flex flex-col items-center justify-center"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="relative w-40 h-40 flex items-center justify-center">
+            {/* Outer rotating ring */}
+            <svg
+              className="absolute inset-0 w-full h-full"
+              viewBox="0 0 160 160"
+              style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.1))" }}
+            >
+              <motion.circle
+                cx="80"
+                cy="80"
+                r="75"
+                fill="none"
+                stroke="url(#gradient)"
+                strokeWidth="4"
+                strokeLinecap="round"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                style={{ transformOrigin: "80px 80px" }}
+              />
+              <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#f59e0b" />
+                  <stop offset="100%" stopColor="#dc2626" />
+                </linearGradient>
+              </defs>
+            </svg>
 
-        {isStreaming && !battleState.isComplete && (
-          <button
-            onClick={isPaused ? resumeBattle : pauseBattle}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-500 hover:to-purple-500 transition-all"
-            data-testid="pause-battle"
-          >
-            {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
-            {isPaused ? t.resumeBattle : t.pauseBattle}
-          </button>
-        )}
+            {/* Middle pulsing ring */}
+            <motion.div
+              className="absolute inset-4 rounded-full border-2 border-amber-400/40"
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            />
 
-        {(battleState.isComplete || logs.length > 0) && (
-          <button
-            onClick={resetBattle}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-gray-700 text-white font-semibold hover:bg-gray-600 transition-all"
-            data-testid="reset-battle"
-          >
-            <RotateCcw className="w-5 h-5" />
-            {t.resetBattle}
-          </button>
-        )}
-      </div>
+            {/* Inner countdown number */}
+            <motion.div
+              key={countdown}
+              className="relative z-10 text-center"
+              initial={{ scale: 1.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="text-7xl font-bold text-amber-500 drop-shadow-lg leading-none">
+                {countdown}
+              </div>
+              <div className="text-sm text-amber-400 font-semibold mt-3">
+                {t.startBattle}
+              </div>
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Error message */}
       {error && (
