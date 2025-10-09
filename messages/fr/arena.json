@@ -1,0 +1,14 @@
+{
+  "Arena": {
+    "title": "Arènes",
+    "subtitle": "Choisissez votre champ de bataille",
+    "backToDashboard": "Retour au Tableau de Bord",
+    "cityLabel": "Ville",
+    "populationLabel": "Population",
+    "allowsDeath": "Combats mortels autorisés",
+    "noDeath": "Combats non létaux",
+    "enterArena": "Entrer dans l'Arène",
+    "noArenas": "Aucune arène disponible pour le moment."
+  }
+}
+

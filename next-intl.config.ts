@@ -64,6 +64,7 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
   let initialGladiators: {default: Record<string, unknown>};
   let dashboard: {default: Record<string, unknown>};
   let cities: {default: Record<string, unknown>};
+  let arena: {default: Record<string, unknown>};
   let arenaDetail: {default: Record<string, unknown>};
 
   try { auth = await import(`./messages/${activeLocale}/auth.json`); } catch { auth = { default: {} }; }
@@ -73,6 +74,7 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
   try { initialGladiators = await import(`./messages/${activeLocale}/initial-gladiators.json`); } catch { initialGladiators = { default: {} }; }
   try { dashboard = await import(`./messages/${activeLocale}/dashboard.json`); } catch { dashboard = { default: {} }; }
   try { cities = await import(`./messages/${activeLocale}/cities.json`); } catch { cities = { default: {} }; }
+  try { arena = await import(`./messages/${activeLocale}/arena.json`); } catch { arena = { default: {} }; }
   try { arenaDetail = await import(`./messages/${activeLocale}/arena-detail.json`); } catch { arenaDetail = { default: {} }; }
 
   const sources = [
@@ -91,6 +93,7 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
     initialGladiators.default,
     dashboard.default,
     cities.default,
+    arena.default,
     arenaDetail.default
   ].map((m) => deepifyMessages(m as Record<string, unknown>));
 

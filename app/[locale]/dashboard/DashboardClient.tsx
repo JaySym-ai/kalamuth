@@ -1,23 +1,18 @@
 "use client";
 
 import { useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
+import { Swords } from "lucide-react";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 import { useRealtimeCollection, useRealtimeRow } from "@/lib/supabase/realtime";
 
 import LogoutButton from "@/app/components/auth/LogoutButton";
-import ArenaStatus from "./ArenaStatus";
 import LudusStats from "./LudusStats";
 import GladiatorGrid from "./GladiatorGrid";
 import GameViewport from "@/components/layout/GameViewport";
-
-interface TranslatedArena {
-  slug: string;
-  name: string;
-  city: string;
-  deathEnabled: boolean;
-}
 
 interface DashboardTranslations {
   title: string;
@@ -54,12 +49,14 @@ interface DashboardTranslations {
 interface Props {
   ludus: Ludus & { id: string };
   gladiators: NormalizedGladiator[];
-  translatedArenas: TranslatedArena[];
   locale: string;
   translations: DashboardTranslations;
 }
 
-export default function DashboardClient({ ludus, gladiators, translatedArenas, locale, translations: t }: Props) {
+export default function DashboardClient({ ludus, gladiators, locale, translations: t }: Props) {
+  const router = useRouter();
+  const currentLocale = useLocale();
+
   const { data: realtimeLudus } = useRealtimeRow<Ludus & { id: string }>({
     table: "ludi",
     select:
@@ -151,18 +148,21 @@ export default function DashboardClient({ ludus, gladiators, translatedArenas, l
               }}
             />
 
-            {/* Arena Status Card */}
-            <ArenaStatus
-              arenas={translatedArenas}
-              translations={{
-                arena: t.arena,
-                arenaCityLabel: t.arenaCityLabel,
-                arenaAllowsDeath: t.arenaAllowsDeath,
-                arenaNoDeath: t.arenaNoDeath,
-                arenaEmpty: t.arenaEmpty,
-                viewArena: t.viewArena,
-              }}
-            />
+            {/* Arena Button */}
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              onClick={() => router.push(`/${currentLocale}/arena`)}
+              className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
+              data-testid="arena-button"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Swords className="w-5 h-5 text-amber-400 group-hover:text-amber-300 transition-colors" />
+                <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
+                  {t.arena}
+                </span>
+              </div>
+            </motion.button>
           </div>
 
           {/* Right Column - Gladiators */}

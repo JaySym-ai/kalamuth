@@ -1,0 +1,14 @@
+{
+  "Arena": {
+    "title": "Arenas",
+    "subtitle": "Choose your battlefield",
+    "backToDashboard": "Back to Dashboard",
+    "cityLabel": "City",
+    "populationLabel": "Population",
+    "allowsDeath": "Fatal bouts permitted",
+    "noDeath": "Non-lethal matches",
+    "enterArena": "Enter Arena",
+    "noArenas": "No arenas available yet."
+  }
+}
+
