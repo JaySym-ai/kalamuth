@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Swords, Shield, Zap, Heart, Skull, AlertTriangle, Trophy } from "lucide-react";
+import { Swords, Shield, Heart, Skull, AlertTriangle, Trophy } from "lucide-react";
 import type { CombatLogType } from "@/types/combat";
 
 interface CombatActionProps {

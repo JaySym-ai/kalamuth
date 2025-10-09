@@ -27,7 +27,8 @@ export default function GladiatorGrid({ gladiators, locale, translations: t }: P
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {gladiators.map((gladiator, index) => {
         const healthStatus = getHealthStatus(gladiator);
         const StatusIcon = healthStatus.icon;
@@ -121,6 +122,7 @@ export default function GladiatorGrid({ gladiators, locale, translations: t }: P
           </motion.div>
         );
       })}
+      </div>
     </div>
   );
 }

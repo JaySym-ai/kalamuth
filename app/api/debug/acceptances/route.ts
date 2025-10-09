@@ -37,7 +37,7 @@ export async function GET(req: Request) {
     }
 
     // Fetch match
-    const { data: match, error: matchError } = await supabase
+    const { data: match } = await supabase
       .from("combat_matches")
       .select("*")
       .eq("id", matchId)

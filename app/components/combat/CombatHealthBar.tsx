@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Heart, Skull } from "lucide-react";
+
 
 interface CombatHealthBarProps {
   currentHealth: number;

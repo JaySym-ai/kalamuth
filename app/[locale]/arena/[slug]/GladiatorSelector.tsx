@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Trophy, Skull, ChevronDown, ChevronUp } from "lucide-react";
+import { Heart, Skull, ChevronDown, ChevronUp } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 
 

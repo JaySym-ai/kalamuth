@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -12,7 +11,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ matchId: string }> }
 ) {
-  const supabase = createClient(await cookies());
+
   
   const { matchId } = await params;
   if (!matchId) {

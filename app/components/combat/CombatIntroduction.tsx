@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Swords, MapPin } from "lucide-react";
+import { Swords, MapPin, ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import type { CombatGladiator } from "@/types/combat";
 
 interface CombatIntroductionProps {
@@ -11,6 +12,9 @@ interface CombatIntroductionProps {
   arenaName: string;
   maxHealth1?: number;
   maxHealth2?: number;
+  locale: string;
+  arenaSlug: string;
+  backToArenaText: string;
   translations: {
     versus: string;
     arena: string;
@@ -23,8 +27,12 @@ export default function CombatIntroduction({
   arenaName,
   maxHealth1,
   maxHealth2,
+  locale,
+  arenaSlug,
+  backToArenaText,
   translations: t,
 }: CombatIntroductionProps) {
+  console.log("CombatIntroduction props:", { locale, arenaSlug, backToArenaText });
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -61,7 +69,7 @@ export default function CombatIntroduction({
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ delay: 0.5, duration: 0.5, type: "spring" }}
-          className="flex items-center justify-center"
+          className="flex flex-col items-center justify-center gap-4"
         >
           <div className="relative">
             <motion.div
@@ -73,6 +81,22 @@ export default function CombatIntroduction({
               <Swords className="w-8 h-8 text-white" />
             </div>
           </div>
+          
+          {/* Back to Arena Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="mt-2"
+           >
+             <Link
+              href={`/${locale}/arena/${arenaSlug}`}
+              className="inline-flex items-center gap-1 px-4 py-2 text-sm text-amber-400 hover:text-amber-300 transition-colors border border-amber-700/40 rounded-full bg-black/40 hover:bg-black/60 shadow-lg shadow-amber-500/20"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {backToArenaText}
+            </Link>
+          </motion.div>
         </motion.div>
 
         {/* Gladiator 2 */}

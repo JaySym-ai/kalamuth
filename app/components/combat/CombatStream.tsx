@@ -16,6 +16,8 @@ interface CombatStreamProps {
   arenaName: string;
   maxActions: number;
   locale: string;
+  arenaSlug: string;
+  backToArenaText: string;
   translations: {
     versus: string;
     arena: string;
@@ -40,6 +42,8 @@ export default function CombatStream({
   arenaName,
   maxActions,
   locale,
+  arenaSlug,
+  backToArenaText,
   translations: t,
 }: CombatStreamProps) {
   const [logs, setLogs] = useState<CombatLogEntry[]>([]);
@@ -55,10 +59,12 @@ export default function CombatStream({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [latestLogId, setLatestLogId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(5);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
   const eventSourceRef = useRef<EventSource | null>(null);
   const logContainerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-scroll to bottom when new logs arrive
   useEffect(() => {
@@ -86,6 +92,9 @@ export default function CombatStream({
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
     };
   }, [isStreaming, battleState.isComplete]);
 
@@ -94,6 +103,7 @@ export default function CombatStream({
 
     setIsStreaming(true);
     setError(null);
+    setReconnectAttempts(0);
 
     // Try to start the battle, but if it's already in progress, watch instead
     const startUrl = `/api/combat/match/${matchId}/start?locale=${locale}`;
@@ -160,20 +170,52 @@ export default function CombatStream({
         const watchSource = new EventSource(watchUrl);
         watchSource.onmessage = handleMessage;
         watchSource.onerror = () => {
-          setError("Connection lost. Please refresh the page.");
-          setIsStreaming(false);
           watchSource.close();
+          
+          // Clear any existing reconnect timeout
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+          }
+
+          // Only attempt reconnection if we haven't exceeded max attempts
+          if (reconnectAttempts < 5) {
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000); // Exponential backoff, max 10s
+            
+            reconnectTimeoutRef.current = setTimeout(() => {
+              setReconnectAttempts(prev => prev + 1);
+              startBattle();
+            }, delay);
+          } else {
+            // After max attempts, just stop streaming but don't show error
+            setIsStreaming(false);
+          }
         };
         eventSourceRef.current = watchSource;
       } else {
-        setError("Connection lost. Please refresh the page.");
-        setIsStreaming(false);
         eventSource.close();
+        
+        // Clear any existing reconnect timeout
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+        }
+
+        // Only attempt reconnection if we haven't exceeded max attempts
+        if (reconnectAttempts < 5) {
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000); // Exponential backoff, max 10s
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
+            setReconnectAttempts(prev => prev + 1);
+            startBattle();
+          }, delay);
+        } else {
+          // After max attempts, just stop streaming but don't show error
+          setIsStreaming(false);
+        }
       }
     };
 
     eventSourceRef.current = eventSource;
-  }, [isStreaming, matchId, locale]);
+  }, [isStreaming, matchId, locale, reconnectAttempts]);
 
   // Auto-start battle 5 seconds after component mounts with countdown
   useEffect(() => {
@@ -195,6 +237,21 @@ export default function CombatStream({
     }
   }, [countdown, isStreaming, battleState.isComplete, startBattle]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
+
   return (
     <div className="space-y-8">
       {/* Introduction with real-time health */}
@@ -210,6 +267,9 @@ export default function CombatStream({
         arenaName={arenaName}
         maxHealth1={gladiator1.health}
         maxHealth2={gladiator2.health}
+        locale={locale}
+        arenaSlug={arenaSlug}
+        backToArenaText={backToArenaText}
         translations={{
           versus: t.versus,
           arena: t.arena,
@@ -314,7 +374,7 @@ export default function CombatStream({
         {/* Log container */}
         <div
           ref={logContainerRef}
-          className="h-[400px] overflow-y-auto space-y-3 p-4 rounded-lg bg-black/40 border border-amber-900/30"
+          className="h-[400px] overflow-y-auto space-y-3 p-4 rounded-lg bg-black/40 border border-amber-900/30 custom-scrollbar"
         >
           {logs.length === 0 && !isStreaming && (
             <div className="h-full flex items-center justify-center text-gray-500 text-sm">

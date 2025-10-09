@@ -11,6 +11,8 @@ interface CombatClientProps {
   arenaName: string;
   maxActions: number;
   locale: string;
+  arenaSlug: string;
+  backToArenaText: string;
 }
 
 export default function CombatClient({
@@ -20,6 +22,8 @@ export default function CombatClient({
   arenaName,
   maxActions,
   locale,
+  arenaSlug,
+  backToArenaText,
 }: CombatClientProps) {
   const t = useTranslations("Combat");
 
@@ -31,6 +35,8 @@ export default function CombatClient({
       arenaName={arenaName}
       maxActions={maxActions}
       locale={locale}
+      arenaSlug={arenaSlug}
+      backToArenaText={backToArenaText}
       translations={{
         versus: t("versus"),
         arena: t("arena"),

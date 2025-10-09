@@ -2,8 +2,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import type { CombatGladiator } from "@/types/combat";
 import CombatClient from "./CombatClient";
 
@@ -132,17 +130,6 @@ export default async function CombatPage({ params }: PageProps) {
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header */}
-        <div className="mb-8">
-          <Link
-            href={`/${locale}/arena/${match.arenaSlug}`}
-            className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            {t("backToArena")}
-          </Link>
-        </div>
-
         {/* Combat Client Component */}
         <CombatClient
           matchId={matchId}
@@ -151,6 +138,8 @@ export default async function CombatPage({ params }: PageProps) {
           arenaName={arena.name}
           maxActions={config.maxActions}
           locale={locale}
+          arenaSlug={match.arenaSlug}
+          backToArenaText={t("backToArena")}
         />
       </div>
     </main>

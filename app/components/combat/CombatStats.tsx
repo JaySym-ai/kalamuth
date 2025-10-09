@@ -33,7 +33,7 @@ export default function CombatStats({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const progressPercent = Math.min(100, (currentAction / maxActions) * 100);
+
 
   return (
     <div className="space-y-1">

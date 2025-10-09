@@ -66,7 +66,7 @@ export default function DashboardClient({ ludus, gladiators, translatedArenas, l
     match: { id: ludus.id },
     initialData: ludus,
     primaryKey: "id",
-    transform: useCallback((row: any) => {
+    transform: useCallback((row: Record<string, unknown>) => {
       const record = row as Record<string, unknown>;
       return {
         ...(ludus as Ludus & { id: string }),
@@ -84,7 +84,7 @@ export default function DashboardClient({ ludus, gladiators, translatedArenas, l
     initialData: gladiators,
     orderBy: { column: "createdAt", ascending: true },
     primaryKey: "id",
-    transform: useCallback((row: any) => {
+    transform: useCallback((row: Record<string, unknown>) => {
       const raw = row as Record<string, unknown> & { id?: unknown };
       const identifier = typeof raw.id === "string" ? raw.id : String(raw.id ?? "");
       return normalizeGladiator(identifier, raw, locale);

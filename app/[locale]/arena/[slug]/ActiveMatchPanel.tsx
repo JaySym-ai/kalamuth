@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Swords, Heart, Trophy, Shield, Activity, Clock, Play } from "lucide-react";
+import { Swords, Heart, Shield, Activity, Clock, Play } from "lucide-react";
 import type { CombatMatch, CombatantSummary, CombatLogEntry } from "@/types/combat";
 
 interface Props {

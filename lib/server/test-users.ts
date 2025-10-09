@@ -21,5 +21,5 @@ export const TEST_USER_EMAILS = [
  */
 export function hasTestServerAccess(userEmail: string | null | undefined): boolean {
   if (!userEmail) return false;
-  return TEST_USER_EMAILS.includes(userEmail as any);
+  return TEST_USER_EMAILS.includes(userEmail as typeof TEST_USER_EMAILS[number]);
 }

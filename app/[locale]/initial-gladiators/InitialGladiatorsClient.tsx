@@ -218,8 +218,8 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
         </div>
       )}
 
-      {/* Unified Gladiators Grid (stable 3 slots) */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12" data-testid="gladiators-grid">
+      {/* Unified Gladiators Grid (show max 3 per row) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 max-w-6xl mx-auto" data-testid="gladiators-grid">
         {Array.from({ length: minRequired }).map((_, idx) => {
           const gladiator = list[idx];
           if (!gladiator) {
@@ -453,8 +453,8 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
                 </div>
               </div>
 
-              {/* Modal Body with Scrollable Content */}
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+               {/* Modal Body with Scrollable Content */}
+               <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)] custom-scrollbar">
                 {/* Status & Conditions */}
                 {(selectedGladiator.injury || selectedGladiator.sickness || selectedGladiator.handicap || selectedGladiator.uniquePower) && (
                   <div className="mb-6">

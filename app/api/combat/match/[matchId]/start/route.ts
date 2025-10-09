@@ -140,7 +140,7 @@ export async function GET(
           );
 
           // Calculate damage and update health
-          const damage = calculateDamage(gladiator1, gladiator2, battleState);
+          const damage = calculateDamage();
           const targetGladiator = Math.random() > 0.5 ? 1 : 2;
 
           if (targetGladiator === 1) {
@@ -275,7 +275,7 @@ function normalizeGladiator(row: Record<string, unknown>, locale: string): Comba
 }
 
 async function saveLog(
-  supabase: any,
+  supabase: ReturnType<typeof createServiceRoleClient>,
   matchId: string,
   actionNumber: number,
   type: string,
@@ -307,14 +307,14 @@ async function saveLog(
     actionNumber: data.actionNumber,
     message: data.message,
     createdAt: data.createdAt,
-    type: data.type as any,
+    type: data.type as "introduction" | "action" | "injury" | "death" | "victory" | "system",
     locale: data.locale,
     gladiator1Health: data.gladiator1Health,
     gladiator2Health: data.gladiator2Health,
   };
 }
 
-function calculateDamage(g1: CombatGladiator, g2: CombatGladiator, state: BattleState): number {
+function calculateDamage(): number {
   // Simple damage calculation (10-30 HP per action)
   return Math.floor(Math.random() * 21) + 10;
 }
