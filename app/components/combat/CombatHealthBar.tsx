@@ -6,7 +6,6 @@ import { Heart, Skull } from "lucide-react";
 interface CombatHealthBarProps {
   currentHealth: number;
   maxHealth: number;
-  gladiatorName: string;
   isPlayer?: boolean;
   isDead?: boolean;
 }
@@ -14,7 +13,6 @@ interface CombatHealthBarProps {
 export default function CombatHealthBar({
   currentHealth,
   maxHealth,
-  gladiatorName,
   isPlayer = false,
   isDead = false,
 }: CombatHealthBarProps) {
@@ -37,15 +35,6 @@ export default function CombatHealthBar({
 
   return (
     <div className={`flex flex-col gap-2 ${isPlayer ? "items-start" : "items-end"}`}>
-      {/* Gladiator name */}
-      <div className="flex items-center gap-2">
-        {isDead && <Skull className="w-4 h-4 text-red-500" />}
-        <span className="text-sm font-semibold text-amber-100">
-          {gladiatorName}
-        </span>
-        {!isDead && <Heart className="w-4 h-4 text-red-400" />}
-      </div>
-
       {/* Health bar container */}
       <div className="w-full max-w-[200px] sm:max-w-[280px]">
         <div className="relative h-8 bg-black/40 rounded-lg border border-amber-900/30 overflow-hidden">
@@ -56,7 +45,7 @@ export default function CombatHealthBar({
             animate={{ width: `${healthPercent}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           />
-          
+
           {/* Pulse effect for low health */}
           {!isDead && healthPercent > 0 && healthPercent < 30 && (
             <motion.div
@@ -72,11 +61,6 @@ export default function CombatHealthBar({
               {isDead ? "DEFEATED" : `${currentHealth} / ${maxHealth}`}
             </span>
           </div>
-        </div>
-
-        {/* Health percentage indicator */}
-        <div className="mt-1 text-[10px] text-amber-100/60 text-center">
-          {isDead ? "0%" : `${Math.round(healthPercent)}%`}
         </div>
       </div>
     </div>

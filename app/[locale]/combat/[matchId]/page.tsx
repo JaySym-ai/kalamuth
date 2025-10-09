@@ -136,18 +136,11 @@ export default async function CombatPage({ params }: PageProps) {
         <div className="mb-8">
           <Link
             href={`/${locale}/arena/${match.arenaSlug}`}
-            className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors mb-4"
+            className="inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             {t("backToArena")}
           </Link>
-
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-red-600">
-            {t("title")}
-          </h1>
-          <p className="text-gray-400 mt-2">
-            {arena.name} • {arena.city}
-          </p>
         </div>
 
         {/* Combat Client Component */}

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Swords, MapPin, Heart } from "lucide-react";
+import { Swords, MapPin } from "lucide-react";
 import Image from "next/image";
 import type { CombatGladiator } from "@/types/combat";
 
@@ -9,14 +9,11 @@ interface CombatIntroductionProps {
   gladiator1: CombatGladiator;
   gladiator2: CombatGladiator;
   arenaName: string;
+  maxHealth1?: number;
+  maxHealth2?: number;
   translations: {
     versus: string;
     arena: string;
-    health: string;
-    ranking: string;
-    birthplace: string;
-    personality: string;
-    weakness: string;
   };
 }
 
@@ -24,6 +21,8 @@ export default function CombatIntroduction({
   gladiator1,
   gladiator2,
   arenaName,
+  maxHealth1,
+  maxHealth2,
   translations: t,
 }: CombatIntroductionProps) {
   return (
@@ -55,7 +54,7 @@ export default function CombatIntroduction({
       {/* Gladiators */}
       <div className="relative z-10 grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-6 items-center">
         {/* Gladiator 1 */}
-        <GladiatorCard gladiator={gladiator1} translations={t} delay={0.3} />
+        <GladiatorCard gladiator={gladiator1} maxHealth={maxHealth1 || gladiator1.health} delay={0.3} />
 
         {/* VS Divider */}
         <motion.div
@@ -77,7 +76,7 @@ export default function CombatIntroduction({
         </motion.div>
 
         {/* Gladiator 2 */}
-        <GladiatorCard gladiator={gladiator2} translations={t} delay={0.4} isRight />
+        <GladiatorCard gladiator={gladiator2} maxHealth={maxHealth2 || gladiator2.health} delay={0.4} isRight />
       </div>
     </motion.div>
   );
@@ -85,24 +84,32 @@ export default function CombatIntroduction({
 
 interface GladiatorCardProps {
   gladiator: CombatGladiator;
-  translations: {
-    health: string;
-    ranking: string;
-    birthplace: string;
-    personality: string;
-    weakness: string;
-  };
+  maxHealth: number;
   delay: number;
   isRight?: boolean;
 }
 
-function GladiatorCard({ gladiator, translations: t, delay, isRight = false }: GladiatorCardProps) {
+function GladiatorCard({ gladiator, maxHealth, delay, isRight = false }: GladiatorCardProps) {
+  const healthPercent = Math.max(0, Math.min(100, (gladiator.health / maxHealth) * 100));
+
+  const getHealthColor = () => {
+    if (healthPercent > 60) return "bg-emerald-500";
+    if (healthPercent > 30) return "bg-amber-500";
+    return "bg-red-500";
+  };
+
+  const getHealthGlow = () => {
+    if (healthPercent > 60) return "shadow-emerald-500/50";
+    if (healthPercent > 30) return "shadow-amber-500/50";
+    return "shadow-red-500/50";
+  };
+
   return (
     <motion.div
       initial={{ x: isRight ? 50 : -50, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ delay, duration: 0.5 }}
-      className="flex flex-col items-center gap-3"
+      className="flex flex-col items-center gap-2"
     >
       {/* Avatar */}
       <div className="relative">
@@ -130,40 +137,24 @@ function GladiatorCard({ gladiator, translations: t, delay, isRight = false }: G
       {/* Name */}
       <div className="text-center">
         <h3 className="text-lg font-bold text-amber-100">
-          {gladiator.name}
+          {gladiator.name} {gladiator.surname}
         </h3>
-        <p className="text-sm text-gray-400">
-          {gladiator.surname}
-        </p>
       </div>
 
-      {/* Stats */}
-      <div className="w-full space-y-2 text-xs">
-        <div className="flex items-center justify-between px-3 py-1.5 rounded-md bg-black/30 border border-amber-900/20">
-          <span className="text-gray-400">{t.health}</span>
-          <span className="font-semibold text-emerald-400 flex items-center gap-1">
-            <Heart className="w-3 h-3" />
-            {gladiator.health}
-          </span>
-        </div>
-        <div className="flex items-center justify-between px-3 py-1.5 rounded-md bg-black/30 border border-amber-900/20">
-          <span className="text-gray-400">{t.ranking}</span>
-          <span className="font-semibold text-amber-400">
-            {gladiator.rankingPoints}
-          </span>
-        </div>
-      </div>
-
-      {/* Traits preview */}
-      <div className="w-full space-y-1 text-[10px] text-gray-500">
-        <div className="truncate">
-          <span className="text-gray-600">{t.birthplace}:</span> {gladiator.birthCity}
-        </div>
-        <div className="truncate">
-          <span className="text-gray-600">{t.personality}:</span> {gladiator.personality.slice(0, 40)}...
-        </div>
-        <div className="truncate">
-          <span className="text-gray-600">{t.weakness}:</span> {gladiator.weakness.slice(0, 40)}...
+      {/* Health Bar */}
+      <div className="w-full max-w-[160px]">
+        <div className="relative h-6 bg-black/40 rounded-lg border border-amber-900/30 overflow-hidden">
+          <motion.div
+            className={`absolute inset-y-0 left-0 ${getHealthColor()} shadow-lg ${getHealthGlow()}`}
+            initial={{ width: "100%" }}
+            animate={{ width: `${healthPercent}%` }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+          />
+          <div className="relative z-10 flex items-center justify-center h-full">
+            <span className="text-xs font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+              {Math.round(healthPercent)}%
+            </span>
+          </div>
         </div>
       </div>
     </motion.div>

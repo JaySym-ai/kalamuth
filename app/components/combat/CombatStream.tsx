@@ -4,19 +4,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import CombatAction from "./CombatAction";
-import CombatHealthBar from "./CombatHealthBar";
+import CombatIntroduction from "./CombatIntroduction";
 import CombatStats from "./CombatStats";
 import type { CombatLogEntry, BattleState } from "@/types/combat";
+import type { CombatGladiator } from "@/types/combat";
 
 interface CombatStreamProps {
   matchId: string;
-  gladiator1Name: string;
-  gladiator2Name: string;
-  gladiator1MaxHealth: number;
-  gladiator2MaxHealth: number;
+  gladiator1: CombatGladiator;
+  gladiator2: CombatGladiator;
+  arenaName: string;
   maxActions: number;
   locale: string;
   translations: {
+    versus: string;
+    arena: string;
     startBattle: string;
     loading: string;
     error: string;
@@ -33,10 +35,9 @@ interface CombatStreamProps {
 
 export default function CombatStream({
   matchId,
-  gladiator1Name,
-  gladiator2Name,
-  gladiator1MaxHealth,
-  gladiator2MaxHealth,
+  gladiator1,
+  gladiator2,
+  arenaName,
   maxActions,
   locale,
   translations: t,
@@ -45,8 +46,8 @@ export default function CombatStream({
   const [battleState, setBattleState] = useState<BattleState>({
     matchId,
     actionNumber: 0,
-    gladiator1Health: gladiator1MaxHealth,
-    gladiator2Health: gladiator2MaxHealth,
+    gladiator1Health: gladiator1.health,
+    gladiator2Health: gladiator2.health,
     isComplete: false,
   });
   const [isStreaming, setIsStreaming] = useState(false);
@@ -195,23 +196,25 @@ export default function CombatStream({
   }, [countdown, isStreaming, battleState.isComplete, startBattle]);
 
   return (
-    <div className="space-y-6">
-      {/* Health bars */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <CombatHealthBar
-          currentHealth={battleState.gladiator1Health}
-          maxHealth={gladiator1MaxHealth}
-          gladiatorName={gladiator1Name}
-          isPlayer
-          isDead={battleState.gladiator1Health <= 0}
-        />
-        <CombatHealthBar
-          currentHealth={battleState.gladiator2Health}
-          maxHealth={gladiator2MaxHealth}
-          gladiatorName={gladiator2Name}
-          isDead={battleState.gladiator2Health <= 0}
-        />
-      </div>
+    <div className="space-y-8">
+      {/* Introduction with real-time health */}
+      <CombatIntroduction
+        gladiator1={{
+          ...gladiator1,
+          health: battleState.gladiator1Health,
+        }}
+        gladiator2={{
+          ...gladiator2,
+          health: battleState.gladiator2Health,
+        }}
+        arenaName={arenaName}
+        maxHealth1={gladiator1.health}
+        maxHealth2={gladiator2.health}
+        translations={{
+          versus: t.versus,
+          arena: t.arena,
+        }}
+      />
 
       {/* Stats */}
       <CombatStats
@@ -276,9 +279,6 @@ export default function CombatStream({
             >
               <div className="text-7xl font-bold text-amber-500 drop-shadow-lg leading-none">
                 {countdown}
-              </div>
-              <div className="text-sm text-amber-400 font-semibold mt-3">
-                {t.startBattle}
               </div>
             </motion.div>
           </div>
