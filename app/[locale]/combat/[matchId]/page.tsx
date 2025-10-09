@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server";
 import { getTranslations } from "next-intl/server";
 import type { CombatGladiator } from "@/types/combat";
 import CombatClient from "./CombatClient";
+import GameViewport from "@/components/layout/GameViewport";
+import ScrollableContent from "@/components/layout/ScrollableContent";
 
 interface PageProps {
   params: Promise<{
@@ -128,21 +130,27 @@ export default async function CombatPage({ params }: PageProps) {
   const t = await getTranslations({ locale, namespace: "Combat" });
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Combat Client Component */}
-        <CombatClient
-          matchId={matchId}
-          gladiator1={gladiator1}
-          gladiator2={gladiator2}
-          arenaName={arena.name}
-          maxActions={config.maxActions}
-          locale={locale}
-          arenaSlug={match.arenaSlug}
-          backToArenaText={t("backToArena")}
-        />
-      </div>
-    </main>
+    <GameViewport>
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black" />
+
+      {/* Scrollable Content */}
+      <ScrollableContent className="relative z-10">
+        <div className="container mx-auto px-4 py-8 max-w-6xl">
+          {/* Combat Client Component */}
+          <CombatClient
+            matchId={matchId}
+            gladiator1={gladiator1}
+            gladiator2={gladiator2}
+            arenaName={arena.name}
+            maxActions={config.maxActions}
+            locale={locale}
+            arenaSlug={match.arenaSlug}
+            backToArenaText={t("backToArena")}
+          />
+        </div>
+      </ScrollableContent>
+    </GameViewport>
   );
 }
 

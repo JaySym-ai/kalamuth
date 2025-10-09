@@ -19,10 +19,28 @@
   }
 }
 
+html {
+  /* Prevent scrolling at root level */
+  overflow: hidden;
+  height: 100%;
+  /* Disable pull-to-refresh and overscroll effects on mobile */
+  overscroll-behavior: none;
+  /* Prevent text size adjustment on mobile */
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  /* Prevent scrolling */
+  overflow: hidden;
+  height: 100%;
+  /* Disable pull-to-refresh and overscroll effects */
+  overscroll-behavior: none;
+  /* Prevent bounce effect on iOS */
+  position: fixed;
+  width: 100%;
 }
 
 /* Custom scrollbar styles */
@@ -44,9 +62,31 @@ body {
   background: linear-gradient(to bottom, #fbbf24, #ef4444);
 }
 
-/* Smooth scroll behavior */
-html {
-  scroll-behavior: smooth;
+/* Game viewport styles */
+.game-viewport {
+  /* Ensure viewport fills screen */
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
+
+  /* Prevent scrolling within viewport unless explicitly allowed */
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+
+  /* Disable text selection for game UI (can be re-enabled for specific elements) */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Allow scrolling in specific scrollable areas */
+[data-scrollable="true"] {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* Re-enable touch actions for scrollable areas */
+  touch-action: pan-y;
+  /* Re-enable text selection in scrollable content */
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* Selection styles */

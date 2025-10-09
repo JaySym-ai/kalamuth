@@ -10,6 +10,7 @@ import LogoutButton from "@/app/components/auth/LogoutButton";
 import ArenaStatus from "./ArenaStatus";
 import LudusStats from "./LudusStats";
 import GladiatorGrid from "./GladiatorGrid";
+import GameViewport from "@/components/layout/GameViewport";
 
 interface TranslatedArena {
   slug: string;
@@ -96,21 +97,24 @@ export default function DashboardClient({ ludus, gladiators, translatedArenas, l
 
 
   return (
-    <div className="relative min-h-screen">
+    <GameViewport>
       {/* Background Effects */}
-      <div className="fixed inset-0 bg-gradient-to-b from-black via-zinc-900 to-black" />
-      <div className="fixed inset-0 bg-[url('/images/arena-bg.jpg')] opacity-5 bg-cover bg-center" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black" />
+      <div className="absolute inset-0 bg-[url('/images/arena-bg.jpg')] opacity-5 bg-cover bg-center" />
 
-      {/* Content Container */}
-      <div className="relative z-10 px-4 pt-[max(env(safe-area-inset-top),24px)] pb-[max(env(safe-area-inset-bottom),24px)]">
+      {/* Scrollable Content Container */}
+      <div
+        className="relative z-10 h-full overflow-y-auto px-3 py-3"
+        data-scrollable="true"
+      >
         {/* Header */}
-        <header className="max-w-7xl mx-auto mb-8">
+        <header className="max-w-7xl mx-auto mb-3">
           <div className="flex items-center justify-between">
             <div>
               <motion.h1
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-4xl md:text-5xl font-black bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent"
+                className="text-2xl md:text-3xl font-black bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent"
               >
                 {currentLudus.name}
               </motion.h1>
@@ -119,22 +123,22 @@ export default function DashboardClient({ ludus, gladiators, translatedArenas, l
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="text-gray-400 italic mt-2"
+                  className="text-gray-400 italic mt-1 text-xs"
                 >
                   &ldquo;{currentLudus.motto}&rdquo;
                 </motion.p>
               )}
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
               <LogoutButton />
             </div>
           </div>
         </header>
 
         {/* Main Grid Layout */}
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-3 pb-3">
           {/* Left Column - Ludus Overview */}
-          <div className="lg:col-span-1 space-y-6" data-testid="dashboard-left-column">
+          <div className="lg:col-span-1 space-y-3" data-testid="dashboard-left-column">
             {/* Ludus Stats Card */}
             <LudusStats
               ludus={currentLudus}
@@ -143,13 +147,6 @@ export default function DashboardClient({ ludus, gladiators, translatedArenas, l
                 treasury: t.treasury,
                 reputation: t.reputation,
                 morale: t.morale,
-                facilities: t.facilities,
-                infirmary: t.infirmary,
-                trainingGround: t.trainingGround,
-                quarters: t.quarters,
-                kitchen: t.kitchen,
-                level: t.level,
-                location: t.location,
                 gladiatorCount: t.gladiatorCount,
               }}
             />
@@ -174,13 +171,13 @@ export default function DashboardClient({ ludus, gladiators, translatedArenas, l
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
+              className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-amber-400">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-bold text-amber-400">
                   {t.gladiators}
                 </h2>
-                <span className="text-gray-400">
+                <span className="text-gray-400 text-xs">
                   {currentGladiators.length} / {currentLudus.maxGladiators}
                 </span>
               </div>
@@ -198,9 +195,9 @@ export default function DashboardClient({ ludus, gladiators, translatedArenas, l
                   }}
                 />
               ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-400 mb-4">{t.noGladiators}</p>
-                  <button className="px-6 py-3 bg-gradient-to-r from-amber-600 to-red-600 text-white font-bold rounded-lg hover:from-amber-500 hover:to-red-500 transform hover:scale-105 transition-all duration-200">
+                <div className="text-center py-8">
+                  <p className="text-gray-400 mb-3 text-sm">{t.noGladiators}</p>
+                  <button className="px-4 py-2 bg-gradient-to-r from-amber-600 to-red-600 text-white text-sm font-bold rounded-lg hover:from-amber-500 hover:to-red-500 transform hover:scale-105 transition-all duration-200">
                     {t.recruitGladiators}
                   </button>
                 </div>
@@ -209,6 +206,6 @@ export default function DashboardClient({ ludus, gladiators, translatedArenas, l
           </div>
         </div>
       </div>
-    </div>
+    </GameViewport>
   );
 }
