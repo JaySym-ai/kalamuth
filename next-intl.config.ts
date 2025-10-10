@@ -56,6 +56,10 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
     import(`./messages/${activeLocale}/footer.json`)
   ]);
 
+  // Import quests translations
+  let quests: {default: Record<string, unknown>};
+  try { quests = await import(`./messages/${activeLocale}/quests.json`); } catch { quests = { default: {} }; }
+
   // Optional namespaces (tolerate missing files per-locale)
   let auth: {default: Record<string, unknown>};
   let intro: {default: Record<string, unknown>};
@@ -94,7 +98,8 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
     dashboard.default,
     cities.default,
     arena.default,
-    arenaDetail.default
+    arenaDetail.default,
+    quests.default
   ].map((m) => deepifyMessages(m as Record<string, unknown>));
 
   const messages = Object.assign({}, ...sources);

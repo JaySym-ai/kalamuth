@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { CITIES } from "@/data/cities";
+import { debug_log, debug_error } from "@/utils/debug";
 
 export default function LudusCreationClient() {
   const t = useTranslations("LudusCreation");
@@ -32,7 +33,7 @@ export default function LudusCreationClient() {
 
   const handleCreateLudus = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Creating ludus with:", {
+    debug_log("Creating ludus with:", {
       ludusName,
       selectedServerId,
       selectedCity,
@@ -45,7 +46,7 @@ export default function LudusCreationClient() {
     }
 
     if (!selectedServerId) {
-      console.error("No server selected!");
+      debug_error("No server selected!");
       setError(t("errors.noServer"));
       return;
     }
@@ -69,7 +70,7 @@ export default function LudusCreationClient() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        console.error("API Error:", errorData);
+        debug_error("API Error:", errorData);
         throw new Error(errorData?.error || errorData?.details || "Failed to create ludus");
       }
 
@@ -81,7 +82,7 @@ export default function LudusCreationClient() {
       // Navigate immediately to gladiator display - generation will start there
       router.push(`/${locale}/initial-gladiators`);
     } catch (err) {
-      console.error("Error creating ludus:", err);
+      debug_error("Error creating ludus:", err);
       setError(t("errors.createFailed"));
       setLoading(false);
     }

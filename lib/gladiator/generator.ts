@@ -22,12 +22,13 @@ export type GenerateOptions = {
 
 function buildSystemPrompt(rarityInfo?: string): string {
   return `
-You are generating gladiators for a Ludus management game.
+You are generating gladiators for a Ludus management game with BILINGUAL content (English and French).
 Follow the provided JSON Schema exactly. Do not include any fields not in the schema.
 - "health" represents max health (HP cap) and must be an integer between 30 and 300.
 - "rarity" must be one of: bad, common, uncommon, rare, epic, legendary, unique. This is hidden from players but affects generation.
-- "stats" fields (strength, agility, dexterity, speed, chance, intelligence, charisma, loyalty) must each be a 1–2 sentence descriptive string about how the gladiator expresses that trait in combat and behavior. Do not return numeric ratings for these.
-- Keep narrative fields vivid but concise (1-2 sentences each), suitable for in-game use.
+- "stats" fields (strength, agility, dexterity, speed, chance, intelligence, charisma, loyalty) must each be a bilingual object with "en" and "fr" keys, containing 1–2 sentence descriptive strings about how the gladiator expresses that trait in combat and behavior. Do not return numeric ratings.
+- All narrative fields (lifeGoal, personality, backstory, weakness, fear, likes, dislikes, physicalCondition, notableHistory) must be bilingual objects with "en" and "fr" keys. Keep descriptions vivid but concise (1-2 sentences each), suitable for in-game use.
+- Optional fields (injury, sickness, handicap, uniquePower) must also be bilingual objects if included.
 - The uniquePower must be subtle and not overpowered; it's optional.
 - If injury is present, injuryTimeLeftHours must be an integer >= 1.
 - Use realistic ancient/mediterranean naming, but creativity is welcome.

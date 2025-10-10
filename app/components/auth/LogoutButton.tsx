@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { LogOut, X } from "lucide-react";
 import { logout } from "@/lib/auth/logout";
+import { debug_error } from "@/utils/debug";
 
 export default function LogoutButton() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -16,7 +17,7 @@ export default function LogoutButton() {
     try {
       await logout();
     } catch (error) {
-      console.error("Logout error:", error);
+      debug_error("Logout error:", error);
       setIsLoggingOut(false);
     }
   };

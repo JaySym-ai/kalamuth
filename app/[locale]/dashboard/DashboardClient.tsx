@@ -139,6 +139,30 @@ export default function DashboardClient({ ludus, translations: t }: Props) {
             </div>
           </motion.button>
 
+          {/* Quests Button */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15 }}
+            onClick={() => router.push(`/${currentLocale}/quests`)}
+            className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
+            data-testid="quests-button"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <div className="relative w-5 h-5">
+                <Image
+                  src="/assets/icon/quest.png"
+                  alt="Quests"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
+                Quests
+              </span>
+            </div>
+          </motion.button>
+
           {/* Your Gladiators Button */}
           <motion.button
             initial={{ opacity: 0, x: -20 }}

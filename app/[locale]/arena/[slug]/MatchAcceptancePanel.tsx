@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Swords, Clock, Check, X, AlertCircle } from "lucide-react";
 import type { CombatMatch, CombatMatchAcceptance, CombatantSummary } from "@/types/combat";
+import { debug_log, debug_error } from "@/utils/debug";
 
 interface Props {
   match: CombatMatch;
@@ -57,7 +58,7 @@ export default function MatchAcceptancePanel({
         setError(t.acceptanceTimeout);
       }
     } catch (err) {
-      console.error("Error checking timeout:", err);
+      debug_error("Error checking timeout:", err);
     }
   }, [match.id, t.acceptanceTimeout]);
 
@@ -98,7 +99,7 @@ export default function MatchAcceptancePanel({
 
   // Debug: Log acceptance changes
   useEffect(() => {
-    console.log('🔄 Acceptances updated:', {
+    debug_log('🔄 Acceptances updated:', {
       total: acceptances.length,
       player: player ? {
         id: player.id,
@@ -159,7 +160,7 @@ export default function MatchAcceptancePanel({
         router.push(`/${locale}/combat/${match.id}`);
       }
     } catch (err) {
-      console.error("Error accepting match:", err);
+      debug_error("Error accepting match:", err);
       setError("Network error. Please try again.");
     } finally {
       setIsAccepting(false);
@@ -187,10 +188,10 @@ export default function MatchAcceptancePanel({
       }
 
       setSuccessMessage(t.youDeclined);
-      
+
       // Match is cancelled, stay on page to show message
     } catch (err) {
-      console.error("Error declining match:", err);
+      debug_error("Error declining match:", err);
       setError("Network error. Please try again.");
     } finally {
       setIsDeclining(false);

@@ -247,7 +247,7 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
 
                 {/* Stats Preview */}
                 <div className="text-xs text-gray-400 mb-3 space-y-1">
-                  <p><span className="text-amber-400">Personality:</span> {typeof gladiator.personality === 'string' ? gladiator.personality : gladiator.personality?.en || 'N/A'}</p>
+                  <p><span className="text-amber-400">Personality:</span> {gladiator.personality}</p>
                 </div>
 
                 {/* Action Buttons */}

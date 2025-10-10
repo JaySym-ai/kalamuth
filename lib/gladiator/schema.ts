@@ -170,6 +170,17 @@ export const GladiatorZ = z
 export type BilingualGladiatorFromZod = z.infer<typeof BilingualGladiatorZ>;
 export type GladiatorFromZod = z.infer<typeof GladiatorZ>;
 
+// Helper for bilingual text schema
+const BilingualTextSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    en: { type: "string", minLength: 1 },
+    fr: { type: "string", minLength: 1 },
+  },
+  required: ["en", "fr"],
+};
+
 // JSON Schema for OpenRouter Structured Outputs (strict mode)
 // We inline the schema (no $ref) to maximize provider compatibility.
 export const OpenRouterGladiatorJsonSchema = {
@@ -183,21 +194,21 @@ export const OpenRouterGladiatorJsonSchema = {
     health: { type: "integer", minimum: GLADIATOR_HEALTH_MIN, maximum: GLADIATOR_HEALTH_MAX },
     currentHealth: { type: "integer", minimum: 0, maximum: GLADIATOR_HEALTH_MAX },
     alive: { type: "boolean" },
-    injury: { type: "string", minLength: 1 },
+    injury: BilingualTextSchema,
     injuryTimeLeftHours: { type: "integer", minimum: 1 },
-    sickness: { type: "string", minLength: 1 },
+    sickness: BilingualTextSchema,
     stats: {
       type: "object",
       additionalProperties: false,
       properties: {
-        strength: { type: "string", minLength: 1 },
-        agility: { type: "string", minLength: 1 },
-        dexterity: { type: "string", minLength: 1 },
-        speed: { type: "string", minLength: 1 },
-        chance: { type: "string", minLength: 1 },
-        intelligence: { type: "string", minLength: 1 },
-        charisma: { type: "string", minLength: 1 },
-        loyalty: { type: "string", minLength: 1 },
+        strength: BilingualTextSchema,
+        agility: BilingualTextSchema,
+        dexterity: BilingualTextSchema,
+        speed: BilingualTextSchema,
+        chance: BilingualTextSchema,
+        intelligence: BilingualTextSchema,
+        charisma: BilingualTextSchema,
+        loyalty: BilingualTextSchema,
       },
       required: [
         "strength",
@@ -210,18 +221,18 @@ export const OpenRouterGladiatorJsonSchema = {
         "loyalty",
       ],
     },
-    lifeGoal: { type: "string", minLength: 1 },
-    personality: { type: "string", minLength: 1 },
-    backstory: { type: "string", minLength: 1 },
-    weakness: { type: "string", minLength: 1 },
-    fear: { type: "string", minLength: 1 },
-    likes: { type: "string", minLength: 1 },
-    dislikes: { type: "string", minLength: 1 },
+    lifeGoal: BilingualTextSchema,
+    personality: BilingualTextSchema,
+    backstory: BilingualTextSchema,
+    weakness: BilingualTextSchema,
+    fear: BilingualTextSchema,
+    likes: BilingualTextSchema,
+    dislikes: BilingualTextSchema,
     birthCity: { type: "string", minLength: 1 },
-    handicap: { type: "string", minLength: 1 },
-    uniquePower: { type: "string", minLength: 1 },
-    physicalCondition: { type: "string", minLength: 1 },
-    notableHistory: { type: "string", minLength: 1 },
+    handicap: BilingualTextSchema,
+    uniquePower: BilingualTextSchema,
+    physicalCondition: BilingualTextSchema,
+    notableHistory: BilingualTextSchema,
   },
   required: [
     "name",
@@ -245,7 +256,7 @@ export const OpenRouterGladiatorJsonSchema = {
   ],
   allOf: [
     {
-      if: { properties: { injury: { type: "string", minLength: 1 } }, required: ["injury"] },
+      if: { properties: { injury: BilingualTextSchema }, required: ["injury"] },
       then: { required: ["injuryTimeLeftHours"] },
     },
   ],
