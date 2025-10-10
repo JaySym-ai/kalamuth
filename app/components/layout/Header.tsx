@@ -23,8 +23,13 @@ export default function Header() {
           ? "bg-black/90 backdrop-blur-xl border-b border-amber-900/20"
           : "bg-gradient-to-b from-black/80 to-transparent"
       }`}
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      }}
     >
-      <div className="container mx-auto px-6 py-4">
+      <div className="container mx-auto px-responsive-4 py-responsive-3">
         <div className="flex items-center justify-between">
           <Logo />
           <Navigation />

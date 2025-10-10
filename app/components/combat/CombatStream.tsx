@@ -294,7 +294,7 @@ export default function CombatStream({
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="relative w-40 h-40 flex items-center justify-center">
+          <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center">
             {/* Outer rotating ring */}
             <svg
               className="absolute inset-0 w-full h-full"
@@ -323,7 +323,7 @@ export default function CombatStream({
 
             {/* Middle pulsing ring */}
             <motion.div
-              className="absolute inset-4 rounded-full border-2 border-amber-400/40"
+              className="absolute inset-3 sm:inset-4 rounded-full border-2 border-amber-400/40"
               animate={{ scale: [1, 1.08, 1] }}
               transition={{ duration: 1, repeat: Infinity }}
             />
@@ -337,7 +337,7 @@ export default function CombatStream({
               exit={{ scale: 0.5, opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="text-7xl font-bold text-amber-500 drop-shadow-lg leading-none">
+              <div className="text-5xl sm:text-6xl md:text-7xl font-bold text-amber-500 drop-shadow-lg leading-none">
                 {countdown}
               </div>
             </motion.div>
@@ -359,12 +359,12 @@ export default function CombatStream({
       {/* Combat log */}
       <div className="relative">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-amber-100 flex items-center gap-2">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h3 className="text-sm sm:text-base md:text-lg font-bold text-amber-100 flex items-center gap-2">
             {t.combatLog}
             {isStreaming && !battleState.isComplete && (
-              <span className="flex items-center gap-1 text-xs text-red-400 animate-pulse">
-                <span className="w-2 h-2 bg-red-500 rounded-full" />
+              <span className="flex items-center gap-1 text-[0.65rem] sm:text-xs text-red-400 animate-pulse">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full" />
                 {t.live}
               </span>
             )}
@@ -374,7 +374,7 @@ export default function CombatStream({
         {/* Log container */}
         <div
           ref={logContainerRef}
-          className="h-[400px] overflow-y-auto space-y-3 p-4 rounded-lg bg-black/40 border border-amber-900/30 custom-scrollbar"
+          className="h-[300px] sm:h-[350px] md:h-[400px] overflow-y-auto space-y-2 sm:space-y-3 p-3 sm:p-4 rounded-lg bg-black/40 border border-amber-900/30 custom-scrollbar"
         >
           {logs.length === 0 && !isStreaming && (
             <div className="h-full flex items-center justify-center text-gray-500 text-sm">

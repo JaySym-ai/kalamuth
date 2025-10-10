@@ -62,56 +62,56 @@ export default function GladiatorCard({ gladiator, isSelected, onClick }: Gladia
         }`}
       >
         {/* Header with Rarity */}
-        <div className={`bg-gradient-to-r ${rarityColors[gladiator.rarity]} p-4`}>
+        <div className={`bg-gradient-to-r ${rarityColors[gladiator.rarity]} p-responsive-3`}>
           <div className="flex items-center justify-between">
-            <div className="text-6xl">{gladiator.image}</div>
+            <div className="text-responsive-5xl">{gladiator.image}</div>
             <div className="text-right">
-              <div className="text-xs text-white/80 uppercase tracking-wider">
+              <div className="text-responsive-xs text-white/80 uppercase tracking-wider">
                 {gladiator.rarity}
               </div>
-              <div className="text-2xl font-bold text-white">Lvl {gladiator.level}</div>
+              <div className="text-responsive-xl font-bold text-white">Lvl {gladiator.level}</div>
             </div>
           </div>
         </div>
-        
+
         {/* Content */}
-        <div className="p-6">
-          <h3 className="text-2xl font-bold text-white mb-1">{gladiator.name}</h3>
-          <p className="text-amber-400 text-sm mb-2">{gladiator.title}</p>
-          <p className="text-gray-400 text-sm mb-4">{gladiator.class}</p>
-          
+        <div className="p-responsive-4">
+          <h3 className="text-responsive-xl font-bold text-white mb-responsive-1">{gladiator.name}</h3>
+          <p className="text-amber-400 text-responsive-sm mb-responsive-2">{gladiator.title}</p>
+          <p className="text-gray-400 text-responsive-sm mb-responsive-4">{gladiator.class}</p>
+
           {/* Stats Bar */}
-          <div className="flex justify-between items-center mb-4 p-3 bg-black/30 rounded-lg">
+          <div className="flex justify-between items-center mb-responsive-4 p-responsive-2 bg-black/30 rounded-responsive-lg">
             <div className="text-center">
-              <div className="text-green-400 font-bold text-lg">{gladiator.wins}</div>
-              <div className="text-gray-500 text-xs">Wins</div>
+              <div className="text-green-400 font-bold text-responsive-lg">{gladiator.wins}</div>
+              <div className="text-gray-500 text-responsive-xs">Wins</div>
             </div>
             <div className="text-gray-600">|</div>
             <div className="text-center">
-              <div className="text-red-400 font-bold text-lg">{gladiator.losses}</div>
-              <div className="text-gray-500 text-xs">Losses</div>
+              <div className="text-red-400 font-bold text-responsive-lg">{gladiator.losses}</div>
+              <div className="text-gray-500 text-responsive-xs">Losses</div>
             </div>
             <div className="text-gray-600">|</div>
             <div className="text-center">
-              <div className="text-amber-400 font-bold text-lg">
+              <div className="text-amber-400 font-bold text-responsive-lg">
                 {((gladiator.wins / (gladiator.wins + gladiator.losses)) * 100).toFixed(0)}%
               </div>
-              <div className="text-gray-500 text-xs">Win Rate</div>
+              <div className="text-gray-500 text-responsive-xs">Win Rate</div>
             </div>
           </div>
-          
+
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-responsive-sm">
             {Object.entries(gladiator.stats).slice(0, 2).map(([stat, value]) => (
-              <div key={stat} className="flex items-center gap-2">
-                <div className="text-gray-500 text-xs capitalize">{stat}:</div>
-                <div className="flex-1 h-1 bg-gray-800 rounded-full overflow-hidden">
+              <div key={stat} className="flex items-center gap-responsive-sm">
+                <div className="text-gray-500 text-responsive-xs capitalize">{stat}:</div>
+                <div className="flex-1 h-[clamp(0.25rem,0.5vw,0.5rem)] bg-gray-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-amber-500 to-red-500 rounded-full transition-all duration-500"
                     style={{ width: `${value}%` }}
                   />
                 </div>
-                <div className="text-amber-400 text-xs font-bold">{value}</div>
+                <div className="text-amber-400 text-responsive-xs font-bold">{value}</div>
               </div>
             ))}
           </div>

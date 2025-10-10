@@ -60,16 +60,16 @@ export default function ConnectionIndicator({ className = '' }: ConnectionIndica
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg border ${bgColor} ${borderColor} ${color} text-sm ${className}`}
+      className={`fixed top-2 right-2 sm:top-4 sm:right-4 z-50 flex items-center gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg border ${bgColor} ${borderColor} ${color} text-xs sm:text-sm ${className}`}
     >
-      <Icon className="w-4 h-4" />
+      <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
       <span>{message}</span>
       {status === 'reconnecting' && (
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
         >
-          <RefreshCw className="w-3 h-3" />
+          <RefreshCw className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
         </motion.div>
       )}
     </motion.div>

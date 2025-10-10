@@ -101,15 +101,15 @@ function StatCard({ icon, label, value, color, bgColor, borderColor }: StatCardP
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex-shrink-0 px-2 py-1.5 rounded-lg border ${bgColor} ${borderColor} min-w-fit`}
+      className={`flex-shrink-0 px-responsive-2 py-responsive-1 rounded-responsive-base border ${bgColor} ${borderColor} min-w-fit`}
     >
-      <div className="flex items-center gap-1">
-        <div className={color}>{icon}</div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[8px] text-gray-400 uppercase tracking-wide leading-none">
+      <div className="flex items-center gap-responsive-sm">
+        <div className={`${color} icon-responsive-xs`}>{icon}</div>
+        <div className="flex flex-col gap-responsive-1">
+          <span className="text-responsive-xs text-gray-400 uppercase tracking-wide leading-none">
             {label}
           </span>
-          <div className={`text-sm font-bold ${color} leading-none`}>
+          <div className={`text-responsive-sm font-bold ${color} leading-none`}>
             {value}
           </div>
         </div>

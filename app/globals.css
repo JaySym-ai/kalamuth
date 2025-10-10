@@ -3,13 +3,66 @@
 :root {
   --background: #000000;
   --foreground: #ffffff;
-}
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* ===== RESPONSIVE SCALING SYSTEM ===== */
+  /* Fluid typography using clamp() for smooth scaling across all viewports */
+  /* Formula: clamp(min, preferred, max) */
+
+  /* Base font sizes - scale from mobile to desktop */
+  /* Minimum sizes ensure readability on smallest screens */
+  --text-xs: clamp(0.75rem, 1.5vw, 0.875rem);       /* 12px → 14px */
+  --text-sm: clamp(0.875rem, 2vw, 1rem);            /* 14px → 16px */
+  --text-base: clamp(1rem, 2.5vw, 1.25rem);         /* 16px → 20px */
+  --text-lg: clamp(1.125rem, 3vw, 1.5rem);          /* 18px → 24px */
+  --text-xl: clamp(1.25rem, 3.5vw, 1.875rem);       /* 20px → 30px */
+  --text-2xl: clamp(1.5rem, 4vw, 2.25rem);          /* 24px → 36px */
+  --text-3xl: clamp(1.875rem, 5vw, 2.75rem);        /* 30px → 44px */
+  --text-4xl: clamp(2.25rem, 6vw, 3.5rem);          /* 36px → 56px */
+  --text-5xl: clamp(3rem, 7vw, 4.5rem);             /* 48px → 72px */
+  --text-6xl: clamp(3.75rem, 8vw, 5.5rem);          /* 60px → 88px */
+  --text-7xl: clamp(4.5rem, 9vw, 6.5rem);           /* 72px → 104px */
+  --text-8xl: clamp(6rem, 11vw, 8rem);              /* 96px → 128px */
+  --text-9xl: clamp(8rem, 14vw, 10rem);             /* 128px → 160px */
+
+  /* Line heights - scale with text */
+  --line-height-tight: clamp(1.2, 1.5vw, 1.4);
+  --line-height-normal: clamp(1.4, 2vw, 1.6);
+  --line-height-relaxed: clamp(1.6, 2.5vw, 1.8);
+
+  /* Spacing scale - responsive padding/margin */
+  --space-1: clamp(0.25rem, 0.5vw, 0.5rem);         /* 4px → 8px */
+  --space-2: clamp(0.5rem, 1vw, 1rem);              /* 8px → 16px */
+  --space-3: clamp(0.75rem, 1.5vw, 1.5rem);         /* 12px → 24px */
+  --space-4: clamp(1rem, 2vw, 2rem);                /* 16px → 32px */
+  --space-6: clamp(1.5rem, 3vw, 3rem);              /* 24px → 48px */
+  --space-8: clamp(2rem, 4vw, 4rem);                /* 32px → 64px */
+  --space-12: clamp(3rem, 6vw, 6rem);               /* 48px → 96px */
+  --space-16: clamp(4rem, 8vw, 8rem);               /* 64px → 128px */
+
+  /* Icon sizes - responsive icon scaling */
+  /* Minimum sizes ensure tap targets meet 48px requirement */
+  --icon-xs: clamp(1rem, 2vw, 1.5rem);              /* 16px → 24px */
+  --icon-sm: clamp(1.25rem, 2.5vw, 2rem);           /* 20px → 32px */
+  --icon-base: clamp(1.5rem, 3vw, 2.5rem);          /* 24px → 40px */
+  --icon-lg: clamp(2.5rem, 4vw, 3rem);              /* 40px → 48px */
+  --icon-xl: clamp(3rem, 5vw, 4rem);                /* 48px → 64px */
+
+  /* Button/tap target sizes - ensure minimum 48px for accessibility */
+  --tap-target-sm: clamp(2.5rem, 6vw, 3rem);        /* 40px → 48px */
+  --tap-target-base: clamp(3rem, 7vw, 3.5rem);      /* 48px → 56px */
+  --tap-target-lg: clamp(3.5rem, 8vw, 4rem);        /* 56px → 64px */
+
+  /* Border radius - responsive rounding */
+  --radius-sm: clamp(0.25rem, 0.5vw, 0.5rem);
+  --radius-base: clamp(0.5rem, 1vw, 1rem);
+  --radius-lg: clamp(0.75rem, 1.5vw, 1.5rem);
+  --radius-xl: clamp(1rem, 2vw, 2rem);
+
+  /* Gap/gap sizes for flex/grid */
+  --gap-sm: clamp(0.5rem, 1vw, 1rem);
+  --gap-base: clamp(1rem, 2vw, 2rem);
+  --gap-lg: clamp(1.5rem, 3vw, 3rem);
+  --gap-xl: clamp(2rem, 4vw, 4rem);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -45,17 +98,17 @@ body {
 
 /* Custom scrollbar styles */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
+  width: clamp(4px, 1.5vw, 12px);
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
+  border-radius: clamp(2px, 0.5vw, 6px);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: linear-gradient(to bottom, #f59e0b, #dc2626);
-  border-radius: 4px;
+  border-radius: clamp(2px, 0.5vw, 6px);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -95,13 +148,88 @@ body {
   color: #fbbf24;
 }
 
+/* ===== RESPONSIVE UTILITY CLASSES ===== */
+/* Typography utilities using CSS variables */
+.text-responsive-xs { font-size: var(--text-xs); }
+.text-responsive-sm { font-size: var(--text-sm); }
+.text-responsive-base { font-size: var(--text-base); }
+.text-responsive-lg { font-size: var(--text-lg); }
+.text-responsive-xl { font-size: var(--text-xl); }
+.text-responsive-2xl { font-size: var(--text-2xl); }
+.text-responsive-3xl { font-size: var(--text-3xl); }
+.text-responsive-4xl { font-size: var(--text-4xl); }
+.text-responsive-5xl { font-size: var(--text-5xl); }
+.text-responsive-6xl { font-size: var(--text-6xl); }
+.text-responsive-7xl { font-size: var(--text-7xl); }
+.text-responsive-8xl { font-size: var(--text-8xl); }
+.text-responsive-9xl { font-size: var(--text-9xl); }
+
+/* Line height utilities */
+.leading-responsive-tight { line-height: var(--line-height-tight); }
+.leading-responsive-normal { line-height: var(--line-height-normal); }
+.leading-responsive-relaxed { line-height: var(--line-height-relaxed); }
+
+/* Spacing utilities */
+.p-responsive-1 { padding: var(--space-1); }
+.p-responsive-2 { padding: var(--space-2); }
+.p-responsive-3 { padding: var(--space-3); }
+.p-responsive-4 { padding: var(--space-4); }
+.p-responsive-6 { padding: var(--space-6); }
+.p-responsive-8 { padding: var(--space-8); }
+
+.px-responsive-2 { padding-left: var(--space-2); padding-right: var(--space-2); }
+.px-responsive-4 { padding-left: var(--space-4); padding-right: var(--space-4); }
+.px-responsive-6 { padding-left: var(--space-6); padding-right: var(--space-6); }
+
+.py-responsive-2 { padding-top: var(--space-2); padding-bottom: var(--space-2); }
+.py-responsive-4 { padding-top: var(--space-4); padding-bottom: var(--space-4); }
+.py-responsive-6 { padding-top: var(--space-6); padding-bottom: var(--space-6); }
+
+.m-responsive-2 { margin: var(--space-2); }
+.m-responsive-4 { margin: var(--space-4); }
+.m-responsive-6 { margin: var(--space-6); }
+
+.mb-responsive-2 { margin-bottom: var(--space-2); }
+.mb-responsive-4 { margin-bottom: var(--space-4); }
+.mb-responsive-6 { margin-bottom: var(--space-6); }
+.mb-responsive-8 { margin-bottom: var(--space-8); }
+
+.mt-responsive-2 { margin-top: var(--space-2); }
+.mt-responsive-4 { margin-top: var(--space-4); }
+.mt-responsive-6 { margin-top: var(--space-6); }
+.mt-responsive-8 { margin-top: var(--space-8); }
+
+/* Gap utilities for flex/grid */
+.gap-responsive-sm { gap: var(--gap-sm); }
+.gap-responsive-base { gap: var(--gap-base); }
+.gap-responsive-lg { gap: var(--gap-lg); }
+.gap-responsive-xl { gap: var(--gap-xl); }
+
+/* Icon size utilities */
+.icon-responsive-xs { width: var(--icon-xs); height: var(--icon-xs); }
+.icon-responsive-sm { width: var(--icon-sm); height: var(--icon-sm); }
+.icon-responsive-base { width: var(--icon-base); height: var(--icon-base); }
+.icon-responsive-lg { width: var(--icon-lg); height: var(--icon-lg); }
+.icon-responsive-xl { width: var(--icon-xl); height: var(--icon-xl); }
+
+/* Tap target size utilities - ensure minimum 48px for accessibility */
+.tap-target-sm { min-width: var(--tap-target-sm); min-height: var(--tap-target-sm); }
+.tap-target-base { min-width: var(--tap-target-base); min-height: var(--tap-target-base); }
+.tap-target-lg { min-width: var(--tap-target-lg); min-height: var(--tap-target-lg); }
+
+/* Border radius utilities */
+.rounded-responsive-sm { border-radius: var(--radius-sm); }
+.rounded-responsive-base { border-radius: var(--radius-base); }
+.rounded-responsive-lg { border-radius: var(--radius-lg); }
+.rounded-responsive-xl { border-radius: var(--radius-xl); }
+
 /* Animation utilities */
 @keyframes float {
   0%, 100% {
-    transform: translateY(0px);
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(-20px);
+    transform: translateY(clamp(-10px, -2vh, -30px));
   }
 }
 

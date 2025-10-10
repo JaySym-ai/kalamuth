@@ -12,15 +12,15 @@ export default function GlowButton({
   onClick,
 }: GlowButtonProps) {
   const sizeClasses = {
-    small: "px-4 py-2 text-sm",
-    medium: "px-6 py-3 text-base",
-    large: "px-8 py-4 text-lg",
+    small: "px-responsive-3 py-responsive-1 text-responsive-sm tap-target-sm",
+    medium: "px-responsive-4 py-responsive-2 text-responsive-base tap-target-base",
+    large: "px-responsive-6 py-responsive-3 text-responsive-lg tap-target-lg",
   };
 
   const baseClasses = `
-    relative font-bold rounded-lg transition-all duration-300 
+    relative font-bold rounded-responsive-lg transition-all duration-300
     transform hover:scale-105 active:scale-95
-    shadow-2xl overflow-hidden group
+    shadow-2xl overflow-hidden group flex items-center justify-center
   `;
 
   const primaryClasses = primary

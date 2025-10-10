@@ -61,24 +61,24 @@ export default async function LudusCreationPage({ params }: { params: Promise<{ 
         </div>
         <div className="max-w-2xl mx-auto w-full">
           {/* Header */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-amber-900/30 border border-amber-700/50 rounded-full backdrop-blur-sm mb-6">
-              <span className="relative flex h-2 w-2">
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-amber-900/30 border border-amber-700/50 rounded-full backdrop-blur-sm mb-4 sm:mb-6">
+              <span className="relative flex h-1.5 w-1.5 sm:h-2 sm:w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                <span className="relative inline-flex rounded-full h-full w-full bg-amber-500"></span>
               </span>
-              <span className="text-amber-400 text-sm font-medium">
+              <span className="text-amber-400 text-xs sm:text-sm font-medium">
                 {t("badge")}
               </span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-4">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black mb-3 sm:mb-4">
               <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent">
                 {t("title")}
               </span>
             </h1>
 
-            <p className="text-xl text-gray-300 max-w-xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 max-w-xl mx-auto">
               {t("subtitle")}
             </p>
           </div>

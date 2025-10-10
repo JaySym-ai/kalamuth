@@ -46,16 +46,16 @@ export default function CombatIntroduction({
       </div>
 
       {/* Arena name */}
-      <div className="relative z-10 text-center mb-6">
+      <div className="relative z-10 text-center mb-4 sm:mb-6">
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 border border-amber-700/40"
+          className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-black/40 border border-amber-700/40"
         >
-          <MapPin className="w-4 h-4 text-amber-400" />
-          <span className="text-sm font-semibold text-amber-100">{t.arena}</span>
-          <span className="text-sm text-gray-300">{arenaName}</span>
+          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
+          <span className="text-xs sm:text-sm font-semibold text-amber-100">{t.arena}</span>
+          <span className="text-xs sm:text-sm text-gray-300">{arenaName}</span>
         </motion.div>
       </div>
 
@@ -69,7 +69,7 @@ export default function CombatIntroduction({
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ delay: 0.5, duration: 0.5, type: "spring" }}
-          className="flex flex-col items-center justify-center gap-4"
+          className="flex flex-col items-center justify-center gap-3 sm:gap-4"
         >
           <div className="relative">
             <motion.div
@@ -77,11 +77,11 @@ export default function CombatIntroduction({
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
               className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-amber-500/20 rounded-full blur-xl"
             />
-            <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-amber-600 border-2 border-amber-400 shadow-lg shadow-amber-500/50">
-              <Swords className="w-8 h-8 text-white" />
+            <div className="relative flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-red-600 to-amber-600 border-2 border-amber-400 shadow-lg shadow-amber-500/50">
+              <Swords className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
           </div>
-          
+
           {/* Back to Arena Button */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -91,9 +91,9 @@ export default function CombatIntroduction({
            >
              <Link
               href={`/${locale}/arena/${arenaSlug}`}
-              className="inline-flex items-center gap-1 px-4 py-2 text-sm text-amber-400 hover:text-amber-300 transition-colors border border-amber-700/40 rounded-full bg-black/40 hover:bg-black/60 shadow-lg shadow-amber-500/20"
+              className="inline-flex items-center gap-1 px-3 sm:px-4 py-2 text-xs sm:text-sm text-amber-400 hover:text-amber-300 transition-colors border border-amber-700/40 rounded-full bg-black/40 hover:bg-black/60 shadow-lg shadow-amber-500/20"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
               {backToArenaText}
             </Link>
           </motion.div>
@@ -142,7 +142,7 @@ function GladiatorCard({ gladiator, maxHealth, delay, isRight = false }: Gladiat
           transition={{ duration: 2, repeat: Infinity }}
           className="absolute inset-0 bg-gradient-to-br from-amber-500/30 to-red-500/30 rounded-full blur-lg"
         />
-        <div className="relative w-24 h-24 rounded-full border-4 border-amber-600 overflow-hidden bg-black/40 shadow-xl">
+        <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full border-3 sm:border-4 border-amber-600 overflow-hidden bg-black/40 shadow-xl">
           {gladiator.avatarUrl ? (
             <Image
               src={gladiator.avatarUrl}
@@ -151,7 +151,7 @@ function GladiatorCard({ gladiator, maxHealth, delay, isRight = false }: Gladiat
               className="object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-4xl text-amber-400">
+            <div className="w-full h-full flex items-center justify-center text-2xl sm:text-3xl md:text-4xl text-amber-400">
               ⚔️
             </div>
           )}
@@ -160,14 +160,14 @@ function GladiatorCard({ gladiator, maxHealth, delay, isRight = false }: Gladiat
 
       {/* Name */}
       <div className="text-center">
-        <h3 className="text-lg font-bold text-amber-100">
+        <h3 className="text-sm sm:text-base md:text-lg font-bold text-amber-100">
           {gladiator.name} {gladiator.surname}
         </h3>
       </div>
 
       {/* Health Bar */}
-      <div className="w-full max-w-[160px]">
-        <div className="relative h-6 bg-black/40 rounded-lg border border-amber-900/30 overflow-hidden">
+      <div className="w-full max-w-[140px] sm:max-w-[160px]">
+        <div className="relative h-5 sm:h-6 bg-black/40 rounded-lg border border-amber-900/30 overflow-hidden">
           <motion.div
             className={`absolute inset-y-0 left-0 ${getHealthColor()} shadow-lg ${getHealthGlow()}`}
             initial={{ width: "100%" }}
@@ -175,7 +175,7 @@ function GladiatorCard({ gladiator, maxHealth, delay, isRight = false }: Gladiat
             transition={{ duration: 0.5, ease: "easeOut" }}
           />
           <div className="relative z-10 flex items-center justify-center h-full">
-            <span className="text-xs font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+            <span className="text-[0.65rem] sm:text-xs font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
               {Math.round(healthPercent)}%
             </span>
           </div>
