@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, Swords, Skull, Shield, Users, MapPin, Scroll } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, Skull, Shield, Users, MapPin, Scroll } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 import type {
   CombatQueueEntry,
@@ -389,6 +390,7 @@ export default function ArenaDetailClient({
       avatarUrl: gladiator.avatarUrl ?? null,
       rankingPoints: gladiator.rankingPoints,
       health: gladiator.health,
+      currentHealth: gladiator.currentHealth,
       userId: null,
       ludusId: gladiator.ludusId ?? null,
       alive: gladiator.alive,
@@ -439,6 +441,7 @@ export default function ArenaDetailClient({
       userId: null,
       rankingPoints: 1000,
       health: 100,
+      currentHealth: 100,
       ludusId: null,
       alive: true,
     } as CombatantSummary;
@@ -626,29 +629,29 @@ export default function ArenaDetailClient({
 
   return (
     <div className="min-h-screen pb-[max(env(safe-area-inset-bottom),24px)] pt-8 px-4 max-w-6xl mx-auto">
-      {/* Back Button */}
-      <motion.button
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        onClick={() => router.push(`/${locale}/dashboard`)}
-        className="mb-6 flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors"
-        data-testid="back-to-dashboard"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        {t.backToDashboard}
-      </motion.button>
-
       {/* Arena Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="text-4xl md:text-5xl font-black mb-4">
-          <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent">
-            {arenaName}
-          </span>
-        </h1>
+        <div className="flex items-center gap-4 mb-4">
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => router.push(`/${locale}/dashboard`)}
+            className="flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors"
+            data-testid="back-to-dashboard"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            {t.backToDashboard}
+          </motion.button>
+          <h1 className="text-4xl md:text-5xl font-black">
+            <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent">
+              {arenaName}
+            </span>
+          </h1>
+        </div>
         <div className="flex items-center gap-4 text-gray-400">
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />
@@ -869,7 +872,14 @@ export default function ArenaDetailClient({
             className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
           >
             <h2 className="text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2">
-              <Swords className="w-6 h-6" />
+              <div className="relative w-6 h-6">
+                <Image
+                  src="/assets/icon/match.png"
+                  alt="Combat Rules"
+                  fill
+                  className="object-contain"
+                />
+              </div>
               {t.combatRules}
             </h2>
 
@@ -913,7 +923,14 @@ export default function ArenaDetailClient({
 
             {/* Arena Image Placeholder */}
             <div className="aspect-video bg-gradient-to-br from-amber-900/30 to-red-900/30 rounded-xl mb-6 flex items-center justify-center border border-amber-700/30">
-              <Swords className="w-16 h-16 text-amber-600/50" />
+              <div className="relative w-16 h-16">
+                <Image
+                  src="/assets/icon/arena.png"
+                  alt="Arena"
+                  fill
+                  className="object-contain"
+                />
+              </div>
             </div>
 
             {/* Quick Stats */}

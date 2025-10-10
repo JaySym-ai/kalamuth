@@ -4,6 +4,7 @@ import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { SERVERS } from "@/data/servers";
 import OpenAI from "openai";
 import { generateOneGladiator } from "@/lib/generation/generateGladiator";
+import { rollRarity, getInitialGladiatorRarityConfig } from "@/lib/gladiator/rarity";
 
 export const runtime = "nodejs";
 
@@ -127,10 +128,15 @@ export async function POST(req: Request) {
 
       while (retries > 0 && !gladiatorCreated) {
         try {
+          // Roll rarity for initial gladiators (only bad and common)
+          const initialRarityConfig = getInitialGladiatorRarityConfig();
+          const rarity = rollRarity(initialRarityConfig);
+
           const g = await generateOneGladiator(client, {
             jobId: job.id,
             attempt: i + 1,
-            existingNames: Array.from(existingNames)
+            existingNames: Array.from(existingNames),
+            rarity
           });
 
           // Check if this name already exists

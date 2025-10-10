@@ -13,7 +13,12 @@ function safeSerialize(value: unknown, maxLength = 4000) {
   }
 }
 
-export type GenerationContext = { jobId?: string; attempt?: number; existingNames?: string[] };
+export type GenerationContext = {
+  jobId?: string;
+  attempt?: number;
+  existingNames?: string[];
+  rarity?: string; // The rolled rarity for this gladiator
+};
 
 export type ApiErrorDetails = {
   status: number | null;
@@ -303,8 +308,23 @@ export async function generateOneGladiator(client: OpenAI, context?: GenerationC
   for (let generationAttempt = 1; generationAttempt <= 3; generationAttempt++) {
     let completion: OpenAI.Chat.Completions.ChatCompletion;
     try {
-      // Build user prompt with existing names constraint
+      // Build user prompt with existing names constraint and rarity guidance
       let userPrompt = 'Create one compliant gladiator.';
+      if (context?.rarity) {
+        userPrompt += `\n\nRARITY: This gladiator must have rarity "${context.rarity}".`;
+        const rarityGuidance: Record<string, string> = {
+          bad: 'They are flawed and unreliable with significant weaknesses, poor stats, and likely injuries or sicknesses. Negative traits are common.',
+          common: 'They are average and unremarkable with balanced stats and some weaknesses. Negative traits are possible.',
+          uncommon: 'They are above average with some notable strengths. Stats are generally good with minor weaknesses. Negative traits are less common.',
+          rare: 'They are quite skilled with clear strengths. Stats are strong across the board. Negative traits are rare but possible.',
+          epic: 'They are exceptional with outstanding abilities. Stats are excellent. Negative traits are very rare. They may have a subtle unique power.',
+          legendary: 'They are legendary with extraordinary abilities. Stats are exceptional. Negative traits are extremely rare. They likely have a unique power.',
+          unique: 'They are one-of-a-kind with unparalleled abilities. Stats are outstanding. Negative traits are almost non-existent. They have a unique power.',
+        };
+        if (rarityGuidance[context.rarity]) {
+          userPrompt += ` ${rarityGuidance[context.rarity]}`;
+        }
+      }
       if (context?.existingNames && context.existingNames.length > 0) {
         userPrompt += `\n\nIMPORTANT: The following names are already taken. You MUST create a gladiator with a DIFFERENT name:\n${context.existingNames.join(', ')}`;
       }
@@ -413,6 +433,7 @@ CRITICAL: You MUST include ALL fields shown below, including "alive" which must 
   "name": "Marcus Serpens",
   "surname": "Shadowstep",
   "avatarUrl": "",
+  "rarity": "rare",
   "health": 184,
   "currentHealth": 184,
   "alive": true,
@@ -508,6 +529,7 @@ CRITICAL: You MUST include ALL fields shown below, including "alive" which must 
 
  Guidelines:
  - Key names must match the example EXACTLY. Do not introduce or rename keys.
+ - "rarity" must be one of: bad, common, uncommon, rare, epic, legendary, unique. This is hidden from players but affects generation.
  - Health must be an integer between 30 and 300.
  - currentHealth must equal health for new gladiators (they start at full health).
  - Each bilingual text field must have both "en" and "fr" keys with appropriate translations.

@@ -159,3 +159,11 @@ Task Output Format (what you return)
 	4.	Playwright specs added/updated (paths) + scenarios list.
 	5.	Any risks/TODOs.
 ⸻
+
+For testing you can use one of theses accounts:
+test2@hotmail.com / qplsk8hothot
+test3@hotmail.com / qplsk8hothot
+test4@hotmail.com / qplsk8hothot
+
+They all have access to a test server, this test server should always be used for testing changes.
+

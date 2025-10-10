@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Coins, Trophy, Heart, Building, MapPin, Users, ArrowLeft } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import type { Ludus } from "@/types/ludus";
@@ -90,7 +91,14 @@ export default function LudusDetailClient({ ludus, translations: t }: Props) {
             className="bg-gray-900/40 rounded-lg p-2.5 border border-gray-800/50 hover:border-amber-700/30 transition-colors duration-300"
           >
             <div className="flex items-center gap-1.5 text-gray-400 mb-1.5">
-              <Coins className="w-4 h-4 text-amber-400" />
+              <div className="relative w-4 h-4">
+                <Image
+                  src="/assets/icon/money.png"
+                  alt="Treasury"
+                  fill
+                  className="object-contain"
+                />
+              </div>
               <span className="text-xs font-semibold">{t.treasury}</span>
             </div>
             <motion.div
@@ -111,7 +119,14 @@ export default function LudusDetailClient({ ludus, translations: t }: Props) {
             className="bg-gray-900/40 rounded-lg p-2.5 border border-gray-800/50 hover:border-amber-700/30 transition-colors duration-300"
           >
             <div className="flex items-center gap-1.5 text-gray-400 mb-1.5">
-              <Trophy className="w-4 h-4 text-amber-400" />
+              <div className="relative w-4 h-4">
+                <Image
+                  src="/assets/icon/reputation.png"
+                  alt="Reputation"
+                  fill
+                  className="object-contain"
+                />
+              </div>
               <span className="text-xs font-semibold">{t.reputation}</span>
             </div>
             <div className="space-y-1">
@@ -135,7 +150,14 @@ export default function LudusDetailClient({ ludus, translations: t }: Props) {
             className="bg-gray-900/40 rounded-lg p-2.5 border border-gray-800/50 hover:border-red-700/30 transition-colors duration-300"
           >
             <div className="flex items-center gap-1.5 text-gray-400 mb-1.5">
-              <Heart className="w-4 h-4 text-red-400" />
+              <div className="relative w-4 h-4">
+                <Image
+                  src="/assets/icon/morale.png"
+                  alt="Morale"
+                  fill
+                  className="object-contain"
+                />
+              </div>
               <span className="text-xs font-semibold">{t.morale}</span>
             </div>
             <div className="space-y-1">
@@ -159,7 +181,14 @@ export default function LudusDetailClient({ ludus, translations: t }: Props) {
             className="bg-gray-900/40 rounded-lg p-2.5 border border-gray-800/50 hover:border-amber-700/30 transition-colors duration-300"
           >
             <div className="flex items-center gap-1.5 text-gray-400 mb-1.5">
-              <Users className="w-4 h-4 text-amber-400" />
+              <div className="relative w-4 h-4">
+                <Image
+                  src="/assets/icon/gladiators.png"
+                  alt="Gladiators"
+                  fill
+                  className="object-contain"
+                />
+              </div>
               <span className="text-xs font-semibold">{t.gladiatorCount}</span>
             </div>
             <motion.div
@@ -204,7 +233,14 @@ export default function LudusDetailClient({ ludus, translations: t }: Props) {
           className="bg-gray-900/40 rounded-lg p-2.5 border border-gray-800/50 hover:border-amber-700/30 transition-colors duration-300"
         >
           <div className="flex items-center gap-1.5 text-gray-400 mb-2">
-            <Building className="w-4 h-4 text-amber-400" />
+            <div className="relative w-4 h-4">
+              <Image
+                src="/assets/icon/inventory.png"
+                alt="Facilities"
+                fill
+                className="object-contain"
+              />
+            </div>
             <span className="text-xs font-semibold">{t.facilities}</span>
           </div>
           <div className="grid grid-cols-1 gap-2">

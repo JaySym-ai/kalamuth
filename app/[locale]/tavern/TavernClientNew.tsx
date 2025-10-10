@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { ArrowLeft, Send, SkipForward } from "lucide-react";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
@@ -285,8 +286,18 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
 
       <div className="relative z-10 h-full flex flex-col px-3 py-3">
         {/* Header */}
-        <header className="flex items-center justify-between mb-3">
-          <div>
+        <header className="flex items-center gap-3 mb-3">
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => router.push(`/${currentLocale}/dashboard`)}
+            className="p-2 hover:bg-amber-900/20 rounded-lg transition-colors"
+            data-testid="back-button"
+          >
+            <ArrowLeft className="w-5 h-5 text-amber-400" />
+          </motion.button>
+          <div className="flex items-center gap-2">
+            <Image src="/assets/icon/tavern.png" width={32} height={32} alt="Tavern icon" />
             <motion.h1
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -295,15 +306,6 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
               {t.title}
             </motion.h1>
           </div>
-          <motion.button
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            onClick={() => router.push(`/${currentLocale}/dashboard`)}
-            className="p-2 hover:bg-amber-900/20 rounded-lg transition-colors"
-            data-testid="back-button"
-          >
-            <ArrowLeft className="w-5 h-5 text-amber-400" />
-          </motion.button>
         </header>
 
         {/* Gladiator Info Card */}
@@ -389,14 +391,6 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
         {/* Action Buttons */}
         <div className="flex gap-2 mt-3">
           <button
-            onClick={handleRecruit}
-            disabled={recruiting}
-            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded font-bold text-sm transition-colors"
-            data-testid="recruit-button"
-          >
-            {recruiting ? t.recruiting : t.recruitThisGladiator}
-          </button>
-          <button
             onClick={handleSkip}
             disabled={loading}
             className="flex-1 px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-600 text-white rounded font-bold text-sm flex items-center justify-center gap-2 transition-colors"
@@ -404,6 +398,14 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
           >
             <SkipForward className="w-4 h-4" />
             {t.skip}
+          </button>
+          <button
+            onClick={handleRecruit}
+            disabled={recruiting}
+            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded font-bold text-sm transition-colors"
+            data-testid="recruit-button"
+          >
+            {recruiting ? t.recruiting : t.recruitThisGladiator}
           </button>
         </div>
       </div>

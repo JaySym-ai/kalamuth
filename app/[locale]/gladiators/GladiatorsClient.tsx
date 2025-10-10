@@ -4,12 +4,13 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
-import { ArrowLeft, Heart, AlertCircle, Activity } from "lucide-react";
+import Image from "next/image";
+import { Heart, AlertCircle, Activity } from "lucide-react";
 import type { Ludus } from "@/types/ludus";
 import { GLADIATOR_HEALTH_MAX } from "@/types/gladiator";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 import { useRealtimeCollection, useRealtimeRow } from "@/lib/supabase/realtime";
-import GameViewport from "@/components/layout/GameViewport";
+import PageLayout from "@/components/layout/PageLayout";
 
 interface GladiatorsTranslations {
   title: string;
@@ -56,38 +57,38 @@ function GladiatorCard({ gladiator, locale, translations: t }: {
       className="group cursor-pointer"
       data-testid={`gladiator-${gladiator.id}`}
     >
-      <div className="relative bg-gradient-to-br from-zinc-900 to-black border border-amber-900/30 rounded-xl p-4 hover:border-amber-700/50 transition-all duration-300 hover:shadow-lg hover:shadow-amber-900/20">
+      <div className="relative bg-gradient-to-br from-zinc-900 to-black border border-amber-900/30 rounded-[clamp(0.75rem,2vw,1rem)] p-[clamp(1rem,3vw,1.5rem)] hover:border-amber-700/50 transition-all duration-300 hover:shadow-lg hover:shadow-amber-900/20">
         {/* Avatar and Basic Info */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-[clamp(0.75rem,2vw,1rem)]">
           {/* Avatar */}
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-600 to-red-600 flex items-center justify-center text-2xl font-bold text-white">
+          <div className="relative flex-shrink-0">
+            <div className="w-[clamp(3.5rem,10vw,4.5rem)] h-[clamp(3.5rem,10vw,4.5rem)] rounded-full bg-gradient-to-br from-amber-600 to-red-600 flex items-center justify-center text-[clamp(1.25rem,4vw,1.75rem)] font-bold text-white">
               {gladiator.name.charAt(0)}
             </div>
             {!gladiator.alive && (
               <div className="absolute inset-0 bg-black/80 rounded-full flex items-center justify-center">
-                <span className="text-red-500 text-lg">✝</span>
+                <span className="text-red-500 text-[clamp(0.875rem,2vw,1.125rem)]">✝</span>
               </div>
             )}
           </div>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <h4 className="text-lg font-bold text-amber-400 truncate">
+            <h4 className="text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold text-amber-400 truncate">
               {gladiator.name} {gladiator.surname}
             </h4>
-            <p className="text-sm text-gray-400 truncate">
+            <p className="text-[clamp(0.75rem,2vw,0.875rem)] text-gray-400 truncate">
               {gladiator.birthCity}
             </p>
 
             {/* Health Status */}
-            <div className="flex items-center gap-2 mt-2">
-              <StatusIcon className={`w-4 h-4 ${healthStatus.color}`} />
-              <span className={`text-sm ${healthStatus.color}`}>
+            <div className="flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] mt-[clamp(0.5rem,1.5vw,0.75rem)]">
+              <StatusIcon className={`w-[clamp(0.875rem,2vw,1rem)] h-[clamp(0.875rem,2vw,1rem)] ${healthStatus.color}`} />
+              <span className={`text-[clamp(0.75rem,2vw,0.875rem)] ${healthStatus.color}`}>
                 {healthStatus.label}
               </span>
               {gladiator.injuryTimeLeftHours && (
-                <span className="text-sm text-gray-500">
+                <span className="text-[clamp(0.75rem,2vw,0.875rem)] text-gray-500">
                   ({gladiator.injuryTimeLeftHours}h)
                 </span>
               )}
@@ -96,15 +97,15 @@ function GladiatorCard({ gladiator, locale, translations: t }: {
         </div>
 
         {/* Health Bar */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-sm mb-1">
+        <div className="mt-[clamp(1rem,2.5vw,1.5rem)]">
+          <div className="flex items-center justify-between text-[clamp(0.75rem,2vw,0.875rem)] mb-[clamp(0.25rem,1vw,0.5rem)]">
             <span className="text-gray-500">{t.health}</span>
             <span className="text-gray-400">{gladiator.currentHealth} / {gladiator.health} HP</span>
           </div>
-          <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+          <div className="h-[clamp(0.5rem,1.5vw,0.75rem)] bg-gray-800 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
-                gladiator.currentHealth === gladiator.health 
+                gladiator.currentHealth === gladiator.health
                   ? 'bg-gradient-to-r from-green-500 to-green-600'
                   : gladiator.currentHealth > gladiator.health * 0.5
                   ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
@@ -113,17 +114,17 @@ function GladiatorCard({ gladiator, locale, translations: t }: {
               style={{ width: `${(gladiator.currentHealth / gladiator.health) * 100}%` }}
             />
           </div>
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="text-[clamp(0.625rem,1.5vw,0.75rem)] text-gray-500 mt-[clamp(0.25rem,1vw,0.5rem)]">
             {Math.round((gladiator.currentHealth / gladiator.health) * 100)}% health
           </div>
         </div>
 
         {/* Hover Effect */}
-        <div className="absolute inset-0 bg-gradient-to-t from-amber-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-amber-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[clamp(0.75rem,2vw,1rem)] pointer-events-none" />
 
         {/* View Details Button (appears on hover) */}
         <button
-          className="absolute bottom-3 right-3 px-3 py-1 bg-amber-600/80 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          className="absolute bottom-[clamp(0.75rem,2vw,1rem)] right-[clamp(0.75rem,2vw,1rem)] px-[clamp(0.75rem,2vw,1rem)] py-[clamp(0.25rem,1vw,0.5rem)] bg-amber-600/80 text-white text-[clamp(0.75rem,2vw,0.875rem)] rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           aria-label={t.viewDetails}
         >
           {t.viewDetails}
@@ -173,93 +174,53 @@ export default function GladiatorsClient({ ludus, gladiators, locale, translatio
   const currentGladiators = realtimeGladiators;
 
   return (
-    <GameViewport>
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black" />
-      <div className="absolute inset-0 bg-[url('/images/arena-bg.jpg')] opacity-5 bg-cover bg-center" />
-
-      {/* Scrollable Content Container */}
-      <div
-        className="relative z-10 h-full overflow-y-auto px-3 py-3"
-        data-scrollable="true"
-      >
-        {/* Header */}
-        <header className="max-w-7xl mx-auto mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <motion.button
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                onClick={() => router.push(`/${currentLocale}/dashboard`)}
-                className="p-2 bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-lg hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300"
-              >
-                <ArrowLeft className="w-5 h-5 text-amber-400" />
-              </motion.button>
-              <div>
-                <motion.h1
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-2xl md:text-3xl font-black bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent"
-                >
-                  {t.title}
-                </motion.h1>
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-gray-400 text-sm mt-1"
-                >
-                  {currentLudus.name} • {currentGladiators.length} / {currentLudus.maxGladiators} {t.gladiatorCount}
-                </motion.p>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Gladiators Grid */}
-        <div className="max-w-7xl mx-auto">
-          {currentGladiators.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {currentGladiators.map((gladiator, index) => (
-                <motion.div
-                  key={gladiator.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <GladiatorCard
-                    gladiator={gladiator}
-                    locale={locale}
-                    translations={{
-                      viewDetails: t.viewDetails,
-                      health: t.health,
-                      injured: t.injured,
-                      sick: t.sick,
-                      healthy: t.healthy,
-                    }}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          ) : (
+    <PageLayout
+      title={t.title}
+      backHref={`/${currentLocale}/dashboard`}
+      icon="/assets/icon/gladiators.png"
+      background="arena"
+    >
+      {/* Gladiators Grid */}
+      {currentGladiators.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[clamp(1rem,2vw,1.5rem)]">
+          {currentGladiators.map((gladiator, index) => (
             <motion.div
+              key={gladiator.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-16"
+              transition={{ delay: index * 0.1 }}
             >
-              <div className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-8">
-                <h3 className="text-xl font-bold text-amber-400 mb-4">{t.noGladiators}</h3>
-                <button 
-                  onClick={() => router.push(`/${currentLocale}/tavern`)}
-                  className="px-6 py-3 bg-gradient-to-r from-amber-600 to-red-600 text-white font-bold rounded-lg hover:from-amber-500 hover:to-red-500 transform hover:scale-105 transition-all duration-200"
-                >
-                  {t.recruitGladiators}
-                </button>
-              </div>
+              <GladiatorCard
+                gladiator={gladiator}
+                locale={locale}
+                translations={{
+                  viewDetails: t.viewDetails,
+                  health: t.health,
+                  injured: t.injured,
+                  sick: t.sick,
+                  healthy: t.healthy,
+                }}
+              />
             </motion.div>
-          )}
+          ))}
         </div>
-      </div>
-    </GameViewport>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-[clamp(2rem,8vw,4rem)]"
+        >
+          <div className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-[clamp(0.75rem,2vw,1rem)] p-[clamp(2rem,5vw,3rem)]">
+            <h3 className="text-[clamp(1.125rem,3vw,1.5rem)] font-bold text-amber-400 mb-[clamp(1rem,2vw,1.5rem)]">{t.noGladiators}</h3>
+            <button
+              onClick={() => router.push(`/${currentLocale}/tavern`)}
+              className="px-[clamp(1.5rem,3vw,2rem)] py-[clamp(0.75rem,2vw,1rem)] bg-gradient-to-r from-amber-600 to-red-600 text-white font-bold text-[clamp(0.875rem,2vw,1rem)] rounded-lg hover:from-amber-500 hover:to-red-500 transform hover:scale-105 transition-all duration-200"
+            >
+              {t.recruitGladiators}
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </PageLayout>
   );
 }

@@ -1,25 +1,31 @@
 import "server-only";
 
-import { Gladiator } from "@/types/gladiator";
+import { Gladiator, GladiatorRarity } from "@/types/gladiator";
 import {
   GladiatorZ,
   OpenRouterGladiatorJsonSchema,
   makeGladiatorArrayJsonSchema,
 } from "@/lib/gladiator/schema";
 import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
+import { rollRarity, getRarityLabel } from "@/lib/gladiator/rarity";
+import type { RarityConfig } from "@/types/server";
 
 
 export type GenerateOptions = {
   seed?: number;
   temperature?: number;
   retry?: number; // number of LLM repair retries on validation failure
+  rarityConfig?: RarityConfig; // rarity percentage configuration
+  preRolledRarity?: GladiatorRarity; // pre-rolled rarity (for testing or specific generation)
 };
 
 
-const systemPrompt = `
+function buildSystemPrompt(rarityInfo?: string): string {
+  return `
 You are generating gladiators for a Ludus management game.
 Follow the provided JSON Schema exactly. Do not include any fields not in the schema.
 - "health" represents max health (HP cap) and must be an integer between 30 and 300.
+- "rarity" must be one of: bad, common, uncommon, rare, epic, legendary, unique. This is hidden from players but affects generation.
 - "stats" fields (strength, agility, dexterity, speed, chance, intelligence, charisma, loyalty) must each be a 1–2 sentence descriptive string about how the gladiator expresses that trait in combat and behavior. Do not return numeric ratings for these.
 - Keep narrative fields vivid but concise (1-2 sentences each), suitable for in-game use.
 - The uniquePower must be subtle and not overpowered; it's optional.
@@ -27,11 +33,36 @@ Follow the provided JSON Schema exactly. Do not include any fields not in the sc
 - Use realistic ancient/mediterranean naming, but creativity is welcome.
 - Within a single generation request, each gladiator's name + surname combination must be unique.
 - avatarUrl must be a valid URL (can be placeholder).
+${rarityInfo ? `\nRARITY GUIDANCE:\n${rarityInfo}` : ''}
 Return only JSON matching the schema.
 `;
+}
 
-function buildUserPrompt(single: boolean, count?: number) {
-  if (single) return "Create one compliant gladiator.";
+function buildRarityGuidance(rarity: GladiatorRarity, config: RarityConfig): string {
+  const rarityLabel = getRarityLabel(rarity);
+  const allRarities = Object.entries(config)
+    .map(([key, pct]) => `${key}: ${pct}%`)
+    .join(", ");
+
+  const guidelines: Record<GladiatorRarity, string> = {
+    [GladiatorRarity.BAD]: `This gladiator has RARITY: ${rarityLabel}. They are flawed and unreliable. They should have significant weaknesses, poor stats, and likely injuries or sicknesses. Negative traits are common. Possible rarity distribution: ${allRarities}`,
+    [GladiatorRarity.COMMON]: `This gladiator has RARITY: ${rarityLabel}. They are average and unremarkable. They have balanced stats with some weaknesses. Negative traits are possible. Possible rarity distribution: ${allRarities}`,
+    [GladiatorRarity.UNCOMMON]: `This gladiator has RARITY: ${rarityLabel}. They are above average with some notable strengths. Stats are generally good with minor weaknesses. Negative traits are less common. Possible rarity distribution: ${allRarities}`,
+    [GladiatorRarity.RARE]: `This gladiator has RARITY: ${rarityLabel}. They are quite skilled with clear strengths. Stats are strong across the board. Negative traits are rare but possible. Possible rarity distribution: ${allRarities}`,
+    [GladiatorRarity.EPIC]: `This gladiator has RARITY: ${rarityLabel}. They are exceptional with outstanding abilities. Stats are excellent. Negative traits are very rare. They may have a subtle unique power. Possible rarity distribution: ${allRarities}`,
+    [GladiatorRarity.LEGENDARY]: `This gladiator has RARITY: ${rarityLabel}. They are legendary with extraordinary abilities. Stats are exceptional. Negative traits are extremely rare. They likely have a unique power. Possible rarity distribution: ${allRarities}`,
+    [GladiatorRarity.UNIQUE]: `This gladiator has RARITY: ${rarityLabel}. They are one-of-a-kind with unparalleled abilities. Stats are outstanding. Negative traits are almost non-existent. They have a unique power. Possible rarity distribution: ${allRarities}`,
+  };
+
+  return guidelines[rarity];
+}
+
+function buildUserPrompt(single: boolean, count?: number, rarity?: GladiatorRarity) {
+  if (single) {
+    return rarity
+      ? `Create one compliant gladiator with rarity: ${rarity}.`
+      : "Create one compliant gladiator.";
+  }
   return `Create ${count} distinct, compliant gladiators.`;
 }
 
@@ -90,9 +121,15 @@ async function llmGenerateRaw(
 }
 
 export async function generateGladiator(opts: GenerateOptions = {}): Promise<Gladiator> {
+  // Roll rarity if not pre-rolled
+  const rarity = opts.preRolledRarity || (opts.rarityConfig ? rollRarity(opts.rarityConfig) : GladiatorRarity.COMMON);
+
+  // Build rarity guidance
+  const rarityGuidance = opts.rarityConfig ? buildRarityGuidance(rarity, opts.rarityConfig) : undefined;
+
   const messages = [
-    { role: "system" as const, content: systemPrompt },
-    { role: "user" as const, content: buildUserPrompt(true) },
+    { role: "system" as const, content: buildSystemPrompt(rarityGuidance) },
+    { role: "user" as const, content: buildUserPrompt(true, undefined, rarity) },
   ];
 
   const schema = OpenRouterGladiatorJsonSchema;
@@ -127,7 +164,7 @@ export async function generateGladiator(opts: GenerateOptions = {}): Promise<Gla
 
 export async function generateGladiators(count: number, opts: GenerateOptions = {}): Promise<Gladiator[]> {
   const messages = [
-    { role: "system" as const, content: systemPrompt },
+    { role: "system" as const, content: buildSystemPrompt() },
     { role: "user" as const, content: buildUserPrompt(false, count) },
   ];
   const arraySchema = makeGladiatorArrayJsonSchema(count);

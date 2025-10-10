@@ -13,6 +13,27 @@
 export const GLADIATOR_HEALTH_MIN = 30;
 export const GLADIATOR_HEALTH_MAX = 300;
 
+/** Rarity levels for gladiators (hidden from UI, used for generation). */
+export enum GladiatorRarity {
+  BAD = 'bad',
+  COMMON = 'common',
+  UNCOMMON = 'uncommon',
+  RARE = 'rare',
+  EPIC = 'epic',
+  LEGENDARY = 'legendary',
+  UNIQUE = 'unique',
+}
+
+export const RARITY_LEVELS = [
+  GladiatorRarity.BAD,
+  GladiatorRarity.COMMON,
+  GladiatorRarity.UNCOMMON,
+  GladiatorRarity.RARE,
+  GladiatorRarity.EPIC,
+  GladiatorRarity.LEGENDARY,
+  GladiatorRarity.UNIQUE,
+] as const;
+
 
 
 /**
@@ -50,6 +71,10 @@ export interface Gladiator {
 
   /** URL to avatar image for this gladiator. */
   avatarUrl: string;
+
+  // — Rarity (hidden from UI, used for generation) —
+  /** Rarity level of this gladiator (affects characteristics). */
+  rarity: GladiatorRarity;
 
   // — Vital status —
   /** Max health (HP cap) in [30..300]. */

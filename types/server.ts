@@ -4,6 +4,24 @@
  * Not connected to storage or UI yet.
  */
 
+/** Rarity percentage configuration for gladiator generation. */
+export interface RarityConfig {
+  /** Percentage chance for bad rarity (0-100). */
+  bad: number;
+  /** Percentage chance for common rarity (0-100). */
+  common: number;
+  /** Percentage chance for uncommon rarity (0-100). */
+  uncommon: number;
+  /** Percentage chance for rare rarity (0-100). */
+  rare: number;
+  /** Percentage chance for epic rarity (0-100). */
+  epic: number;
+  /** Percentage chance for legendary rarity (0-100). */
+  legendary: number;
+  /** Percentage chance for unique rarity (0-100). */
+  unique: number;
+}
+
 /** Minimal gameplay configuration kept per server/world. */
 export interface ServerConfig {
   /** Lower/upper bounds for max health (HP cap) used at creation. */
@@ -18,6 +36,9 @@ export interface ServerConfig {
   ludusMaxGladiators: number;
   /** Number of gladiators to auto-generate for a new ludus on this server. */
   initialGladiatorsPerLudus: number;
+
+  /** Rarity percentage configuration for gladiator generation. */
+  rarityConfig: RarityConfig;
 
   /**
    * Placeholder for future knobs (e.g., economy rates, injury recovery, AI model hints).

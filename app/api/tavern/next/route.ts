@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import OpenAI from "openai";
 import { generateOneGladiator } from "@/lib/generation/generateGladiator";
+import { SERVERS } from "@/data/servers";
+import { rollRarity } from "@/lib/gladiator/rarity";
 
 export const runtime = "nodejs";
 
@@ -70,6 +72,10 @@ export async function POST(req: Request) {
           defaultHeaders: { 'X-Title': 'Kalamuth' }
         });
 
+        // Get server config for rarity rolling
+        const server = SERVERS.find(s => s.id === ludus.serverId);
+        const rarityConfig = server?.config.rarityConfig;
+
         // Fetch existing gladiator names
         const { data: existingGladiators } = await supabase
           .from('gladiators')
@@ -85,10 +91,14 @@ export async function POST(req: Request) {
         let retries = 3;
         while (retries > 0) {
           try {
+            // Roll rarity for replacement gladiator
+            const rarity = rarityConfig ? rollRarity(rarityConfig) : 'common';
+
             const g = await generateOneGladiator(client, {
               jobId: `tavern-next-${ludusId}`,
               attempt: 1,
-              existingNames: Array.from(existingNames)
+              existingNames: Array.from(existingNames),
+              rarity
             });
 
             const fullName = `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase();

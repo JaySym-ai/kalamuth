@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   GLADIATOR_HEALTH_MIN,
   GLADIATOR_HEALTH_MAX,
+  GladiatorRarity,
 } from "@/types/gladiator";
 
 // Base primitives
@@ -49,6 +50,9 @@ export const BilingualGladiatorZ = z
     name: NonEmpty,
     surname: NonEmpty,
     avatarUrl: z.string().url(),
+
+    // Rarity (hidden from UI, used for generation)
+    rarity: z.nativeEnum(GladiatorRarity),
 
     // Vital
     health: z.number().int().min(GLADIATOR_HEALTH_MIN).max(GLADIATOR_HEALTH_MAX),
@@ -108,6 +112,9 @@ export const GladiatorZ = z
     name: NonEmpty,
     surname: NonEmpty,
     avatarUrl: z.string().url(),
+
+    // Rarity (hidden from UI, used for generation)
+    rarity: z.nativeEnum(GladiatorRarity),
 
     // Vital
     health: z.number().int().min(GLADIATOR_HEALTH_MIN).max(GLADIATOR_HEALTH_MAX),
@@ -172,6 +179,7 @@ export const OpenRouterGladiatorJsonSchema = {
     name: { type: "string", minLength: 1 },
     surname: { type: "string", minLength: 1 },
     avatarUrl: { type: "string", format: "uri" },
+    rarity: { type: "string", enum: ["bad", "common", "uncommon", "rare", "epic", "legendary", "unique"] },
     health: { type: "integer", minimum: GLADIATOR_HEALTH_MIN, maximum: GLADIATOR_HEALTH_MAX },
     currentHealth: { type: "integer", minimum: 0, maximum: GLADIATOR_HEALTH_MAX },
     alive: { type: "boolean" },
@@ -219,6 +227,7 @@ export const OpenRouterGladiatorJsonSchema = {
     "name",
     "surname",
     "avatarUrl",
+    "rarity",
     "health",
     "currentHealth",
     "alive",

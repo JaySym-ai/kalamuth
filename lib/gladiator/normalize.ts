@@ -1,6 +1,7 @@
 import {
   GLADIATOR_HEALTH_MAX,
   GLADIATOR_HEALTH_MIN,
+  GladiatorRarity,
   type Gladiator,
   type GladiatorStats,
 } from "@/types/gladiator";
@@ -105,6 +106,9 @@ export function normalizeGladiator(id: string, data: Record<string, unknown>, lo
     name: coerceString(data.name, "—", locale),
     surname: coerceString(data.surname, "—", locale),
     avatarUrl: coerceString(data.avatarUrl, "https://placehold.co/256x256?text=Gladiator", locale),
+    rarity: (typeof data.rarity === "string" && Object.values(GladiatorRarity).includes(data.rarity as GladiatorRarity))
+      ? (data.rarity as GladiatorRarity)
+      : GladiatorRarity.COMMON,
     health: coerceNumber(data.health, {
       min: GLADIATOR_HEALTH_MIN,
       max: GLADIATOR_HEALTH_MAX,

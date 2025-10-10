@@ -4,13 +4,13 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
-import { Swords, Wine, Users } from "lucide-react";
+import Image from "next/image";
 import type { Ludus } from "@/types/ludus";
 import { useRealtimeRow } from "@/lib/supabase/realtime";
 
 import LogoutButton from "@/app/components/auth/LogoutButton";
 import LudusStats from "./LudusStats";
-import GameViewport from "@/components/layout/GameViewport";
+import PageLayout from "@/components/layout/PageLayout";
 
 interface DashboardTranslations {
   title: string;
@@ -69,127 +69,116 @@ export default function DashboardClient({ ludus, translations: t }: Props) {
 
 
   return (
-    <GameViewport>
-      {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black" />
-      <div className="absolute inset-0 bg-[url('/images/arena-bg.jpg')] opacity-5 bg-cover bg-center" />
+    <PageLayout
+      title={currentLudus.name}
+      subtitle={currentLudus.motto ? `"${currentLudus.motto}"` : undefined}
+      background="arena"
+      rightActions={<LogoutButton />}
+      showBackButton={false}
+    >
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-[clamp(0.75rem,2vw,1.5rem)] pb-[clamp(0.75rem,2vw,1.5rem)]">
+        {/* Left Column - Ludus Overview */}
+        <div className="lg:col-span-1 space-y-3" data-testid="dashboard-left-column">
+          {/* Ludus Stats Card */}
+          <LudusStats
+            ludus={currentLudus}
+            translations={{
+              ludusOverview: t.ludusOverview,
+              treasury: t.treasury,
+              reputation: t.reputation,
+              morale: t.morale,
+              gladiatorCount: t.gladiatorCount,
+            }}
+          />
 
-      {/* Scrollable Content Container */}
-      <div
-        className="relative z-10 h-full overflow-y-auto px-3 py-3"
-        data-scrollable="true"
-      >
-        {/* Header */}
-        <header className="max-w-7xl mx-auto mb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <motion.h1
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-2xl md:text-3xl font-black bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent"
-              >
-                {currentLudus.name}
-              </motion.h1>
-              {currentLudus.motto && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-gray-400 italic mt-1 text-xs"
-                >
-                  &ldquo;{currentLudus.motto}&rdquo;
-                </motion.p>
-              )}
+          {/* Arena Button */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => router.push(`/${currentLocale}/arena`)}
+            className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
+            data-testid="arena-button"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <div className="relative w-5 h-5">
+                <Image
+                  src="/assets/icon/arena.png"
+                  alt="Arena"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
+                {t.arena}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <LogoutButton />
+          </motion.button>
+
+          {/* Tavern Button */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+            onClick={() => router.push(`/${currentLocale}/tavern`)}
+            className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
+            data-testid="tavern-button"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <div className="relative w-5 h-5">
+                <Image
+                  src="/assets/icon/tavern.png"
+                  alt="Tavern"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
+                {t.tavern}
+              </span>
             </div>
-          </div>
-        </header>
+          </motion.button>
 
-        {/* Main Grid Layout */}
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-3 pb-3">
-          {/* Left Column - Ludus Overview */}
-          <div className="lg:col-span-1 space-y-3" data-testid="dashboard-left-column">
-            {/* Ludus Stats Card */}
-            <LudusStats
-              ludus={currentLudus}
-              translations={{
-                ludusOverview: t.ludusOverview,
-                treasury: t.treasury,
-                reputation: t.reputation,
-                morale: t.morale,
-                gladiatorCount: t.gladiatorCount,
-              }}
-            />
-
-            {/* Arena Button */}
-            <motion.button
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              onClick={() => router.push(`/${currentLocale}/arena`)}
-              className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
-              data-testid="arena-button"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Swords className="w-5 h-5 text-amber-400 group-hover:text-amber-300 transition-colors" />
-                <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
-                  {t.arena}
-                </span>
+          {/* Your Gladiators Button */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            onClick={() => router.push(`/${currentLocale}/gladiators`)}
+            className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
+            data-testid="gladiators-button"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <div className="relative w-5 h-5">
+                <Image
+                  src="/assets/icon/gladiators.png"
+                  alt="Gladiators"
+                  fill
+                  className="object-contain"
+                />
               </div>
-            </motion.button>
+              <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
+                {t.yourGladiators}
+              </span>
+            </div>
+          </motion.button>
+        </div>
 
-            {/* Tavern Button */}
-            <motion.button
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              onClick={() => router.push(`/${currentLocale}/tavern`)}
-              className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
-              data-testid="tavern-button"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Wine className="w-5 h-5 text-amber-400 group-hover:text-amber-300 transition-colors" />
-                <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
-                  {t.tavern}
-                </span>
-              </div>
-            </motion.button>
-
-            {/* Your Gladiators Button */}
-            <motion.button
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              onClick={() => router.push(`/${currentLocale}/gladiators`)}
-              className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
-              data-testid="gladiators-button"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <Users className="w-5 h-5 text-amber-400 group-hover:text-amber-300 transition-colors" />
-                <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
-                  {t.yourGladiators}
-                </span>
-              </div>
-            </motion.button>
-          </div>
-
-          {/* Right Column - Empty or future content */}
-          <div className="lg:col-span-2">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-6 text-center"
-            >
-              <div className="text-gray-400">
-                <h3 className="text-lg font-bold text-amber-400 mb-2">Welcome to your Ludus</h3>
-                <p className="text-sm">Manage your gladiators and prepare them for battle in the arena.</p>
-              </div>
-            </motion.div>
-          </div>
+        {/* Right Column - Empty or future content */}
+        <div className="lg:col-span-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-6 text-center"
+          >
+            <div className="text-gray-400">
+              <h3 className="text-lg font-bold text-amber-400 mb-2">Welcome to your Ludus</h3>
+              <p className="text-sm">Manage your gladiators and prepare them for battle in the arena.</p>
+            </div>
+          </motion.div>
         </div>
       </div>
-    </GameViewport>
+    </PageLayout>
   );
 }
