@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
       message: "Quest accepted! The gladiator will return in 1 hour.",
     });
   } catch (error) {
-    console.error("Quest acceptance error:", error);
+    debug_error("Quest acceptance error:", error);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

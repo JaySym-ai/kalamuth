@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
   loginUser,
-  registerUser,
   logoutUser,
   clearAuthState,
   waitForAuthState,
@@ -10,33 +9,19 @@ import {
 } from './helpers/auth';
 
 test.describe('Authentication Integration Tests', () => {
-  // Ensure test user exists for login tests
-  test.beforeAll(async ({ browser }) => {
-    const page = await browser.newPage();
-    try {
-      // Clear any existing state first
-      await clearAuthState(page);
-
-      // Use the smart registerUser function that handles existing users
-      await registerUser(page);
-      console.log('Test user setup completed');
-    } catch (error) {
-      console.log('Setup error:', error instanceof Error ? error.message : String(error));
-    } finally {
-      await page.close();
-    }
-  });
+  // Note: Test account must already exist in the test server
+  // Test accounts available: test2@hotmail.com, test3@hotmail.com, test4@hotmail.com
 
   test.beforeEach(async ({ page }) => {
     // Clear any existing authentication state
     await clearAuthState(page);
   });
 
-  test('complete authentication workflow: register → login → access protected content → logout', async ({ page }) => {
-    // Step 1: Register a new user (or login if already exists)
-    await registerUser(page);
+  test('complete authentication workflow: login → access protected content → logout', async ({ page }) => {
+    // Step 1: Login with existing credentials
+    await loginUser(page);
 
-    // Verify we're in setup flow after registration/login
+    // Verify we're in setup flow after login
     await expect(page).toHaveURL(/\/en\/(server-selection|ludus-creation|initial-gladiators|dashboard)/);
 
     // Step 2: Logout

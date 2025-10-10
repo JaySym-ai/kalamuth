@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import type { CombatantSummary, CombatLogEntry, CombatMatchAcceptance } from "@/types/combat";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
@@ -31,7 +32,7 @@ export async function GET(
     .maybeSingle();
 
   if (matchError) {
-    console.error("Failed to load match", matchError);
+    debug_error("Failed to load match", matchError);
     return NextResponse.json({ error: "failed_to_fetch_match" }, { status: 500 });
   }
 
@@ -48,7 +49,7 @@ export async function GET(
     .eq("userId", user.id);
 
   if (participantError) {
-    console.error("Failed to verify participant", participantError);
+    debug_error("Failed to verify participant", participantError);
     return NextResponse.json({ error: "failed_to_fetch_match" }, { status: 500 });
   }
 
@@ -62,7 +63,7 @@ export async function GET(
     .in("id", gladiatorIds);
 
   if (gladiatorError) {
-    console.error("Failed to load gladiators", gladiatorError);
+    debug_error("Failed to load gladiators", gladiatorError);
     return NextResponse.json({ error: "failed_to_fetch_gladiators" }, { status: 500 });
   }
 
@@ -88,7 +89,7 @@ export async function GET(
       .eq("matchId", matchId);
 
     if (acceptanceError) {
-      console.error("Failed to fetch acceptances:", acceptanceError);
+      debug_error("Failed to fetch acceptances:", acceptanceError);
     } else {
       acceptances = acceptanceData || [];
     }

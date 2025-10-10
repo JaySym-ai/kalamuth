@@ -207,7 +207,7 @@ export default function MatchAcceptancePanel({
 
   // Check if both players have accepted and navigate to combat
   useEffect(() => {
-    console.log('🚀 Navigation check:', {
+    debug_log('🚀 Navigation check:', {
       userStatus: userAcceptance?.status,
       opponentStatus: opponentAcceptance?.status,
       bothAccepted: userAcceptance?.status === "accepted" && opponentAcceptance?.status === "accepted",
@@ -217,9 +217,9 @@ export default function MatchAcceptancePanel({
       userAcceptance?.status === "accepted" &&
       opponentAcceptance?.status === "accepted"
     ) {
-      console.log('✅ Both accepted! Navigating to combat immediately...');
+      debug_log('✅ Both accepted! Navigating to combat immediately...');
       // Both accepted, navigate to combat immediately
-      console.log('🎯 Navigating to:', `/${locale}/combat/${match.id}`);
+      debug_log('🎯 Navigating to:', `/${locale}/combat/${match.id}`);
       router.push(`/${locale}/combat/${match.id}`);
     }
   }, [userAcceptance?.status, opponentAcceptance?.status, router, locale, match.id]);

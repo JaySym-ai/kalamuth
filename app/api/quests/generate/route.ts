@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
 import type { GeneratedQuest, VolunteerInfo, QuestGenerationContext } from "@/types/quest";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}));
     const ludusId = typeof body?.ludusId === 'string' ? body.ludusId.trim() : null;
+    const locale = typeof body?.locale === 'string' ? body.locale : 'en';
 
     if (!ludusId) {
       return NextResponse.json({ error: "missing_ludus_id" }, { status: 400 });
@@ -57,6 +59,7 @@ export async function POST(req: Request) {
       ludusName: ludus.name,
       ludusReputation: ludus.reputation || 0,
       ludusLocation: ludus.locationCity,
+      locale,
       gladiators: gladiators.map(g => ({
         id: g.id,
         name: g.name,
@@ -78,16 +81,16 @@ export async function POST(req: Request) {
     });
 
     const questContent = questCompletion.choices[0]?.message?.content?.trim() || "";
-    console.log("Quest AI Response:", questContent);
+    debug_log("Quest AI Response:", questContent);
     const quest = parseQuestResponse(questContent);
 
     if (!quest) {
-      console.error("Failed to parse quest response:", questContent);
+      debug_error("Failed to parse quest response:", questContent);
       return NextResponse.json({ error: "quest_generation_failed" }, { status: 500 });
     }
 
     // Find volunteer gladiator
-    const volunteerPrompt = buildVolunteerPrompt(quest, gladiators);
+    const volunteerPrompt = buildVolunteerPrompt(quest, gladiators, locale);
     const volunteerCompletion = await openrouter.chat.completions.create({
       model: MODEL_STORYTELLING,
       messages: [{ role: "user", content: volunteerPrompt }],
@@ -96,11 +99,11 @@ export async function POST(req: Request) {
     });
 
     const volunteerContent = volunteerCompletion.choices[0]?.message?.content?.trim() || "";
-    console.log("Volunteer AI Response:", volunteerContent);
+    debug_log("Volunteer AI Response:", volunteerContent);
     const volunteer = parseVolunteerResponse(volunteerContent, gladiators);
 
     if (!volunteer) {
-      console.error("Failed to parse volunteer response:", volunteerContent);
+      debug_error("Failed to parse volunteer response:", volunteerContent);
       return NextResponse.json({ error: "volunteer_selection_failed" }, { status: 500 });
     }
 
@@ -130,12 +133,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "failed_to_create_quest" }, { status: 500 });
     }
 
+    const volunteerGladiator = gladiators.find(g => g.id === volunteer.gladiatorId);
     return NextResponse.json({
-      quest: createdQuest,
-      gladiatorName: gladiators.find(g => g.id === volunteer.gladiatorId)?.name,
+      quest: {
+        ...createdQuest,
+        gladiatorName: volunteerGladiator ? `${volunteerGladiator.name} ${volunteerGladiator.surname}` : undefined,
+      },
     });
   } catch (error) {
-    console.error("Quest generation error:", error);
+    debug_error("Quest generation error:", error);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
@@ -144,6 +150,39 @@ function buildQuestPrompt(context: QuestGenerationContext): string {
   const gladiatorsList = context.gladiators
     .map(g => `- ${g.name} ${g.surname}: ${g.personality}`)
     .join('\n');
+
+  const isFrench = context.locale === 'fr';
+  
+  if (isFrench) {
+    return `Vous êtes un générateur de quêtes pour un jeu de gestion de ludus de gladiateurs romains. Générez UNE SEULE quête qui soit immersive, historiquement précise et centrée sur le jeu de rôle.
+
+CONTEXTE DU LUDUS:
+- Nom: ${context.ludusName}
+- Réputation: ${context.ludusReputation}/100
+- Lieu: ${context.ludusLocation || 'Inconnu'}
+
+GLADIATEURS DISPONIBLES:
+${gladiatorsList}
+
+Générez une quête au format JSON avec ces CHAMPS EXACTS:
+{
+  "title": "Titre de la quête (court, 3-5 mots)",
+  "description": "Récit détaillé de la quête (2-3 phrases, immersif et historiquement précis)",
+  "reward": <nombre entre 1 et 5>,
+  "dangerPercentage": <nombre 0-99>,
+  "sicknessPercentage": <nombre 0-99>,
+  "deathPercentage": <nombre 0-99>
+}
+
+La quête doit être:
+- Historiquement précise pour l'époque romaine
+- Immersive et centrée sur le jeu de rôle
+- Appropriée pour les gladiateurs (combat, arène, survie, honneur)
+- Dangereuse mais pas impossible
+- La récompense doit refléter le niveau de danger
+
+IMPORTANT: Retournez SEULEMENT du JSON valide, sans autre texte.`;
+  }
 
   return `You are a quest generator for a Roman gladiator ludus management game. Generate ONE quest that is immersive, historically accurate, and roleplay-focused.
 
@@ -175,10 +214,31 @@ The quest should be:
 IMPORTANT: Return ONLY valid JSON, no other text.`;
 }
 
-function buildVolunteerPrompt(quest: GeneratedQuest, gladiators: any[]): string {
+function buildVolunteerPrompt(quest: GeneratedQuest, gladiators: any[], locale: string = 'en'): string {
   const gladiatorsList = gladiators
     .map(g => `- ${g.id}: ${g.name} ${g.surname} (${g.personality})`)
     .join('\n');
+
+  const isFrench = locale === 'fr';
+
+  if (isFrench) {
+    return `Vous sélectionnez un gladiateur volontaire pour cette quête :
+"${quest.title}: ${quest.description}"
+
+GLADIATEURS DISPONIBLES:
+${gladiatorsList}
+
+Sélectionnez le MEILLEUR volontaire en fonction de sa personnalité et des exigences de la quête. Générez ensuite un message de jeu de rôle de ce gladiateur expliquant pourquoi il se porte volontaire.
+
+Répondez au format JSON :
+{
+  "gladiatorId": "<uuid du gladiateur sélectionné>",
+  "volunteerMessage": "Un message de jeu de rôle de 1-2 phrases du gladiateur expliquant sa motivation"
+}
+
+Le message doit être dans le personnage, dramatique et immersif.
+IMPORTANT: Retournez SEULEMENT du JSON valide, sans autre texte.`;
+  }
 
   return `You are selecting a volunteer gladiator for this quest:
 "${quest.title}: ${quest.description}"

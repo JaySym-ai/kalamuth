@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import type { CombatLogEntry } from "@/types/combat";
+import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -151,7 +152,7 @@ export async function GET(
                 }
               }
             } catch (error) {
-              console.error("Poll error:", error);
+              debug_error("Poll error:", error);
               clearInterval(pollInterval);
             }
           }, 1000);
@@ -164,7 +165,7 @@ export async function GET(
           };
         }
       } catch (error) {
-        console.error("Watch stream error:", error);
+        debug_error("Watch stream error:", error);
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", message: errorMessage })}\n\n`));
         controller.close();

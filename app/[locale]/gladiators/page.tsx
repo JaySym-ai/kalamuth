@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { debug_error } from "@/utils/debug";
 import GladiatorsClient from "./GladiatorsClient";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
@@ -95,7 +96,7 @@ export default async function GladiatorsPage({ params }: { params: Promise<{ loc
       return aTime.localeCompare(bTime);
     });
   } catch (error) {
-    console.error("Error loading gladiators data:", error);
+    debug_error("Error loading gladiators data:", error);
     redirect(`/${locale}/server-selection`);
   }
 

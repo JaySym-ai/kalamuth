@@ -1,5 +1,6 @@
 "use client";
 
+import { debug_log, debug_error } from "@/utils/debug";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -87,8 +88,21 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ludusId: ludus.id }),
     })
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((data) => {
+            throw new Error(data.error || 'Generation failed');
+          });
+        }
+        return res.json().then((data) => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          return data;
+        });
+      })
       .catch((err) => {
-        console.error("Tavern gladiator generation failed:", err);
+        debug_error("Tavern gladiator generation failed:", err);
         setError(t.error);
       })
       .finally(() => {
@@ -167,7 +181,7 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
 
       setChatMessages(prev => [...prev, gladiatorMessage]);
     } catch (err) {
-      console.error("Chat failed:", err);
+      debug_error("Chat failed:", err);
       setError(t.error);
     } finally {
       setLoading(false);
@@ -193,6 +207,10 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
         return;
       }
 
+      const data = await response.json();
+
+      // The new gladiator is already in the realtime collection,
+      // so we just need to move to the next gladiator in the list
       // Move to next gladiator
       if (currentGladiatorIndex < gladiators.length - 1) {
         setCurrentGladiatorIndex(prev => prev + 1);
@@ -204,7 +222,7 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
       setChatMessages([]);
       setError(null);
     } catch (err) {
-      console.error("Skip failed:", err);
+      debug_error("Skip failed:", err);
       setError(t.error);
     }
   };
@@ -241,7 +259,7 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
       // Reset chat
       setChatMessages([]);
     } catch (err) {
-      console.error("Recruitment failed:", err);
+      debug_error("Recruitment failed:", err);
       setError(t.error);
     } finally {
       setRecruiting(false);

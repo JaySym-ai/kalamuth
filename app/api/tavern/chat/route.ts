@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import OpenAI from "openai";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
@@ -210,7 +211,7 @@ You are ${context.name} ${context.surname}. Make the user believe they're talkin
     return NextResponse.json({ response }, { status: 200 });
   } catch (e) {
     if (process.env.NODE_ENV !== 'production') {
-      console.error('[api/tavern/chat] failed', e);
+      debug_error('[api/tavern/chat] failed', e);
     }
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }

@@ -15,6 +15,7 @@ import type {
 } from "@/types/combat";
 import { useRealtimeCollection } from "@/lib/supabase/realtime";
 import { createClient } from "@/utils/supabase/clients";
+import { debug_log, debug_error } from "@/utils/debug";
 import GladiatorSelector from "./GladiatorSelector";
 import ActiveMatchPanel from "./ActiveMatchPanel";
 import MatchAcceptancePanel from "./MatchAcceptancePanel";
@@ -220,14 +221,14 @@ export default function ArenaDetailClient({
         });
 
         if (!response.ok) {
-          console.error("Failed to fetch acceptances");
+          debug_error("Failed to fetch acceptances");
           return;
         }
 
         const data = await response.json();
         if (!isCancelled && data.acceptances) {
           setInitialAcceptances(data.acceptances);
-          console.log('📥 Loaded initial acceptances:', {
+          debug_log('📥 Loaded initial acceptances:', {
             matchId: activeMatchId,
             count: data.acceptances.length,
             acceptances: data.acceptances.map((a: CombatMatchAcceptance) => ({
@@ -240,7 +241,7 @@ export default function ArenaDetailClient({
       } catch (err) {
         if (isCancelled) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
-        console.error("Error fetching acceptances:", err);
+        debug_error("Error fetching acceptances:", err);
       }
     };
 
@@ -302,14 +303,14 @@ export default function ArenaDetailClient({
   // Enhanced error handling for realtime connection issues
   useEffect(() => {
     if (acceptancesData.length > 0) {
-      console.log('📡 Realtime acceptances data received:', acceptancesData.length);
+      debug_log('📡 Realtime acceptances data received:', acceptancesData.length);
     }
   }, [acceptancesData]);
 
   // Debug: Log acceptances data changes
   useEffect(() => {
     if (activeMatch?.status === "pending_acceptance") {
-      console.log('📡 ArenaDetailClient - Acceptances updated:', {
+      debug_log('📡 ArenaDetailClient - Acceptances updated:', {
         matchId: activeMatch.id,
         totalAcceptances: acceptanceRecords.length,
         initialAcceptances: initialAcceptances.length,
@@ -355,7 +356,7 @@ export default function ArenaDetailClient({
           .single();
 
         if (error) {
-          console.error("Error fetching opponent:", error);
+          debug_error("Error fetching opponent:", error);
           return;
         }
 
@@ -363,7 +364,7 @@ export default function ArenaDetailClient({
           setOpponentGladiatorData(data as NormalizedGladiator);
         }
       } catch (error) {
-        console.error("Error fetching opponent data:", error);
+        debug_error("Error fetching opponent data:", error);
       }
     };
 
@@ -505,7 +506,7 @@ export default function ArenaDetailClient({
       } catch (err) {
         if (isCancelled) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
-        console.error("Failed to load match details", err);
+        debug_error("Failed to load match details", err);
         setMatchDetailsError(t.failedToLoadMatch);
       } finally {
         if (!isCancelled) {
@@ -581,7 +582,7 @@ export default function ArenaDetailClient({
         await refreshUserQueue();
       }
     } catch (err) {
-      console.error("Error joining queue:", err);
+      debug_error("Error joining queue:", err);
       setError(t.networkError);
     } finally {
       setIsJoining(false);
@@ -620,7 +621,7 @@ export default function ArenaDetailClient({
         await refreshUserQueue();
       }
     } catch (err) {
-      console.error("Error leaving queue:", err);
+      debug_error("Error leaving queue:", err);
       setError(t.networkError);
     } finally {
       setIsLeaving(false);

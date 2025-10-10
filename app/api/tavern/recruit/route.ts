@@ -5,10 +5,24 @@ import OpenAI from "openai";
 import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 import { SERVERS } from "@/data/servers";
 import { rollRarity } from "@/lib/gladiator/rarity";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
 function nowIso() { return new Date().toISOString(); }
+
+function serializeError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (typeof error === 'object' && error !== null) {
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+  return String(error);
+}
 
 export async function POST(req: Request) {
   try {
@@ -61,7 +75,7 @@ export async function POST(req: Request) {
     });
 
     if (insertErr) {
-      console.error("Failed to insert gladiator:", insertErr);
+      debug_error("Failed to insert gladiator:", insertErr);
       return NextResponse.json({ error: "recruitment_failed" }, { status: 500 });
     }
 
@@ -73,7 +87,7 @@ export async function POST(req: Request) {
       .eq('id', tavernGladiatorId);
 
     if (deleteErr) {
-      console.error("Failed to delete tavern gladiator:", deleteErr);
+      debug_error("Failed to delete tavern gladiator:", deleteErr);
       return NextResponse.json({ error: "cleanup_failed" }, { status: 500 });
     }
 
@@ -84,7 +98,7 @@ export async function POST(req: Request) {
       .eq('id', ludusId);
 
     if (updateErr) {
-      console.error("Failed to update ludus:", updateErr);
+      debug_error("Failed to update ludus:", updateErr);
       return NextResponse.json({ error: "update_failed" }, { status: 500 });
     }
 
@@ -111,6 +125,7 @@ export async function POST(req: Request) {
         );
 
         let retries = 3;
+        let lastError: unknown = null;
         while (retries > 0) {
           try {
             // Roll rarity for replacement gladiator
@@ -133,22 +148,33 @@ export async function POST(req: Request) {
                 createdAt: now,
                 updatedAt: now,
               });
+              debug_log(`[tavern/recruit] Successfully generated replacement gladiator: ${fullName}`);
               break;
             }
+            lastError = `Duplicate name generated: ${fullName}`;
+            debug_warn(`[tavern/recruit] Duplicate name generated (retry ${4 - retries}/3): ${fullName}`);
             retries--;
-          } catch {
+          } catch (e) {
+            lastError = e;
+            const errorMsg = serializeError(e);
+            debug_error(`[tavern/recruit] Error generating replacement gladiator (retry ${4 - retries}/3): ${errorMsg}`);
             retries--;
           }
         }
+        if (lastError && retries === 0) {
+          const errorMsg = serializeError(lastError);
+          debug_warn(`[tavern/recruit] Failed to generate replacement gladiator after 3 retries: ${errorMsg}`);
+        }
       } catch (error) {
-        console.error("Failed to generate replacement gladiator:", error);
+        const errorMsg = serializeError(error);
+        debug_error(`[tavern/recruit] Failed to generate replacement gladiator: ${errorMsg}`);
         // Don't fail the recruitment if replacement generation fails
       }
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (e) {
-    if (process.env.NODE_ENV !== 'production') console.error('[api/tavern/recruit] failed', e);
+    if (process.env.NODE_ENV !== 'production') debug_error('[api/tavern/recruit] failed', e);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }

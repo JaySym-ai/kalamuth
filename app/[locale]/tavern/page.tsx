@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { debug_error } from "@/utils/debug";
 import TavernClient from "./TavernClientNew";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
@@ -88,7 +89,7 @@ export default async function TavernPage({ params }: { params: Promise<{ locale:
       );
     }
   } catch (error) {
-    console.error("Error loading tavern data:", error);
+    debug_error("Error loading tavern data:", error);
     redirect(`/${locale}/server-selection`);
   }
 

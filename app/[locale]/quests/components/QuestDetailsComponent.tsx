@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import type { Quest } from "@/types/quest";
 
@@ -16,10 +17,25 @@ export default function QuestDetailsComponent({
   onReroll,
   translations: t,
 }: QuestDetailsComponentProps) {
+  const [showRerollConfirm, setShowRerollConfirm] = useState(false);
+
   const getRiskColor = (percentage: number) => {
     if (percentage >= 70) return "text-red-400";
     if (percentage >= 40) return "text-yellow-400";
     return "text-green-400";
+  };
+
+  const handleRerollClick = () => {
+    setShowRerollConfirm(true);
+  };
+
+  const handleRerollConfirm = () => {
+    setShowRerollConfirm(false);
+    onReroll();
+  };
+
+  const handleRerollCancel = () => {
+    setShowRerollConfirm(false);
   };
 
   const getRiskBgColor = (percentage: number) => {
@@ -115,6 +131,9 @@ export default function QuestDetailsComponent({
           className="bg-gradient-to-r from-amber-900/20 to-orange-900/20 border border-amber-600/30 rounded-xl p-6 space-y-3"
         >
           <h3 className="text-lg font-bold text-amber-100">{t.volunteer}</h3>
+          {quest.gladiatorName && (
+            <p className="text-amber-200 font-semibold">{quest.gladiatorName}</p>
+          )}
           <p className="text-gray-300 italic">"{quest.volunteerMessage}"</p>
         </motion.div>
       )}
@@ -135,7 +154,7 @@ export default function QuestDetailsComponent({
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          onClick={onReroll}
+          onClick={handleRerollClick}
           className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 hover:scale-[1.02]"
         >
           {t.rerollQuest}
@@ -143,6 +162,42 @@ export default function QuestDetailsComponent({
       </div>
 
       <p className="text-xs text-gray-500 text-center">{t.rerollCost}</p>
+
+      {/* Reroll Confirmation Dialog */}
+      {showRerollConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-black/90 border border-amber-900/50 rounded-xl p-6 max-w-md w-full space-y-4 shadow-2xl shadow-amber-900/20"
+          >
+            <h3 className="text-xl font-bold text-amber-100">{t.rerollQuest}</h3>
+            <div className="space-y-2">
+              <p className="text-amber-200 font-medium">
+                {t.rerollCost}
+              </p>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                {t.rerollConfirmMessage}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <button
+                onClick={handleRerollCancel}
+                className="bg-gradient-to-r from-red-900 to-red-800 hover:from-red-800 hover:to-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 hover:scale-[1.02] border border-red-700/50"
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={handleRerollConfirm}
+                className="bg-gradient-to-r from-amber-700 to-amber-800 hover:from-amber-600 hover:to-amber-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 hover:scale-[1.02] border border-amber-600/50"
+              >
+                {t.rerollQuest}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }

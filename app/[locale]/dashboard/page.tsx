@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { debug_error } from "@/utils/debug";
 import DashboardClient from "./DashboardClient";
 import type { Ludus } from "@/types/ludus";
 
@@ -72,7 +73,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
     } as Ludus & { id: string };
   } catch (error) {
-    console.error("Error loading dashboard data:", error);
+    debug_error("Error loading dashboard data:", error);
     redirect(`/${locale}/server-selection`);
   }
 

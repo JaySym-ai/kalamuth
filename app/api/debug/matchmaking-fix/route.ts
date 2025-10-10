@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
@@ -48,7 +49,7 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Debug endpoint error:", error);
+    debug_error("Debug endpoint error:", error);
     return NextResponse.json(
       { error: "Debug endpoint failed", details: error },
       { status: 500 }

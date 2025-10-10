@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { CombatQueueEntry } from "@/types/combat";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
@@ -43,7 +44,7 @@ export async function GET(req: Request) {
       count: queueEntries?.length || 0,
     });
   } catch (error) {
-    console.error("Error fetching queue:", error);
+    debug_error("Error fetching queue:", error);
     return NextResponse.json(
       { error: "Failed to fetch queue" },
       { status: 500 }
@@ -145,7 +146,7 @@ export async function POST(req: Request) {
       queueEntry: queueEntry as CombatQueueEntry,
     });
   } catch (error) {
-    console.error("Error joining queue:", error);
+    debug_error("Error joining queue:", error);
     return NextResponse.json(
       { error: "Failed to join queue" },
       { status: 500 }
@@ -186,7 +187,7 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error leaving queue:", error);
+    debug_error("Error leaving queue:", error);
     return NextResponse.json(
       { error: "Failed to leave queue" },
       { status: 500 }
@@ -306,7 +307,7 @@ async function attemptMatchmaking(
       .single();
 
     if (matchError || !match) {
-      console.error("Error creating match:", matchError);
+      debug_error("Error creating match:", matchError);
       return;
     }
 
@@ -318,7 +319,7 @@ async function attemptMatchmaking(
       .eq("status", "waiting");
 
     if (updateError) {
-      console.error("Error updating queue status:", updateError);
+      debug_error("Error updating queue status:", updateError);
       await serviceRole.from("combat_matches").delete().eq("id", match.id);
       return;
     }
@@ -345,7 +346,7 @@ async function attemptMatchmaking(
       .insert(acceptances);
 
     if (acceptanceError) {
-      console.error("Error creating acceptances:", acceptanceError);
+      debug_error("Error creating acceptances:", acceptanceError);
       // Clean up the match and queue entries using service role
       await serviceRole.from("combat_matches").delete().eq("id", match.id);
       await serviceRole
@@ -354,6 +355,6 @@ async function attemptMatchmaking(
         .in("id", [entry1.id, entry2.id]);
     }
   } catch (error) {
-    console.error("Matchmaking error:", error);
+    debug_error("Matchmaking error:", error);
   }
 }

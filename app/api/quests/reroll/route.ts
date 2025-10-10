@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
       newTreasuryAmount: newAmount,
     });
   } catch (error) {
-    console.error("Quest reroll error:", error);
+    debug_error("Quest reroll error:", error);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

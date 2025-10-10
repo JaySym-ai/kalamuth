@@ -5,6 +5,7 @@ import { SERVERS } from "@/data/servers";
 import OpenAI from "openai";
 import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 import { rollRarity, getInitialGladiatorRarityConfig } from "@/lib/gladiator/rarity";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
@@ -174,7 +175,7 @@ export async function POST(req: Request) {
           if (retries === 0) {
             // Final failure after all retries
             if (process.env.NODE_ENV !== 'production') {
-              console.error('Gladiator generation failed after retries', {
+              debug_error('Gladiator generation failed after retries', {
                 jobId: job.id,
                 attempt: i + 1,
                 error: msg
@@ -182,7 +183,7 @@ export async function POST(req: Request) {
             }
             errors.push(msg);
           } else if (process.env.NODE_ENV !== 'production') {
-            console.warn('Gladiator generation retry', {
+            debug_warn('Gladiator generation retry', {
               jobId: job.id,
               attempt: i + 1,
               retriesLeft: retries,
@@ -203,7 +204,7 @@ export async function POST(req: Request) {
         if (updErr) throw new Error(updErr.message);
       }
     } catch (err) {
-      if (process.env.NODE_ENV !== 'production') console.error('Failed to update ludus gladiatorCount', { jobId: job.id, ludusId, error: err instanceof Error ? err.message : String(err) });
+      if (process.env.NODE_ENV !== 'production') debug_error('Failed to update ludus gladiatorCount', { jobId: job.id, ludusId, error: err instanceof Error ? err.message : String(err) });
       errors.push('Failed to update ludus gladiatorCount');
     }
 
@@ -215,7 +216,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, jobId: job.id, created, errors }, { status: 202 });
   } catch (e) {
-    if (process.env.NODE_ENV !== 'production') console.error('[api/gladiators/start] failed', e);
+    if (process.env.NODE_ENV !== 'production') debug_error('[api/gladiators/start] failed', e);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }

@@ -5,6 +5,20 @@ import OpenAI from "openai";
 import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 import { SERVERS } from "@/data/servers";
 import { rollRarity } from "@/lib/gladiator/rarity";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
+
+function serializeError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (typeof error === 'object' && error !== null) {
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+  return String(error);
+}
 
 export const runtime = "nodejs";
 
@@ -38,15 +52,20 @@ export async function POST(req: Request) {
       .select('id', { count: 'exact', head: true })
       .eq('ludusId', ludusId);
 
-    if ((existingCount ?? 0) >= 3) {
+    if ((existingCount ?? 0) >= 2) {
       return NextResponse.json({ ok: true, created: 0, reason: 'already_satisfied' }, { status: 200 });
     }
 
-    const toCreate = 3 - (existingCount ?? 0);
+    const toCreate = 2 - (existingCount ?? 0);
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "missing_api_key" }, { status: 500 });
 
-    const client = new OpenAI({ apiKey, baseURL: 'https://openrouter.ai/api/v1', defaultHeaders: { 'X-Title': 'Kalamuth' } });
+    const client = new OpenAI({
+      apiKey,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: { 'X-Title': 'Kalamuth' },
+      timeout: 60000 // 60 second timeout
+    });
 
     // Get server config for rarity rolling
     const server = SERVERS.find(s => s.id === ludus.serverId);
@@ -105,8 +124,9 @@ export async function POST(req: Request) {
           gladiatorCreated = true;
         } catch (e) {
           retries--;
+          const errorMsg = serializeError(e);
+          debug_error(`[tavern/generate] Gladiator ${i + 1} generation attempt failed (retry ${4 - retries}/3): ${errorMsg}`);
           if (retries === 0) {
-            const errorMsg = e instanceof Error ? e.message : String(e);
             errors.push(`Gladiator ${i + 1}: ${errorMsg}`);
           }
         }
@@ -115,7 +135,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, created, errors }, { status: 200 });
   } catch (e) {
-    if (process.env.NODE_ENV !== 'production') console.error('[api/tavern/generate] failed', e);
+    if (process.env.NODE_ENV !== 'production') debug_error('[api/tavern/generate] failed', e);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }

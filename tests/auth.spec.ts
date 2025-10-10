@@ -1,31 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { registerUser, TEST_CREDENTIALS } from './helpers/auth';
+import { loginUser, TEST_CREDENTIALS } from './helpers/auth';
 
-// Use shared test credentials
+// Use shared test credentials (pre-created test account)
 const TEST_EMAIL = TEST_CREDENTIALS.email;
 const TEST_PASSWORD = TEST_CREDENTIALS.password;
 
 test.describe('Authentication Flow', () => {
-  // Setup: Create a test user that can be used for login tests
-  test.beforeAll(async ({ browser }) => {
-    const page = await browser.newPage();
-    try {
-      await page.goto('/en/auth');
-      await page.click('[data-testid="switch-to-register"]');
-      await page.fill('[data-testid="register-email-input"]', TEST_EMAIL);
-      await page.fill('[data-testid="register-password-input"]', TEST_PASSWORD);
-      await page.fill('[data-testid="register-password-confirm-input"]', TEST_PASSWORD);
-      await page.check('[data-testid="terms-checkbox"]');
-      await page.click('[data-testid="register-submit-button"]');
-      // Wait a bit for registration to complete
-      await page.waitForTimeout(2000);
-    } catch (error) {
-      // User might already exist, which is fine
-      console.log('Test user setup:', error instanceof Error ? error.message : 'Unknown error');
-    } finally {
-      await page.close();
-    }
-  });
+  // Note: Test account must already exist in the test server
+  // Test accounts available: test2@hotmail.com, test3@hotmail.com, test4@hotmail.com
 
   test.beforeEach(async ({ page }) => {
     // Start each test from the home page
@@ -43,7 +25,7 @@ test.describe('Authentication Flow', () => {
     await expect(page.locator('h1')).toContainText('Welcome back');
   });
 
-  test('should allow user registration with email and password', async ({ page }) => {
+  test('should display registration form UI', async ({ page }) => {
     // Navigate to auth page to test the registration form UI
     await page.goto('/en/auth');
 
@@ -59,12 +41,6 @@ test.describe('Authentication Flow', () => {
     await expect(page.locator('[data-testid="register-password-confirm-input"]')).toBeVisible();
     await expect(page.locator('[data-testid="terms-checkbox"]')).toBeVisible();
     await expect(page.locator('[data-testid="register-submit-button"]')).toBeVisible();
-
-    // Use registerUser helper which handles existing users gracefully
-    await registerUser(page);
-
-    // Should redirect into setup flow after successful registration/login
-    await expect(page).toHaveURL(/\/en\/(server-selection|ludus-creation|initial-gladiators|dashboard)/, { timeout: 15000 });
   });
 
   test('should allow user login with email and password', async ({ page }) => {

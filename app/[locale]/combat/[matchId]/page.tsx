@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { getTranslations } from "next-intl/server";
 import type { CombatGladiator } from "@/types/combat";
+import { debug_error } from "@/utils/debug";
 import CombatClient from "./CombatClient";
 import GameViewport from "@/components/layout/GameViewport";
 import ScrollableContent from "@/components/layout/ScrollableContent";
@@ -41,12 +42,12 @@ export default async function CombatPage({ params }: PageProps) {
     .maybeSingle();
 
   if (matchError) {
-    console.error("Combat page - Match fetch error:", matchError);
+    debug_error("Combat page - Match fetch error:", matchError);
     redirect(`/${locale}/dashboard`);
   }
 
   if (!match) {
-    console.error("Combat page - Match not found:", matchId);
+    debug_error("Combat page - Match not found:", matchId);
     redirect(`/${locale}/dashboard`);
   }
 
@@ -58,12 +59,12 @@ export default async function CombatPage({ params }: PageProps) {
     .eq("userId", auth.user.id);
 
   if (participantError) {
-    console.error("Combat page - Participant check error:", participantError);
+    debug_error("Combat page - Participant check error:", participantError);
     redirect(`/${locale}/dashboard`);
   }
 
   if (!participantCheck || participantCheck.length === 0) {
-    console.error("Combat page - User is not a participant in match:", matchId);
+    debug_error("Combat page - User is not a participant in match:", matchId);
     redirect(`/${locale}/dashboard`);
   }
 
@@ -83,28 +84,28 @@ export default async function CombatPage({ params }: PageProps) {
     .single();
 
   if (g1Error || g2Error) {
-    console.error("Combat page - Gladiator fetch error:", { g1Error, g2Error });
-    console.error("Match details:", {
+    debug_error("Combat page - Gladiator fetch error:", { g1Error, g2Error });
+    debug_error("Match details:", {
       matchId,
       gladiator1Id: match.gladiator1Id,
       gladiator2Id: match.gladiator2Id,
       userId: auth.user.id
     });
-    console.error("⚠️  If you see PGRST116 error, run migration: npx supabase db push");
-    console.error("⚠️  See FIX_GLADIATOR_VISIBILITY.md for details");
+    debug_error("⚠️  If you see PGRST116 error, run migration: npx supabase db push");
+    debug_error("⚠️  See FIX_GLADIATOR_VISIBILITY.md for details");
     redirect(`/${locale}/dashboard`);
   }
 
   if (!gladiator1Data || !gladiator2Data) {
-    console.error("Combat page - Missing gladiator data:", {
+    debug_error("Combat page - Missing gladiator data:", {
       hasG1: !!gladiator1Data,
       hasG2: !!gladiator2Data,
       matchId,
       userId: auth.user.id
     });
-    console.error("⚠️  This usually means RLS is blocking opponent gladiator access");
-    console.error("⚠️  Run migration: npx supabase db push");
-    console.error("⚠️  See FIX_GLADIATOR_VISIBILITY.md for details");
+    debug_error("⚠️  This usually means RLS is blocking opponent gladiator access");
+    debug_error("⚠️  Run migration: npx supabase db push");
+    debug_error("⚠️  See FIX_GLADIATOR_VISIBILITY.md for details");
     redirect(`/${locale}/dashboard`);
   }
 

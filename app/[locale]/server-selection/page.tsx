@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { debug_error } from "@/utils/debug";
 import ServerSelectionClient from "./ServerSelectionClient";
 import { SERVERS } from "@/data/servers";
 import { hasTestServerAccess } from "@/lib/server/test-users";
@@ -32,7 +33,7 @@ export default async function ServerSelectionPage({ params }: { params: Promise<
       .maybeSingle();
     hasLudus = Boolean(ludus);
   } catch (error) {
-    console.error("Error checking ludus:", error);
+    debug_error("Error checking ludus:", error);
   }
   if (hasLudus) {
     // User already has a ludus: proceed into the app

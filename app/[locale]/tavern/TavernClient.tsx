@@ -1,5 +1,6 @@
 "use client";
 
+import { debug_log, debug_error } from "@/utils/debug";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -87,7 +88,7 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
       body: JSON.stringify({ ludusId: ludus.id }),
     })
       .catch((err) => {
-        console.error("Tavern gladiator generation failed:", err);
+        debug_error("Tavern gladiator generation failed:", err);
         setError(t.error);
       })
       .finally(() => {
@@ -116,7 +117,7 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
         setError(data.error || t.error);
       }
     } catch (err) {
-      console.error("Recruitment failed:", err);
+      debug_error("Recruitment failed:", err);
       setError(t.error);
     } finally {
       setRecruiting(null);
@@ -139,7 +140,7 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
         setError(data.error || t.error);
       }
     } catch (err) {
-      console.error("Reroll failed:", err);
+      debug_error("Reroll failed:", err);
       setError(t.error);
     } finally {
       setRerolling(null);

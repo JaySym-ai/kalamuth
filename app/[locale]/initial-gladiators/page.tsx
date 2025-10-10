@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { debug_error } from "@/utils/debug";
 import InitialGladiatorsClient from "./InitialGladiatorsClient";
 import { SERVERS } from "@/data/servers";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
@@ -70,7 +71,7 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
 
     // Do not generate here anymore; generation is now async via job + Supabase listener (future)
   } catch (error) {
-    console.error("Error loading gladiators:", error);
+    debug_error("Error loading gladiators:", error);
     redirect(`/${locale}/server-selection`);
   }
 

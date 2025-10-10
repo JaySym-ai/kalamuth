@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
 import type { QuestResult } from "@/types/quest";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -152,7 +153,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("Quest completion error:", error);
+    debug_error("Quest completion error:", error);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

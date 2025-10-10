@@ -17,6 +17,7 @@ export default function QuestOngoingComponent({
 }: QuestOngoingComponentProps) {
   const [timeRemaining, setTimeRemaining] = useState<string>("1:00:00");
   const [progress, setProgress] = useState(0);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   useEffect(() => {
     if (!quest.startedAt) return;
@@ -72,13 +73,13 @@ export default function QuestOngoingComponent({
         </div>
 
         <p className="text-sm text-gray-400 text-center">
-          The gladiator is on their quest. Check back soon for results.
+          {t.questOngoing}
         </p>
       </div>
 
       {/* Quest Details */}
       <div className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-6 space-y-3">
-        <h3 className="text-lg font-bold text-amber-100">Quest Details</h3>
+        <h3 className="text-lg font-bold text-amber-100">{t.questDetails}</h3>
         <p className="text-gray-300">{quest.description}</p>
       </div>
 
@@ -86,13 +87,52 @@ export default function QuestOngoingComponent({
       <motion.button
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        onClick={onCancel}
+        onClick={() => setShowCancelConfirm(true)}
         className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 hover:scale-[1.02]"
       >
         {t.cancelQuest}
       </motion.button>
 
       <p className="text-xs text-gray-500 text-center">{t.cancelCost}</p>
+
+      {/* Cancel Confirmation Dialog */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-black/90 border border-red-900/50 rounded-xl p-6 max-w-md w-full space-y-4 shadow-2xl shadow-red-900/20"
+          >
+            <h3 className="text-xl font-bold text-red-100">{t.cancelQuest}</h3>
+            <div className="space-y-2">
+              <p className="text-red-200 font-medium">
+                {t.cancelCost}
+              </p>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                {t.cancelConfirmMessage}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <button
+                onClick={() => setShowCancelConfirm(false)}
+                className="bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-500 hover:to-gray-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 hover:scale-[1.02] border border-gray-500/50"
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={() => {
+                  setShowCancelConfirm(false);
+                  onCancel();
+                }}
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 hover:scale-[1.02] border border-red-500/50"
+              >
+                {t.cancelConfirm}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }

@@ -111,7 +111,7 @@ export default function QuestResultsComponent({
             className="bg-red-900/30 border border-red-600/30 rounded-lg p-4 col-span-2"
           >
             <div className="text-sm text-gray-400 mb-2">{t.gladiatorDied}</div>
-            <div className="text-red-300 font-bold">The gladiator has fallen in battle.</div>
+            <div className="text-red-300 font-bold">{t.gladiatorFallenInBattle}</div>
           </motion.div>
         )}
       </div>

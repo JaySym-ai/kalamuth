@@ -22,6 +22,7 @@ export interface Quest {
   
   // Quest assignment
   gladiatorId?: string;
+  gladiatorName?: string; // For display purposes
   
   // Quest narrative and details
   title: string;
@@ -56,6 +57,7 @@ export interface QuestGenerationContext {
   ludusName: string;
   ludusReputation: number;
   ludusLocation?: string;
+  locale?: string;
   gladiators: Array<{
     id: string;
     name: string;

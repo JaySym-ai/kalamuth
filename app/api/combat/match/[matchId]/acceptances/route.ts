@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { CombatMatchAcceptance } from "@/types/combat";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
@@ -74,7 +75,7 @@ export async function GET(
       count: acceptances?.length || 0,
     });
   } catch (error) {
-    console.error("Error fetching acceptances:", error);
+    debug_error("Error fetching acceptances:", error);
     return NextResponse.json(
       { error: "Failed to fetch acceptances" },
       { status: 500 }

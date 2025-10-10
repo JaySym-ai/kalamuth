@@ -4,6 +4,7 @@ import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
 import { ARENAS } from "@/data/arenas";
 import { getCombatConfigForArena } from "@/lib/combat/config";
 import type { CombatGladiator, CombatLogEntry, BattleState } from "@/types/combat";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -199,7 +200,7 @@ export async function GET(
 
         controller.close();
       } catch (error) {
-        console.error("Combat stream error:", error);
+        debug_error("Combat stream error:", error);
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", message: errorMessage })}\n\n`));
         controller.close();

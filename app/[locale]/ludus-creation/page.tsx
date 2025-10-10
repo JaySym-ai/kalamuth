@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { debug_error } from "@/utils/debug";
 import LudusCreationClient from "./LudusCreationClient";
 import LogoutButton from "../../components/auth/LogoutButton";
 
@@ -37,7 +38,7 @@ export default async function LudusCreationPage({ params }: { params: Promise<{ 
       throw error;
     }
 
-    console.error("Error checking ludus:", error);
+    debug_error("Error checking ludus:", error);
   }
 
   const t = await getTranslations("LudusCreation");

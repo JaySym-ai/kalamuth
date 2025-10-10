@@ -1,5 +1,6 @@
 "use client";
 
+import { debug_log, debug_error } from "@/utils/debug";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
@@ -156,7 +157,7 @@ export default function CombatStream({
           eventSource.close();
         }
       } catch (err) {
-        console.error("Failed to parse SSE data:", err);
+        debug_error("Failed to parse SSE data:", err);
       }
     };
 

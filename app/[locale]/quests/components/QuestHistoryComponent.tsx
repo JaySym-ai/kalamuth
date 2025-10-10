@@ -71,15 +71,15 @@ export default function QuestHistoryComponent({
 
             <div className="grid grid-cols-3 gap-2 text-xs">
               <div>
-                <span className="text-gray-500">Reward:</span>
+                <span className="text-gray-500">{t.reward}:</span>
                 <span className="text-amber-300 ml-1 font-bold">{quest.reward}</span>
               </div>
               <div>
-                <span className="text-gray-500">Danger:</span>
+                <span className="text-gray-500">{t.danger}:</span>
                 <span className="text-amber-300 ml-1 font-bold">{quest.dangerPercentage}%</span>
               </div>
               <div>
-                <span className="text-gray-500">Date:</span>
+                <span className="text-gray-500">{t.date}:</span>
                 <span className="text-gray-400 ml-1">
                   {new Date(quest.createdAt).toLocaleDateString()}
                 </span>

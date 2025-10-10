@@ -1,5 +1,6 @@
 "use client";
 
+import { debug_log, debug_error } from "@/utils/debug";
 import { motion } from "framer-motion";
 import { Swords, MapPin, ArrowLeft } from "lucide-react";
 import Image from "next/image";
@@ -32,7 +33,7 @@ export default function CombatIntroduction({
   backToArenaText,
   translations: t,
 }: CombatIntroductionProps) {
-  console.log("CombatIntroduction props:", { locale, arenaSlug, backToArenaText });
+  debug_log("CombatIntroduction props:", { locale, arenaSlug, backToArenaText });
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}

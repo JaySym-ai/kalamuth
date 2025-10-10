@@ -1,12 +1,14 @@
 import { Page, expect } from '@playwright/test';
 
+// Pre-created test accounts (must exist in the test server)
 export const TEST_CREDENTIALS = {
-  email: 'testplay@kalamuth.com',
-  password: 'testpassword123',
+  email: 'test2@hotmail.com',
+  password: 'qplsk8hothot',
 };
 
 /**
- * Helper function to log in a user
+ * Helper function to log in a user with existing credentials
+ * Note: The test account must already exist in the test server
  */
 export async function loginUser(page: Page, email = TEST_CREDENTIALS.email, password = TEST_CREDENTIALS.password, locale = 'en') {
   // Clear any existing auth state first
@@ -21,105 +23,19 @@ export async function loginUser(page: Page, email = TEST_CREDENTIALS.email, pass
     return;
   }
 
-  // Smart registration: try to register first, then fallback to login if the user exists
-  try {
-    // Switch to register mode
-    await page.click('[data-testid="switch-to-register"]');
+  // Login with existing credentials
+  await page.fill('[data-testid="email-input"]', email);
+  await page.fill('[data-testid="password-input"]', password);
+  await page.click('[data-testid="login-submit-button"]');
 
-    // Fill registration form
-    await page.fill('[data-testid="register-email-input"]', email);
-    await page.fill('[data-testid="register-password-input"]', password);
-    await page.fill('[data-testid="register-password-confirm-input"]', password);
-    await page.check('[data-testid="terms-checkbox"]');
-
-    // Submit registration
-    await page.click('[data-testid="register-submit-button"]');
-
-    // Wait for successful redirect into setup flow or dashboard
-    const postAuthPattern = locale === 'en'
-      ? /\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard)(\/)?$/
-      : new RegExp(`\\/${locale}\\/(server-selection|ludus-creation|initial-gladiators|dashboard)(\\/)?$`);
-    await page.waitForURL(postAuthPattern, { timeout: 15000 });
-    console.log('User registered successfully');
-    return;
-  } catch {
-    console.log('Registration failed, attempting login (user might already exist)');
-
-    // Ensure we are on the auth page, then switch to login and try to login
-    if (!page.url().includes('/auth')) {
-      await page.goto(`/${locale}/auth`);
-      await page.waitForLoadState('networkidle');
-    }
-
-    await page.click('[data-testid="switch-to-login"]');
-    await page.fill('[data-testid="email-input"]', email);
-    await page.fill('[data-testid="password-input"]', password);
-    await page.click('[data-testid="login-submit-button"]');
-
-    const postAuthPattern = locale === 'en'
-      ? /\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard|$)/
-      : new RegExp(`\\/${locale}\\/(server-selection|ludus-creation|initial-gladiators|dashboard|$)`);
-    await page.waitForURL(postAuthPattern, { timeout: 30000 });
-    console.log('User logged in successfully');
-    return;
-
-  }
+  const postAuthPattern = locale === 'en'
+    ? /\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard|$)/
+    : new RegExp(`\\/${locale}\\/(server-selection|ludus-creation|initial-gladiators|dashboard|$)`);
+  await page.waitForURL(postAuthPattern, { timeout: 30000 });
+  console.log('User logged in successfully');
 }
 
-/**
- * Helper function to register a new user or login if user already exists
- * This function tries registration first, and if the user already exists, it will login instead
- */
-export async function registerUser(page: Page, email = TEST_CREDENTIALS.email, password = TEST_CREDENTIALS.password) {
-  // Clear any existing auth state first
-  await clearAuthState(page);
 
-  await page.goto('/en/auth');
-  await page.waitForLoadState('networkidle');
-
-  // Check if we're already authenticated (redirected away from auth page)
-  if (!page.url().includes('/auth')) {
-    console.log('User already authenticated, skipping registration');
-    return;
-  }
-
-  // Switch to register mode
-  await page.click('[data-testid="switch-to-register"]');
-
-  // Fill registration form
-  await page.fill('[data-testid="register-email-input"]', email);
-  await page.fill('[data-testid="register-password-input"]', password);
-  await page.fill('[data-testid="register-password-confirm-input"]', password);
-  await page.check('[data-testid="terms-checkbox"]');
-
-  // Submit registration
-  await page.click('[data-testid="register-submit-button"]');
-
-  try {
-    // Wait for successful registration redirect into setup flow
-    await page.waitForURL(/\/en\/(server-selection|ludus-creation|initial-gladiators|dashboard)/, { timeout: 15000 });
-    console.log('User registered successfully');
-  } catch {
-    // If registration fails (user might already exist), try to login instead
-    console.log('Registration failed, attempting login (user might already exist)');
-
-    // Check if we're still on auth page or got redirected
-    if (page.url().includes('/auth')) {
-      // Switch back to login mode and try to login
-      await page.click('[data-testid="switch-to-login"]');
-      await page.fill('[data-testid="email-input"]', email);
-      await page.fill('[data-testid="password-input"]', password);
-      await page.click('[data-testid="login-submit-button"]');
-
-      // Wait for login redirect
-      await page.waitForURL(/\/(en\/)?(server-selection|ludus-creation|initial-gladiators|dashboard|$)/, { timeout: 15000 });
-      console.log('User logged in successfully');
-    } else {
-      // If we're not on auth page, we might already be authenticated
-      console.log('User might already be authenticated');
-    }
-  }
-}
 
 /**
  * Helper function to log out a user
@@ -206,16 +122,15 @@ export async function testApiAuthentication(page: Page, shouldBeAuthenticated: b
 
 /**
  * Helper function to setup test user (alias for loginUser)
+ * Note: The test account must already exist in the test server
  */
-export async function setupTestUser(page: Page, email: string, password: string) {
+export async function setupTestUser(page: Page, email = TEST_CREDENTIALS.email, password = TEST_CREDENTIALS.password) {
   await loginUser(page, email, password);
 }
 
 /**
- * Helper function to cleanup test user (currently just logs out)
+ * Helper function to cleanup test user (clears auth state)
  */
 export async function cleanupTestUser(page: Page) {
-  // For now, we just clear the auth state
-  // In the future, we might want to delete the test user from the database
   await clearAuthState(page);
 }

@@ -5,10 +5,24 @@ import OpenAI from "openai";
 import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 import { SERVERS } from "@/data/servers";
 import { rollRarity } from "@/lib/gladiator/rarity";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
 function nowIso() { return new Date().toISOString(); }
+
+function serializeError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (typeof error === 'object' && error !== null) {
+    try {
+      return JSON.stringify(error);
+    } catch {
+      return String(error);
+    }
+  }
+  return String(error);
+}
 
 export async function POST(req: Request) {
   try {
@@ -51,7 +65,12 @@ export async function POST(req: Request) {
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "missing_api_key" }, { status: 500 });
 
-    const client = new OpenAI({ apiKey, baseURL: 'https://openrouter.ai/api/v1', defaultHeaders: { 'X-Title': 'Kalamuth' } });
+    const client = new OpenAI({
+      apiKey,
+      baseURL: 'https://openrouter.ai/api/v1',
+      defaultHeaders: { 'X-Title': 'Kalamuth' },
+      timeout: 60000 // 60 second timeout
+    });
 
     // Get server config for rarity rolling
     const server = SERVERS.find(s => s.id === ludus.serverId);
@@ -71,6 +90,7 @@ export async function POST(req: Request) {
 
     let newGladiator = null;
     let retries = 3;
+    let lastError: unknown = null;
 
     while (retries > 0 && !newGladiator) {
       try {
@@ -87,15 +107,23 @@ export async function POST(req: Request) {
         const fullName = `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase();
         if (!existingNames.has(fullName)) {
           newGladiator = g;
+          debug_log(`[tavern/reroll] Successfully generated new gladiator: ${fullName}`);
         } else {
+          lastError = `Duplicate name generated: ${fullName}`;
+          debug_warn(`[tavern/reroll] Duplicate name generated (retry ${4 - retries}/3): ${fullName}`);
           retries--;
         }
-      } catch {
+      } catch (e) {
+        lastError = e;
+        const errorMsg = serializeError(e);
+        debug_error(`[tavern/reroll] Error generating new gladiator (retry ${4 - retries}/3): ${errorMsg}`);
         retries--;
       }
     }
 
     if (!newGladiator) {
+      const errorMsg = serializeError(lastError);
+      debug_error(`[tavern/reroll] Failed to generate new gladiator after 3 retries. Last error: ${errorMsg}`);
       return NextResponse.json({ error: "generation_failed" }, { status: 500 });
     }
 
@@ -107,7 +135,7 @@ export async function POST(req: Request) {
       .eq('id', tavernGladiatorId);
 
     if (deleteErr) {
-      console.error("Failed to delete old tavern gladiator:", deleteErr);
+      debug_error("Failed to delete old tavern gladiator:", deleteErr);
       return NextResponse.json({ error: "delete_failed" }, { status: 500 });
     }
 
@@ -123,13 +151,13 @@ export async function POST(req: Request) {
     });
 
     if (insertErr) {
-      console.error("Failed to insert new tavern gladiator:", insertErr);
+      debug_error("Failed to insert new tavern gladiator:", insertErr);
       return NextResponse.json({ error: "insertion_failed" }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (e) {
-    if (process.env.NODE_ENV !== 'production') console.error('[api/tavern/reroll] failed', e);
+    if (process.env.NODE_ENV !== 'production') debug_error('[api/tavern/reroll] failed', e);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }

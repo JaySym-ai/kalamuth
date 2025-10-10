@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { debug_error } from "@/utils/debug";
 import QuestsClient from "./QuestsClient";
 import type { Ludus } from "@/types/ludus";
 import type { Quest } from "@/types/quest";
@@ -108,7 +109,7 @@ export default async function QuestsPage({ params }: { params: Promise<{ locale:
       }));
     }
   } catch (error) {
-    console.error("Error loading quests data:", error);
+    debug_error("Error loading quests data:", error);
     redirect(`/${locale}/server-selection`);
   }
 
@@ -145,6 +146,7 @@ export default async function QuestsPage({ params }: { params: Promise<{ locale:
           questAccepted: t("questAccepted"),
           questInProgress: t("questInProgress"),
           timeRemaining: t("timeRemaining"),
+          questOngoing: t("questOngoing"),
           questResult: t("questResult"),
           questCompleted: t("questCompleted"),
           questFailed: t("questFailed"),

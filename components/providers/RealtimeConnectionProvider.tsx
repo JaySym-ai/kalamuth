@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { createClient } from '@/utils/supabase/clients';
+import { debug_log } from '@/utils/debug';
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'reconnecting' | 'error';
 
@@ -49,14 +50,14 @@ export function RealtimeConnectionProvider({ children }: RealtimeConnectionProvi
     const channel = supabase
       .channel('connection-monitor')
       .on('system', {}, (payload) => {
-        console.log('🔌 Realtime system event:', payload);
+        debug_log('🔌 Realtime system event:', payload);
         if (payload.extension === 'postgres_changes') {
           setStatus('connected');
           setRetryCount(0);
         }
       })
       .subscribe((status) => {
-        console.log('🔌 Realtime subscription status:', status);
+        debug_log('🔌 Realtime subscription status:', status);
         if (status === 'SUBSCRIBED') {
           setStatus('connected');
           setRetryCount(0);

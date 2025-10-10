@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
       .eq("matchId", matchId);
 
     if (acceptanceError) {
-      console.error("Error fetching acceptances:", acceptanceError);
+      debug_error("Error fetching acceptances:", acceptanceError);
       return NextResponse.json({ 
         error: "Failed to fetch acceptances",
         details: acceptanceError 
@@ -51,7 +52,7 @@ export async function GET(req: Request) {
       userId: user.id,
     });
   } catch (error) {
-    console.error("Error in debug endpoint:", error);
+    debug_error("Error in debug endpoint:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

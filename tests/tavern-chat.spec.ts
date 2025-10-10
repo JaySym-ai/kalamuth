@@ -51,6 +51,30 @@ test.describe('Tavern Chat Interface', () => {
     expect(messageCount).toBeGreaterThanOrEqual(1);
   });
 
+  test('generates new gladiator when skipping', async ({ page }) => {
+    // Get the initial gladiator name
+    const initialNameElement = page.locator('text=/Name/').first();
+    const initialText = await initialNameElement.textContent();
+    const initialName = initialText?.replace('Name', '').trim() || '';
+
+    const skipButton = page.getByTestId('skip-button');
+
+    // Click skip
+    await skipButton.click();
+
+    // Wait for the new gladiator to be generated and displayed
+    await page.waitForTimeout(2000);
+
+    // Get the new gladiator name
+    const newNameElement = page.locator('text=/Name/').first();
+    const newText = await newNameElement.textContent();
+    const newName = newText?.replace('Name', '').trim() || '';
+
+    // The new gladiator should be different from the initial one
+    expect(newName).not.toBe(initialName);
+    expect(newName.length).toBeGreaterThan(0);
+  });
+
   test('recruits a gladiator', async ({ page }) => {
     const recruitButton = page.getByTestId('recruit-button');
     

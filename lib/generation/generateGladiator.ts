@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 // Local copy of model selection used for JSON-structured generation
 export const MODEL_JSON_STRUCTURED = 'google/gemini-2.5-flash-lite';
@@ -343,7 +344,7 @@ export async function generateOneGladiator(client: OpenAI, context?: GenerationC
     } catch (err) {
       const details = extractApiErrorDetails(err);
       if (process.env.NODE_ENV !== 'production') {
-        console.error('OpenRouter transport error', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, model: MODEL_JSON_STRUCTURED, ...details });
+        debug_error('OpenRouter transport error', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, model: MODEL_JSON_STRUCTURED, ...details });
       }
       lastError = err instanceof Error ? err : new Error(details.message || 'OpenRouter transport error');
       continue;
@@ -360,7 +361,7 @@ export async function generateOneGladiator(client: OpenAI, context?: GenerationC
     const providerError = extractProviderErrorDetails(completion);
     if (!content && providerError) {
       if (process.env.NODE_ENV !== 'production') {
-        console.error('OpenRouter provider error', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, completionId: completion.id ?? null, providerError });
+        debug_error('OpenRouter provider error', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, completionId: completion.id ?? null, providerError });
       }
       lastError = new Error(`Provider error: ${providerError.message}`);
       continue;
@@ -368,7 +369,7 @@ export async function generateOneGladiator(client: OpenAI, context?: GenerationC
 
     if (!content) {
       if (process.env.NODE_ENV !== 'production') {
-        console.error('LLM returned empty content', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, completionId: completion.id ?? null, finishReason, reasoning: reasoningText ? reasoningText.slice(0, 500) : null, reasoningDetails, rawChoice: safeSerialize(choice), rawCompletion: safeSerialize(completion) });
+        debug_error('LLM returned empty content', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, completionId: completion.id ?? null, finishReason, reasoning: reasoningText ? reasoningText.slice(0, 500) : null, reasoningDetails, rawChoice: safeSerialize(choice), rawCompletion: safeSerialize(completion) });
       }
       lastError = new Error('Provider returned empty content');
       continue;
@@ -384,14 +385,14 @@ export async function generateOneGladiator(client: OpenAI, context?: GenerationC
           parsed = JSON.parse(fencedMatch[1]!);
         } catch (innerErr) {
           if (process.env.NODE_ENV !== 'production') {
-            console.error('LLM fenced JSON parse failed', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, error: innerErr instanceof Error ? innerErr.message : String(innerErr), rawSnippetLength: fencedMatch[1]?.length ?? 0 });
+            debug_error('LLM fenced JSON parse failed', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, error: innerErr instanceof Error ? innerErr.message : String(innerErr), rawSnippetLength: fencedMatch[1]?.length ?? 0 });
           }
           lastError = innerErr instanceof Error ? innerErr : new Error(String(innerErr));
           continue;
         }
       } else {
         if (process.env.NODE_ENV !== 'production') {
-          console.error('LLM did not return valid JSON', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, error: parseErr instanceof Error ? parseErr.message : String(parseErr), contentPreview: content.slice(0, 500), contentLength: content.length, finishReason, completionId: completion.id ?? null, usage: completion.usage ?? null, choiceRole: choiceMessage?.role ?? null, toolCallsCount, reasoning: reasoningText ? reasoningText.slice(0, 500) : null, reasoningDetails, rawChoice: safeSerialize(choice), rawCompletion: safeSerialize(completion) });
+          debug_error('LLM did not return valid JSON', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, error: parseErr instanceof Error ? parseErr.message : String(parseErr), contentPreview: content.slice(0, 500), contentLength: content.length, finishReason, completionId: completion.id ?? null, usage: completion.usage ?? null, choiceRole: choiceMessage?.role ?? null, toolCallsCount, reasoning: reasoningText ? reasoningText.slice(0, 500) : null, reasoningDetails, rawChoice: safeSerialize(choice), rawCompletion: safeSerialize(completion) });
         }
         lastError = parseErr instanceof Error ? parseErr : new Error(String(parseErr));
         continue;
@@ -412,7 +413,7 @@ export async function generateOneGladiator(client: OpenAI, context?: GenerationC
       }
     } catch (validationErr) {
       if (process.env.NODE_ENV !== 'production') {
-        console.error('Generated gladiator failed validation', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, completionId: completion.id ?? null, error: validationErr instanceof Error ? validationErr.message : String(validationErr), rawGladiator: safeSerialize(parsed) });
+        debug_error('Generated gladiator failed validation', { jobId: context?.jobId ?? null, attempt: context?.attempt ?? null, generationAttempt, completionId: completion.id ?? null, error: validationErr instanceof Error ? validationErr.message : String(validationErr), rawGladiator: safeSerialize(parsed) });
       }
       lastError = validationErr instanceof Error ? validationErr : new Error(String(validationErr));
       continue;
@@ -535,8 +536,8 @@ CRITICAL: You MUST include ALL fields shown below, including "alive" which must 
  - Each bilingual text field must have both "en" and "fr" keys with appropriate translations.
 - Each stats.* value must be a non-empty textual description (1–2 sentences) in both languages.
 - Narrative fields must each be a bilingual object with "en" and "fr" keys.
-- "notableHistory" is always required with non-empty strings in both languages.
-- If there is no injury, injuryTimeLeftHours, sickness, handicap, or uniquePower, omit the key entirely.
+- REQUIRED NARRATIVE FIELDS (ALWAYS include): lifeGoal, personality, backstory, weakness, fear, likes, dislikes, physicalCondition, notableHistory. Each must be a bilingual object with both "en" and "fr" keys.
+- OPTIONAL FIELDS (omit if not applicable): injury, injuryTimeLeftHours, sickness, handicap, uniquePower. If you include any of these, they must be bilingual objects with both "en" and "fr" keys.
 - IMPORTANT: "injuryTimeLeftHours" should ONLY be included if "injury" is also present. If you include injuryTimeLeftHours, you MUST also include the injury field.
 - The avatarUrl must remain exactly empty like that "".
 - Use authentic ancient Mediterranean-inspired names (names and birthCity stay single language).

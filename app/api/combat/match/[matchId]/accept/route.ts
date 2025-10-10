@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { CombatMatchAcceptance } from "@/types/combat";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
@@ -69,7 +70,7 @@ export async function POST(
       .single();
 
     if (acceptanceError) {
-      console.error("Error updating acceptance:", acceptanceError);
+      debug_error("Error updating acceptance:", acceptanceError);
       return NextResponse.json({ error: "failed_to_accept" }, { status: 500 });
     }
 
@@ -80,7 +81,7 @@ export async function POST(
       .eq("matchId", matchId);
 
     if (allAcceptancesError) {
-      console.error("Error fetching acceptances:", allAcceptancesError);
+      debug_error("Error fetching acceptances:", allAcceptancesError);
       return NextResponse.json({ error: "failed_to_check_status" }, { status: 500 });
     }
 
@@ -97,7 +98,7 @@ export async function POST(
         .eq("id", matchId);
 
       if (updateError) {
-        console.error("Error updating match status:", updateError);
+        debug_error("Error updating match status:", updateError);
         return NextResponse.json({ error: "failed_to_update_match" }, { status: 500 });
       }
     }
@@ -108,7 +109,7 @@ export async function POST(
       bothAccepted: allAccepted && allAcceptances.length === 2,
     });
   } catch (error) {
-    console.error("Error accepting match:", error);
+    debug_error("Error accepting match:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

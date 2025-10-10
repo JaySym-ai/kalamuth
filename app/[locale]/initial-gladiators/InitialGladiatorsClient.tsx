@@ -1,5 +1,6 @@
 "use client";
 
+import { debug_log, debug_error } from "@/utils/debug";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -105,7 +106,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
       body: JSON.stringify({ ludusId, count: minRequired })
     })
     .catch((err) => {
-      console.error("Auto-start gladiator generation failed:", err);
+      debug_error("Auto-start gladiator generation failed:", err);
       setGenError("error");
     })
     .finally(() => {
@@ -150,7 +151,7 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
       // Navigate to dashboard
       router.push(`/${locale}/dashboard`);
     } catch (error) {
-      console.error("Error completing onboarding:", error);
+      debug_error("Error completing onboarding:", error);
       setLoading(false);
     }
   };

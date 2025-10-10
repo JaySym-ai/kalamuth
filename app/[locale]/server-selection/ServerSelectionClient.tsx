@@ -1,5 +1,6 @@
 "use client";
 
+import { debug_log, debug_error } from "@/utils/debug";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -26,7 +27,7 @@ export default function ServerSelectionClient({ servers }: Props) {
       sessionStorage.setItem("selectedServerId", selectedServer);
       router.push(`/${locale}/ludus-creation`);
     } catch (error) {
-      console.error("Error selecting server:", error);
+      debug_error("Error selecting server:", error);
       setLoading(false);
     }
   };

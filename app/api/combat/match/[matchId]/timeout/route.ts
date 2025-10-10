@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/utils/supabase/server";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
@@ -52,7 +53,7 @@ export async function POST(
       .eq("id", matchId);
 
     if (updateError) {
-      console.error("Error cancelling match:", updateError);
+      debug_error("Error cancelling match:", updateError);
       return NextResponse.json({ error: "failed_to_cancel" }, { status: 500 });
     }
 
@@ -67,7 +68,7 @@ export async function POST(
       .eq("matchId", matchId);
 
     if (queueDeleteError) {
-      console.error("Error removing gladiators from queue:", queueDeleteError);
+      debug_error("Error removing gladiators from queue:", queueDeleteError);
     }
 
     // Get acceptance records for logging
@@ -77,7 +78,7 @@ export async function POST(
       .eq("matchId", matchId);
 
     if (acceptanceError) {
-      console.error("Error fetching acceptances:", acceptanceError);
+      debug_error("Error fetching acceptances:", acceptanceError);
     }
 
     return NextResponse.json({
@@ -86,7 +87,7 @@ export async function POST(
       acceptances: acceptances || [],
     });
   } catch (error) {
-    console.error("Error handling timeout:", error);
+    debug_error("Error handling timeout:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

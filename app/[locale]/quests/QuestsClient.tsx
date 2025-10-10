@@ -1,5 +1,6 @@
 "use client";
 
+import { debug_log, debug_error } from "@/utils/debug";
 import { useCallback, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
@@ -38,11 +39,15 @@ interface QuestsTranslations {
   acceptQuest: string;
   rerollQuest: string;
   rerollCost: string;
+  rerollConfirm: string;
+  rerollConfirmMessage: string;
+  cancel: string;
   cancelQuest: string;
   cancelCost: string;
   questAccepted: string;
   questInProgress: string;
   timeRemaining: string;
+  questOngoing: string;
   questResult: string;
   questCompleted: string;
   questFailed: string;
@@ -162,7 +167,7 @@ export default function QuestsClient({ ludus, initialQuests, locale, translation
           : q
       ));
     } catch (err) {
-      console.error("Quest completion error:", err);
+      debug_error("Quest completion error:", err);
       setError(err instanceof Error ? err.message : "Failed to complete quest");
     }
   };
@@ -175,7 +180,7 @@ export default function QuestsClient({ ludus, initialQuests, locale, translation
       const response = await fetch("/api/quests/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ludusId: ludus.id }),
+        body: JSON.stringify({ ludusId: ludus.id, locale: currentLocale }),
       });
 
       if (!response.ok) {
@@ -217,8 +222,6 @@ export default function QuestsClient({ ludus, initialQuests, locale, translation
   };
 
   const handleCancelQuest = async (questId: string) => {
-    if (!confirm("Cancel this quest? It will cost 2 sestertii.")) return;
-
     try {
       const response = await fetch("/api/quests/cancel", {
         method: "POST",
@@ -232,8 +235,8 @@ export default function QuestsClient({ ludus, initialQuests, locale, translation
       }
 
       // Update quest status
-      setQuests(quests.map(q => 
-        q.id === questId 
+      setQuests(quests.map(q =>
+        q.id === questId
           ? { ...q, status: 'cancelled' as QuestStatus }
           : q
       ));

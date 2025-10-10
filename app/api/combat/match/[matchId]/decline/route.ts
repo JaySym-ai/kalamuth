@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { CombatMatchAcceptance } from "@/types/combat";
+import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
 
 export const runtime = "nodejs";
 
@@ -64,7 +65,7 @@ export async function POST(
       .single();
 
     if (acceptanceError) {
-      console.error("Error updating acceptance:", acceptanceError);
+      debug_error("Error updating acceptance:", acceptanceError);
       return NextResponse.json({ error: "failed_to_decline" }, { status: 500 });
     }
 
@@ -78,7 +79,7 @@ export async function POST(
       .eq("id", matchId);
 
     if (updateError) {
-      console.error("Error cancelling match:", updateError);
+      debug_error("Error cancelling match:", updateError);
       return NextResponse.json({ error: "failed_to_cancel_match" }, { status: 500 });
     }
 
@@ -104,7 +105,7 @@ export async function POST(
       matchCancelled: true,
     });
   } catch (error) {
-    console.error("Error declining match:", error);
+    debug_error("Error declining match:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
