@@ -3,7 +3,17 @@
     "subtitle": "YOUR WARRIORS",
     "title": "Meet The Gladiators",
     "description": "Each warrior has unique abilities, personalities, and combat styles",
-    "combatAnalysis": "Combat Analysis"
+    "combatAnalysis": "Combat Analysis",
+    "gladiators": "Gladiators",
+    "gladiatorCount": "gladiators",
+    "viewDetails": "View Details",
+    "health": "Health",
+    "injured": "Injured",
+    "sick": "Sick",
+    "healthy": "Healthy",
+    "noGladiators": "No gladiators in your ludus yet.",
+    "recruitGladiators": "Recruit Gladiators",
+    "backToDashboard": "Back to Dashboard"
   }
 }
 

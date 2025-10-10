@@ -80,7 +80,7 @@ export async function POST(req: Request) {
         } else {
           retries--;
         }
-      } catch (e) {
+      } catch {
         retries--;
       }
     }

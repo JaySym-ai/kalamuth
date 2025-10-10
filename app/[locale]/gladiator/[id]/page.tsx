@@ -24,7 +24,7 @@ export default async function GladiatorDetailPage({
   // Fetch the gladiator
   const { data: gladiatorData, error } = await supabase
     .from("gladiators")
-    .select("id, ludusId, serverId, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear, physicalCondition, notableHistory, alive")
+    .select("id, ludusId, serverId, name, surname, avatarUrl, birthCity, health, current_health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear, physicalCondition, notableHistory, alive")
     .eq("id", id)
     .maybeSingle();
 

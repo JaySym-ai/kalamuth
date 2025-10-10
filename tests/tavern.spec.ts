@@ -22,7 +22,6 @@ test.describe('Tavern Feature', () => {
   test('should show loading state while generating gladiators', async ({ page }) => {
     await page.goto('/en/tavern');
     // Wait for loading to appear and then disappear
-    const loader = page.getByRole('img', { hidden: true }).filter({ has: page.locator('[class*="animate-spin"]') });
     // The loader should appear briefly during generation
     await page.waitForTimeout(500);
   });
@@ -127,10 +126,7 @@ test.describe('Tavern Feature', () => {
     
     const firstGladiator = page.locator('[data-testid^="tavern-gladiator-"]').first();
     const rerollButton = firstGladiator.locator('[data-testid^="reroll-button-"]');
-    
-    // Get the initial gladiator ID
-    const initialTestId = await firstGladiator.getAttribute('data-testid');
-    
+
     // Click reroll
     await rerollButton.click();
     

@@ -142,8 +142,8 @@ test.describe('Responsive Design - Font and Image Scaling', () => {
     
     // Get initial emoji size on mobile
     const emojis = page.locator('[class*="text-"]').filter({ hasText: /[🗡️⚔️🛡️👑]/ });
-    const mobileEmojiCount = await emojis.count();
-    
+    await emojis.count();
+
     // Test on desktop
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto('/en');

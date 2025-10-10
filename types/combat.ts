@@ -126,6 +126,7 @@ export interface CombatantSummary {
   avatarUrl?: string | null;
   rankingPoints: number;
   health: number;
+  currentHealth: number;
   userId: string | null;
   ludusId: string | null;
   alive: boolean;

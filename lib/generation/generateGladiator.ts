@@ -90,12 +90,12 @@ export interface GeneratedGladiatorStats {
   strength: string; agility: string; dexterity: string; speed: string; chance: string; intelligence: string; charisma: string; loyalty: string;
 }
 export interface BilingualGeneratedGladiator {
-  name: string; surname: string; avatarUrl: string; health: number; alive: boolean;
+  name: string; surname: string; avatarUrl: string; health: number; currentHealth: number; alive: boolean;
   injury?: BilingualText; injuryTimeLeftHours?: number; sickness?: BilingualText;
   stats: BilingualGladiatorStats; lifeGoal: BilingualText; personality: BilingualText; backstory: BilingualText; weakness: BilingualText; fear: BilingualText; likes: BilingualText; dislikes: BilingualText; birthCity: string; handicap?: BilingualText; uniquePower?: BilingualText; physicalCondition: BilingualText; notableHistory: BilingualText;
 }
 export interface GeneratedGladiator {
-  name: string; surname: string; avatarUrl: string; health: number; alive: boolean;
+  name: string; surname: string; avatarUrl: string; health: number; currentHealth: number; alive: boolean;
   injury?: string; injuryTimeLeftHours?: number; sickness?: string;
   stats: GeneratedGladiatorStats; lifeGoal: string; personality: string; backstory: string; weakness: string; fear: string; likes: string; dislikes: string; birthCity: string; handicap?: string; uniquePower?: string; physicalCondition: string; notableHistory: string;
 }
@@ -157,6 +157,10 @@ function normalizeBilingualGladiatorRaw(raw: Record<string, unknown>): Bilingual
     throw new Error('Field "avatarUrl" must be empty string or "https://placehold.co/256x256?text=Gladiator"');
   }
   const health = expectIntegerInRange(raw.health, 'health', HEALTH_MIN, HEALTH_MAX);
+  // For new gladiators, currentHealth should equal health (full health)
+  const currentHealth = raw.currentHealth !== undefined && raw.currentHealth !== null 
+    ? expectIntegerInRange(raw.currentHealth, 'currentHealth', 0, health)
+    : health;
   // Default to true if missing (gladiators start alive)
   const alive = raw.alive !== undefined && raw.alive !== null ? expectBoolean(raw.alive, 'alive') : true;
 
@@ -198,6 +202,7 @@ function normalizeBilingualGladiatorRaw(raw: Record<string, unknown>): Bilingual
     surname,
     avatarUrl: avatarUrl || 'https://placehold.co/256x256?text=Gladiator',
     health,
+    currentHealth,
     alive,
     ...(injury ? { injury } : {}),
     ...(injuryTimeLeftHours ? { injuryTimeLeftHours } : {}),
@@ -227,6 +232,10 @@ function normalizeGeneratedGladiatorRaw(raw: Record<string, unknown>): Generated
   }
   const avatarUrl = rawAvatarUrl || 'https://placehold.co/256x256?text=Gladiator';
   const health = expectIntegerInRange(raw.health, 'health', HEALTH_MIN, HEALTH_MAX);
+  // For new gladiators, currentHealth should equal health (full health)
+  const currentHealth = raw.currentHealth !== undefined && raw.currentHealth !== null 
+    ? expectIntegerInRange(raw.currentHealth, 'currentHealth', 0, health)
+    : health;
   // Default to true if missing (gladiators start alive)
   const alive = raw.alive !== undefined && raw.alive !== null ? expectBoolean(raw.alive, 'alive') : true;
 
@@ -268,6 +277,7 @@ function normalizeGeneratedGladiatorRaw(raw: Record<string, unknown>): Generated
     surname,
     avatarUrl,
     health,
+    currentHealth,
     alive,
     ...(injury ? { injury } : {}),
     ...(injuryTimeLeftHours ? { injuryTimeLeftHours } : {}),
@@ -404,6 +414,7 @@ CRITICAL: You MUST include ALL fields shown below, including "alive" which must 
   "surname": "Shadowstep",
   "avatarUrl": "",
   "health": 184,
+  "currentHealth": 184,
   "alive": true,
   "injury": {
     "en": "Bruised ribs",
@@ -495,10 +506,11 @@ CRITICAL: You MUST include ALL fields shown below, including "alive" which must 
   }
 }
 
-Guidelines:
-- Key names must match the example EXACTLY. Do not introduce or rename keys.
-- Health must be an integer between 30 and 300.
-- Each bilingual text field must have both "en" and "fr" keys with appropriate translations.
+ Guidelines:
+ - Key names must match the example EXACTLY. Do not introduce or rename keys.
+ - Health must be an integer between 30 and 300.
+ - currentHealth must equal health for new gladiators (they start at full health).
+ - Each bilingual text field must have both "en" and "fr" keys with appropriate translations.
 - Each stats.* value must be a non-empty textual description (1–2 sentences) in both languages.
 - Narrative fields must each be a bilingual object with "en" and "fr" keys.
 - "notableHistory" is always required with non-empty strings in both languages.

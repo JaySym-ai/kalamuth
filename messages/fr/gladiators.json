@@ -3,7 +3,17 @@
     "subtitle": "VOS GUERRIERS",
     "title": "Rencontrez les gladiateurs",
     "description": "Chaque guerrier possède des compétences, des personnalités et des styles de combat uniques",
-    "combatAnalysis": "Analyse de combat"
+    "combatAnalysis": "Analyse de combat",
+    "gladiators": "Gladiateurs",
+    "gladiatorCount": "gladiateurs",
+    "viewDetails": "Voir les Détails",
+    "health": "Santé",
+    "injured": "Blessé",
+    "sick": "Malade",
+    "healthy": "En Bonne Santé",
+    "noGladiators": "Aucun gladiateur dans votre ludus pour le moment.",
+    "recruitGladiators": "Recruter des Gladiateurs",
+    "backToDashboard": "Retour au Tableau de Bord"
   }
 }
 

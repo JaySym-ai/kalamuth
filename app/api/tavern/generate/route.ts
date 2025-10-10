@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
-import { SERVERS } from "@/data/servers";
+import { createClient } from "@/utils/supabase/server";
 import OpenAI from "openai";
 import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 

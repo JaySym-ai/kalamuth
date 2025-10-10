@@ -55,7 +55,7 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
     // Check if gladiators already exist for this ludus
     const { data: glads } = await supabase
       .from("gladiators")
-      .select("id, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, physicalCondition, notableHistory, alive")
+      .select("id, name, surname, avatarUrl, birthCity, health, current_health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, physicalCondition, notableHistory, alive")
       .eq("ludusId", ludus.id);
 
     // Determine required initial count from server config

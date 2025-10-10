@@ -82,7 +82,7 @@ function buildStats(candidate: unknown, fallback: Record<string, unknown>, local
       const chosen = source[key] ?? fallback[key];
       return [key, coerceString(chosen, "—", locale)];
     })
-  ) as GladiatorStats;
+  ) as unknown as GladiatorStats;
 
   return stats;
 }
@@ -107,6 +107,11 @@ export function normalizeGladiator(id: string, data: Record<string, unknown>, lo
     avatarUrl: coerceString(data.avatarUrl, "https://placehold.co/256x256?text=Gladiator", locale),
     health: coerceNumber(data.health, {
       min: GLADIATOR_HEALTH_MIN,
+      max: GLADIATOR_HEALTH_MAX,
+      fallback: GLADIATOR_HEALTH_MIN,
+    }),
+    currentHealth: coerceNumber(data.currentHealth ?? data.current_health, {
+      min: 0,
       max: GLADIATOR_HEALTH_MAX,
       fallback: GLADIATOR_HEALTH_MIN,
     }),
@@ -143,6 +148,11 @@ export function normalizeGladiator(id: string, data: Record<string, unknown>, lo
     createdAt: typeof data.createdAt === "string" ? data.createdAt : undefined,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : undefined,
   };
+
+  // Ensure currentHealth doesn't exceed max health
+  if (gladiator.currentHealth > gladiator.health) {
+    gladiator.currentHealth = gladiator.health;
+  }
 
   return gladiator;
 }

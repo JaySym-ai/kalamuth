@@ -58,7 +58,7 @@ export async function GET(
 
   const { data: gladiatorRows, error: gladiatorError } = await supabase
     .from("gladiators")
-    .select("id, name, surname, avatarUrl, rankingPoints, health, userId, ludusId, alive")
+    .select("id, name, surname, avatarUrl, rankingPoints, health, current_health, userId, ludusId, alive")
     .in("id", gladiatorIds);
 
   if (gladiatorError) {
@@ -73,6 +73,7 @@ export async function GET(
     avatarUrl: (row.avatarUrl as string | null | undefined) ?? null,
     rankingPoints: typeof row.rankingPoints === "number" ? row.rankingPoints : 0,
     health: typeof row.health === "number" ? row.health : 0,
+    currentHealth: typeof row.current_health === "number" ? row.current_health : (typeof row.health === "number" ? row.health : 0),
     userId: row.userId as string,
     ludusId: (row.ludusId as string | null | undefined) ?? null,
     alive: typeof row.alive === "boolean" ? row.alive : false,

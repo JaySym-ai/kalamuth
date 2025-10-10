@@ -52,6 +52,7 @@ export const BilingualGladiatorZ = z
 
     // Vital
     health: z.number().int().min(GLADIATOR_HEALTH_MIN).max(GLADIATOR_HEALTH_MAX),
+    currentHealth: z.number().int().min(0).max(GLADIATOR_HEALTH_MAX),
     alive: z.boolean().default(true),
 
     // Conditions (bilingual)
@@ -89,6 +90,15 @@ export const BilingualGladiatorZ = z
         path: ["injuryTimeLeftHours"],
       });
     }
+    
+    // Ensure currentHealth doesn't exceed max health
+    if (val.currentHealth > val.health) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "currentHealth cannot exceed max health",
+        path: ["currentHealth"],
+      });
+    }
   });
 
 // Legacy single-language gladiator schema (for backward compatibility)
@@ -101,6 +111,7 @@ export const GladiatorZ = z
 
     // Vital
     health: z.number().int().min(GLADIATOR_HEALTH_MIN).max(GLADIATOR_HEALTH_MAX),
+    currentHealth: z.number().int().min(0).max(GLADIATOR_HEALTH_MAX),
     alive: z.boolean().default(true),
 
     // Conditions
@@ -138,6 +149,15 @@ export const GladiatorZ = z
         path: ["injuryTimeLeftHours"],
       });
     }
+    
+    // Ensure currentHealth doesn't exceed max health
+    if (val.currentHealth > val.health) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "currentHealth cannot exceed max health",
+        path: ["currentHealth"],
+      });
+    }
   });
 
 export type BilingualGladiatorFromZod = z.infer<typeof BilingualGladiatorZ>;
@@ -153,6 +173,7 @@ export const OpenRouterGladiatorJsonSchema = {
     surname: { type: "string", minLength: 1 },
     avatarUrl: { type: "string", format: "uri" },
     health: { type: "integer", minimum: GLADIATOR_HEALTH_MIN, maximum: GLADIATOR_HEALTH_MAX },
+    currentHealth: { type: "integer", minimum: 0, maximum: GLADIATOR_HEALTH_MAX },
     alive: { type: "boolean" },
     injury: { type: "string", minLength: 1 },
     injuryTimeLeftHours: { type: "integer", minimum: 1 },
@@ -199,6 +220,7 @@ export const OpenRouterGladiatorJsonSchema = {
     "surname",
     "avatarUrl",
     "health",
+    "currentHealth",
     "alive",
     "stats",
     "lifeGoal",

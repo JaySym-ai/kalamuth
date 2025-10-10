@@ -45,7 +45,7 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
   // Real-time gladiator data updates
   const { data: realtimeGladiator } = useRealtimeRow<NormalizedGladiator>({
     table: "gladiators",
-    select: "*",
+    select: "id, ludusId, serverId, name, surname, avatarUrl, birthCity, health, current_health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear, physicalCondition, notableHistory, alive",
     match: { id: gladiator.id },
     initialData: gladiator,
     primaryKey: "id",

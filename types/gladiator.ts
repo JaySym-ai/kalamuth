@@ -54,6 +54,8 @@ export interface Gladiator {
   // — Vital status —
   /** Max health (HP cap) in [30..300]. */
   health: number;
+  /** Current health points - may be reduced by combat/injury and restored by healing. */
+  currentHealth: number;
   /** Alive flag (default true). If false, the gladiator is unusable in play. */
   alive: boolean;
 
