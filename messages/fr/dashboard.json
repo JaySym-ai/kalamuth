@@ -3,6 +3,7 @@
     "title": "Tableau de Bord du Ludus",
     "ludusOverview": "Vue d'ensemble du Ludus",
     "arena": "Arène",
+    "tavern": "Taverne",
     "arenaCityLabel": "Ville",
     "arenaAllowsDeath": "Combats mortels autorisés",
     "arenaNoDeath": "Combats non létaux",
@@ -166,6 +167,23 @@
         "25": "Des festins dignes des empereurs dotent les guerriers d'une vitalité inégalée."
       }
     }
+  },
+  "Tavern": {
+    "title": "La Taverne",
+    "subtitle": "Recruter de nouveaux gladiateurs pour rejoindre votre ludus",
+    "availableGladiators": "Gladiateurs Disponibles",
+    "recruit": "Recruter",
+    "reroll": "Relancer",
+    "recruiting": "Recrutement en cours...",
+    "rerolling": "Relance en cours...",
+    "ludusFullTitle": "Ludus Plein",
+    "ludusFullMessage": "Votre ludus a atteint sa capacité maximale. Vous ne pouvez pas recruter plus de gladiateurs.",
+    "loadingGladiators": "Génération de gladiateurs...",
+    "noGladiators": "Aucun gladiateur disponible. Veuillez réessayer.",
+    "recruitSuccess": "Gladiateur recruté avec succès !",
+    "rerollSuccess": "Gladiateur relancé avec succès !",
+    "error": "Une erreur s'est produite. Veuillez réessayer.",
+    "backToDashboard": "Retour au Tableau de Bord"
   },
   "GladiatorDetail": {
     "backToDashboard": "Retour au Tableau de Bord",

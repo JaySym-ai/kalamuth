@@ -157,7 +157,8 @@ function normalizeBilingualGladiatorRaw(raw: Record<string, unknown>): Bilingual
     throw new Error('Field "avatarUrl" must be empty string or "https://placehold.co/256x256?text=Gladiator"');
   }
   const health = expectIntegerInRange(raw.health, 'health', HEALTH_MIN, HEALTH_MAX);
-  const alive = expectBoolean(raw.alive, 'alive');
+  // Default to true if missing (gladiators start alive)
+  const alive = raw.alive !== undefined && raw.alive !== null ? expectBoolean(raw.alive, 'alive') : true;
 
   const statsSource = (raw.stats ?? raw.statistics) as unknown;
   if (!statsSource || typeof statsSource !== 'object') throw new Error('Field "stats" must be an object containing all stat fields');
@@ -184,10 +185,12 @@ function normalizeBilingualGladiatorRaw(raw: Record<string, unknown>): Bilingual
   const uniquePower = expectOptionalBilingualText(raw.uniquePower, 'uniquePower');
 
   let injuryTimeLeftHours: number | undefined;
-  if (injury) {
-    injuryTimeLeftHours = expectIntegerInRange(raw.injuryTimeLeftHours, 'injuryTimeLeftHours', 1, 24 * 30);
-  } else if (raw.injuryTimeLeftHours !== undefined && raw.injuryTimeLeftHours !== null) {
-    throw new Error('Omit "injuryTimeLeftHours" when there is no injury');
+  // If injuryTimeLeftHours is provided, validate it (even if injury is missing, we'll ignore the time)
+  if (raw.injuryTimeLeftHours !== undefined && raw.injuryTimeLeftHours !== null) {
+    if (injury) {
+      injuryTimeLeftHours = expectIntegerInRange(raw.injuryTimeLeftHours, 'injuryTimeLeftHours', 1, 24 * 30);
+    }
+    // If injuryTimeLeftHours is present but injury is not, we silently ignore the time value
   }
 
   return {
@@ -224,7 +227,8 @@ function normalizeGeneratedGladiatorRaw(raw: Record<string, unknown>): Generated
   }
   const avatarUrl = rawAvatarUrl || 'https://placehold.co/256x256?text=Gladiator';
   const health = expectIntegerInRange(raw.health, 'health', HEALTH_MIN, HEALTH_MAX);
-  const alive = expectBoolean(raw.alive, 'alive');
+  // Default to true if missing (gladiators start alive)
+  const alive = raw.alive !== undefined && raw.alive !== null ? expectBoolean(raw.alive, 'alive') : true;
 
   const statsSource = (raw.stats ?? raw.statistics) as unknown;
   if (!statsSource || typeof statsSource !== 'object') throw new Error('Field "stats" must be an object containing all stat fields');
@@ -251,10 +255,12 @@ function normalizeGeneratedGladiatorRaw(raw: Record<string, unknown>): Generated
   const uniquePower = expectOptionalString(raw.uniquePower, 'uniquePower');
 
   let injuryTimeLeftHours: number | undefined;
-  if (injury) {
-    injuryTimeLeftHours = expectIntegerInRange(raw.injuryTimeLeftHours, 'injuryTimeLeftHours', 1, 24 * 30);
-  } else if (raw.injuryTimeLeftHours !== undefined && raw.injuryTimeLeftHours !== null) {
-    throw new Error('Omit "injuryTimeLeftHours" when there is no injury');
+  // If injuryTimeLeftHours is provided, validate it (even if injury is missing, we'll ignore the time)
+  if (raw.injuryTimeLeftHours !== undefined && raw.injuryTimeLeftHours !== null) {
+    if (injury) {
+      injuryTimeLeftHours = expectIntegerInRange(raw.injuryTimeLeftHours, 'injuryTimeLeftHours', 1, 24 * 30);
+    }
+    // If injuryTimeLeftHours is present but injury is not, we silently ignore the time value
   }
 
   return {
@@ -390,7 +396,8 @@ export async function generateOneGladiator(client: OpenAI, context?: GenerationC
 const systemPromptBilingual = `detailed thinking off
 
 You are generating gladiators for a Ludus management game with BILINGUAL content (English and French).
-Respond with a single JSON object that matches this structure exactly (the values below are examples; replace them with new content, but keep the keys, casing, and types identical):
+Respond with a single JSON object that matches this structure exactly (the values below are examples; replace them with new content, but keep the keys, casing, and types identical).
+CRITICAL: You MUST include ALL fields shown below, including "alive" which must ALWAYS be true (boolean).
 
 {
   "name": "Marcus Serpens",
@@ -496,6 +503,7 @@ Guidelines:
 - Narrative fields must each be a bilingual object with "en" and "fr" keys.
 - "notableHistory" is always required with non-empty strings in both languages.
 - If there is no injury, injuryTimeLeftHours, sickness, handicap, or uniquePower, omit the key entirely.
+- IMPORTANT: "injuryTimeLeftHours" should ONLY be included if "injury" is also present. If you include injuryTimeLeftHours, you MUST also include the injury field.
 - The avatarUrl must remain exactly empty like that "".
 - Use authentic ancient Mediterranean-inspired names (names and birthCity stay single language).
 - Keep descriptions flavorful (1–4 sentences) and ensure French translations are natural and idiomatic.

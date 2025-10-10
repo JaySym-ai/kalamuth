@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
-import { Swords } from "lucide-react";
+import { Swords, Wine } from "lucide-react";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 import { useRealtimeCollection, useRealtimeRow } from "@/lib/supabase/realtime";
@@ -18,6 +18,7 @@ interface DashboardTranslations {
   title: string;
   ludusOverview: string;
   arena: string;
+  tavern: string;
   arenaCityLabel: string;
   arenaAllowsDeath: string;
   arenaNoDeath: string;
@@ -160,6 +161,23 @@ export default function DashboardClient({ ludus, gladiators, locale, translation
                 <Swords className="w-5 h-5 text-amber-400 group-hover:text-amber-300 transition-colors" />
                 <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
                   {t.arena}
+                </span>
+              </div>
+            </motion.button>
+
+            {/* Tavern Button */}
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              onClick={() => router.push(`/${currentLocale}/tavern`)}
+              className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
+              data-testid="tavern-button"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Wine className="w-5 h-5 text-amber-400 group-hover:text-amber-300 transition-colors" />
+                <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
+                  {t.tavern}
                 </span>
               </div>
             </motion.button>

@@ -3,6 +3,7 @@
     "title": "Ludus Dashboard",
     "ludusOverview": "Ludus Overview",
     "arena": "Arena",
+    "tavern": "Tavern",
     "arenaCityLabel": "City",
     "arenaAllowsDeath": "Fatal bouts permitted",
     "arenaNoDeath": "Non-lethal matches",
@@ -166,6 +167,23 @@
         "25": "Feasts worthy of emperors empower warriors with unmatched vitality."
       }
     }
+  },
+  "Tavern": {
+    "title": "The Tavern",
+    "subtitle": "Recruit new gladiators to join your ludus",
+    "availableGladiators": "Available Gladiators",
+    "recruit": "Recruit",
+    "reroll": "Reroll",
+    "recruiting": "Recruiting...",
+    "rerolling": "Rerolling...",
+    "ludusFullTitle": "Ludus Full",
+    "ludusFullMessage": "Your ludus has reached its maximum capacity. You cannot recruit more gladiators.",
+    "loadingGladiators": "Generating gladiators...",
+    "noGladiators": "No gladiators available. Please try again.",
+    "recruitSuccess": "Gladiator recruited successfully!",
+    "rerollSuccess": "Gladiator rerolled successfully!",
+    "error": "An error occurred. Please try again.",
+    "backToDashboard": "Back to Dashboard"
   },
   "GladiatorDetail": {
     "backToDashboard": "Back to Dashboard",
