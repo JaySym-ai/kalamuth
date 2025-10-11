@@ -8,88 +8,16 @@ import LogoutButton from "../auth/LogoutButton";
 import { usePathname } from "next/navigation";
 
 export default function Navigation() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const t = useTranslations("Nav");
   const pathname = usePathname();
   const isHome = pathname === "/" || pathname === "/en" || pathname === "/fr" || pathname === "/en/" || pathname === "/fr/";
-
-  const navItems = [
-    { label: t("arena"), href: "#arena" },
-    { label: t("gladiators"), href: "#gladiators" },
-    { label: t("training"), href: "#training" },
-    { label: t("city"), href: "#city" },
-    { label: t("wars"), href: "#wars" }
-  ];
 
   return (
     <>
       {/* Desktop Navigation */}
       <nav className="hidden lg:flex items-center gap-6">
-        {navItems.map((item) => (
-          <NavLink key={item.label} href={item.href}>
-            {item.label}
-          </NavLink>
-        ))}
-        <button className="px-6 py-2 bg-gradient-to-r from-amber-600 to-red-600 text-white font-bold rounded-lg hover:from-amber-500 hover:to-red-500 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-amber-500/25">
-          {t("enterArena")}
-        </button>
         <LanguageSwitcher />
         {!isHome && <LogoutButton />}
       </nav>
-
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="lg:hidden relative w-10 h-10 flex flex-col justify-center items-center gap-1.5 group"
-        aria-label="Toggle menu"
-      >
-        <span
-          className={`block w-8 h-0.5 bg-amber-500 transition-all duration-300 ${
-            isMenuOpen ? "rotate-45 translate-y-2" : ""
-          }`}
-        />
-        <span
-          className={`block w-8 h-0.5 bg-amber-500 transition-all duration-300 ${
-            isMenuOpen ? "opacity-0" : ""
-          }`}
-        />
-        <span
-          className={`block w-8 h-0.5 bg-amber-500 transition-all duration-300 ${
-            isMenuOpen ? "-rotate-45 -translate-y-2" : ""
-          }`}
-        />
-      </button>
-
-      {/* Mobile Navigation */}
-      <div
-        className={`lg:hidden fixed inset-x-0 top[72px] bg-black/95 backdrop-blur-xl border-b border-amber-900/20 transform transition-transform duration-300 ${
-          isMenuOpen ? "translate-y-0" : "-translate-y-full"
-        }`}
-      >
-        <nav className="container mx-auto px-6 py-6 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">Language</span>
-            <LanguageSwitcher />
-          </div>
-          {navItems.map((item) => (
-            <NavLink
-              key={item.label}
-              href={item.href}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-          <button className="mt-4 px-6 py-3 bg-gradient-to-r from-amber-600 to-red-600 text-white font-bold rounded-lg hover:from-amber-500 hover:to-red-500 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-amber-500/25">
-            {t("enterArena")}
-          </button>
-          {!isHome && (
-            <div className="mt-2">
-              <LogoutButton />
-            </div>
-          )}
-        </nav>
-      </div>
     </>
   );
 }

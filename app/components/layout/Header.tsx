@@ -29,7 +29,7 @@ export default function Header() {
         paddingRight: "env(safe-area-inset-right)",
       }}
     >
-      <div className="container mx-auto px-responsive-4 py-responsive-3">
+      <div className="container mx-auto px-responsive-4 py-6">
         <div className="flex items-center justify-between">
           <Logo />
           <Navigation />

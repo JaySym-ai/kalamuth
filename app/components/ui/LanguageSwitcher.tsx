@@ -9,8 +9,8 @@ export default function LanguageSwitcher() {
   const pathname = usePathname();
 
   const locales = [
-    { code: "en", label: "EN" },
-    { code: "fr", label: "FR" }
+    { code: "en", label: "EN", flag: "🇺🇸" },
+    { code: "fr", label: "FR", flag: "🇫🇷" }
   ];
 
   // Strip leading locale from current path (e.g., /en/xyz -> /xyz)
@@ -24,13 +24,14 @@ export default function LanguageSwitcher() {
           <Link
             key={l.code}
             href={targetHref}
-            className={`px-3 py-2 rounded-md text-sm font-semibold transition-colors ${
+            className={`px-3 py-2 rounded-md text-sm font-semibold transition-colors flex items-center gap-2 ${
               locale === l.code
                 ? "bg-amber-600 text-white"
                 : "bg-black/40 border border-amber-700/40 text-amber-300 hover:bg-amber-900/30"
             }`}
             aria-current={locale === l.code ? "true" : undefined}
           >
+            <span className="text-base">{l.flag}</span>
             {l.label}
           </Link>
         );
