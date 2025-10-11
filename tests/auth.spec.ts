@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginUser, TEST_CREDENTIALS } from './helpers/auth';
+import { TEST_CREDENTIALS } from './helpers/auth';
 
 // Use shared test credentials (pre-created test account)
 const TEST_EMAIL = TEST_CREDENTIALS.email;

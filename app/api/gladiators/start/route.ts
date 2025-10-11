@@ -5,7 +5,7 @@ import { SERVERS } from "@/data/servers";
 import OpenAI from "openai";
 import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 import { rollRarity, getInitialGladiatorRarityConfig } from "@/lib/gladiator/rarity";
-import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
 

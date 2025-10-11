@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 interface QuestGenerationComponentProps {
   isGenerating: boolean;
   onGenerate: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   translations: any;
 }
 

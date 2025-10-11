@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
 
 // Local copy of model selection used for JSON-structured generation
 export const MODEL_JSON_STRUCTURED = 'google/gemini-2.5-flash-lite';

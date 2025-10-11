@@ -5,6 +5,7 @@ import type { Quest } from "@/types/quest";
 
 interface QuestResultsComponentProps {
   quest: Quest;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   translations: any;
 }
 
@@ -12,7 +13,6 @@ export default function QuestResultsComponent({
   quest,
   translations: t,
 }: QuestResultsComponentProps) {
-  const isSuccess = !quest.questFailed && !quest.gladiatorDied;
   const statusColor = quest.gladiatorDied
     ? "from-red-900/30 to-red-800/30"
     : quest.questFailed

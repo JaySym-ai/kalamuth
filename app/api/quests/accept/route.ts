@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/server";
 import { getQuestDurationMinutes } from "@/lib/ludus/repository";
-import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

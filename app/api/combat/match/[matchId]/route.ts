@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import type { CombatantSummary, CombatLogEntry, CombatMatchAcceptance } from "@/types/combat";
-import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
 

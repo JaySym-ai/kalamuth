@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/utils/supabase/server";
-import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
 

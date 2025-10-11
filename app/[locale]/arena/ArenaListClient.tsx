@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import Image from "next/image";
+
 import { Skull, Shield, MapPin, Users } from "lucide-react";
 import PageLayout from "@/components/layout/PageLayout";
 
@@ -35,10 +35,6 @@ export default function ArenaListClient({ arenas, locale, translations: t }: Pro
 
   const handleArenaClick = (arenaSlug: string) => {
     router.push(`/${locale}/arena/${arenaSlug}`);
-  };
-
-  const handleBackClick = () => {
-    router.push(`/${locale}/dashboard`);
   };
 
   return (

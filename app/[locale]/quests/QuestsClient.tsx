@@ -1,8 +1,7 @@
 "use client";
 
-import { debug_log, debug_error } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
 import { useCallback, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import type { Ludus } from "@/types/ludus";
@@ -79,8 +78,7 @@ interface Props {
   translations: QuestsTranslations;
 }
 
-export default function QuestsClient({ ludus, initialQuests, locale, questDurationMinutes, translations: t }: Props) {
-  const router = useRouter();
+export default function QuestsClient({ ludus, initialQuests, questDurationMinutes, translations: t }: Props) {
   const currentLocale = useLocale();
   const [quests, setQuests] = useState<Quest[]>(initialQuests);
   const [currentQuest, setCurrentQuest] = useState<Quest | null>(null);
@@ -88,7 +86,7 @@ export default function QuestsClient({ ludus, initialQuests, locale, questDurati
   const [error, setError] = useState<string | null>(null);
 
   // Get current ludus data
-  const { data: realtimeLudus } = useRealtimeRow<Ludus & { id: string }>({
+  useRealtimeRow<Ludus & { id: string }>({
     table: "ludi",
     select:
       "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt",
@@ -105,8 +103,45 @@ export default function QuestsClient({ ludus, initialQuests, locale, questDurati
     }, [ludus]),
   });
 
-  const currentLudus = realtimeLudus ?? ludus;
   const questDurationMs = questDurationMinutes * 60 * 1000;
+
+  const completeQuest = useCallback(async (questId: string) => {
+    try {
+      const response = await fetch("/api/quests/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questId }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to complete quest");
+      }
+
+      const data = await response.json();
+
+      // Update quest with results
+      setQuests(quests.map(q =>
+        q.id === questId
+          ? {
+              ...q,
+              status: data.result.questFailed ? 'failed' : 'completed',
+              completedAt: new Date().toISOString(),
+              result: data.result.whatHappened,
+              healthLost: data.result.healthLost,
+              sicknessContracted: data.result.sicknessContracted,
+              injuryContracted: data.result.injuryContracted,
+              questFailed: data.result.questFailed,
+              gladiatorDied: data.result.gladiatorDied,
+              reward: data.result.rewardEarned,
+            }
+          : q
+      ));
+    } catch (err) {
+      debug_error("Quest completion error:", err);
+      setError(err instanceof Error ? err.message : "Failed to complete quest");
+    }
+  }, [quests]);
 
   // Check for active quest and handle completion
   useEffect(() => {
@@ -132,45 +167,7 @@ export default function QuestsClient({ ludus, initialQuests, locale, questDurati
         return () => clearTimeout(timer);
       }
     }
-  }, [quests, questDurationMs]);
-
-  const completeQuest = async (questId: string) => {
-    try {
-      const response = await fetch("/api/quests/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questId }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to complete quest");
-      }
-
-      const data = await response.json();
-
-      // Update quest with results
-      setQuests(quests.map(q =>
-        q.id === questId
-          ? {
-              ...q,
-              status: data.result.questFailed ? 'failed' : 'completed',
-              completedAt: new Date().toISOString(),
-              result: data.result.narrative,
-              healthLost: data.result.healthLost,
-              sicknessContracted: data.result.sicknessContracted,
-              injuryContracted: data.result.injuryContracted,
-              questFailed: data.result.questFailed,
-              gladiatorDied: data.result.gladiatorDied,
-              reward: data.result.rewardEarned,
-            }
-          : q
-      ));
-    } catch (err) {
-      debug_error("Quest completion error:", err);
-      setError(err instanceof Error ? err.message : "Failed to complete quest");
-    }
-  };
+  }, [quests, questDurationMs, completeQuest]);
 
   const handleGenerateQuest = async () => {
     setIsGenerating(true);

@@ -8,6 +8,7 @@ interface QuestDetailsComponentProps {
   quest: Quest;
   onAccept: () => void;
   onReroll: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   translations: any;
 }
 
@@ -134,7 +135,7 @@ export default function QuestDetailsComponent({
           {quest.gladiatorName && (
             <p className="text-amber-200 font-semibold">{quest.gladiatorName}</p>
           )}
-          <p className="text-gray-300 italic">"{quest.volunteerMessage}"</p>
+          <p className="text-gray-300 italic">&quot;{quest.volunteerMessage}&quot;</p>
         </motion.div>
       )}
 

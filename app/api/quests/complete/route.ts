@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
 import type { QuestResult } from "@/types/quest";
-import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,6 +74,7 @@ export async function POST(req: Request) {
     let newHealth = gladiator.current_health - result.healthLost;
     newHealth = Math.max(0, Math.min(gladiator.health, newHealth));
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: Record<string, any> = {
       current_health: newHealth,
     };
@@ -158,6 +159,7 @@ export async function POST(req: Request) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function buildResultPrompt(quest: any, gladiator: any): string {
   return `You are a quest narrator for a Roman gladiator game. Generate the outcome of a quest that just completed.
 

@@ -202,12 +202,10 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        setError(data.error || t.error);
+        const errorData = await response.json();
+        setError(errorData.error || t.error);
         return;
       }
-
-      const data = await response.json();
 
       // The new gladiator is already in the realtime collection,
       // so we just need to move to the next gladiator in the list

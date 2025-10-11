@@ -1,6 +1,6 @@
 "use client";
 
-import { debug_log, debug_error } from "@/utils/debug";
+
 import { motion } from "framer-motion";
 import { Swords, MapPin, ArrowLeft } from "lucide-react";
 import Image from "next/image";

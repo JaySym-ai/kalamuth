@@ -8,6 +8,7 @@ interface QuestOngoingComponentProps {
   quest: Quest;
   onCancel: () => void;
   questDurationMinutes: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   translations: any;
 }
 

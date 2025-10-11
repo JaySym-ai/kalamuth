@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
 import type { GeneratedQuest, VolunteerInfo, QuestGenerationContext } from "@/types/quest";
-import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
+import { debug_log, debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -214,6 +214,7 @@ The quest should be:
 IMPORTANT: Return ONLY valid JSON, no other text.`;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function buildVolunteerPrompt(quest: GeneratedQuest, gladiators: any[], locale: string = 'en'): string {
   const gladiatorsList = gladiators
     .map(g => `- ${g.id}: ${g.name} ${g.surname} (${g.personality})`)
@@ -282,6 +283,7 @@ function parseQuestResponse(content: string): GeneratedQuest | null {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseVolunteerResponse(content: string, gladiators: any[]): VolunteerInfo | null {
   try {
     // Remove markdown code blocks if present

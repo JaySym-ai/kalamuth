@@ -4,7 +4,7 @@ import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
 import { ARENAS } from "@/data/arenas";
 import { getCombatConfigForArena } from "@/lib/combat/config";
 import type { CombatGladiator, CombatLogEntry, BattleState } from "@/types/combat";
-import { debug_log, debug_error, debug_warn, debug_info } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

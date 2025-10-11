@@ -4,10 +4,8 @@ import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import { Heart, AlertCircle, Activity } from "lucide-react";
 import type { Ludus } from "@/types/ludus";
-import { GLADIATOR_HEALTH_MAX } from "@/types/gladiator";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 import { useRealtimeCollection, useRealtimeRow } from "@/lib/supabase/realtime";
 import PageLayout from "@/components/layout/PageLayout";
@@ -138,7 +136,7 @@ export default function GladiatorsClient({ ludus, gladiators, locale, translatio
   const router = useRouter();
   const currentLocale = useLocale();
 
-  const { data: realtimeLudus } = useRealtimeRow<Ludus & { id: string }>({
+  useRealtimeRow<Ludus & { id: string }>({
     table: "ludi",
     select:
       "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt",
@@ -170,7 +168,6 @@ export default function GladiatorsClient({ ludus, gladiators, locale, translatio
     }, [locale]),
   });
 
-  const currentLudus = realtimeLudus ?? ludus;
   const currentGladiators = realtimeGladiators;
 
   return (

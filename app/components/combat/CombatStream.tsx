@@ -1,6 +1,6 @@
 "use client";
 
-import { debug_log, debug_error } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";

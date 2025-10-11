@@ -1,6 +1,6 @@
 "use client";
 
-import { debug_log, debug_error } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";

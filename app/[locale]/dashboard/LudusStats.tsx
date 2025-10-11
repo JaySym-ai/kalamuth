@@ -17,7 +17,7 @@ interface Props {
   };
 }
 
-export default function LudusStats({ ludus, translations: t }: Props) {
+export default function LudusStats({ ludus }: Props) {
   const locale = useLocale();
   const router = useRouter();
 

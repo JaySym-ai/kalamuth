@@ -5,6 +5,7 @@ import type { Quest } from "@/types/quest";
 
 interface QuestHistoryComponentProps {
   quests: Quest[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   translations: any;
 }
 
@@ -88,7 +89,7 @@ export default function QuestHistoryComponent({
 
             {quest.result && (
               <p className="text-sm text-gray-300 italic border-t border-gray-700/30 pt-2 mt-2">
-                "{quest.result}"
+                &quot;{quest.result}&quot;
               </p>
             )}
           </motion.div>
