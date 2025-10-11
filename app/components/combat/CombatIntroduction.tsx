@@ -6,6 +6,7 @@ import { Swords, MapPin, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { CombatGladiator } from "@/types/combat";
+import { debug_log } from "@/utils/debug";
 
 interface CombatIntroductionProps {
   gladiator1: CombatGladiator;

@@ -194,7 +194,19 @@ export default async function ArenaDetailPage({
           failedToLoadMatch: t("failedToLoadMatch"),
           statusReady: t("statusReady"),
           statusIncapacitated: t("statusIncapacitated"),
-
+          matchAcceptanceTitle: t("matchAcceptanceTitle"),
+          opponentFound: t("opponentFound"),
+          waitingForAcceptance: t("waitingForAcceptance"),
+          acceptMatch: t("acceptMatch"),
+          declineMatch: t("declineMatch"),
+          acceptanceTimeout: t("acceptanceTimeout"),
+          opponentDeclined: t("opponentDeclined"),
+          timeRemaining: t("timeRemaining"),
+          youAccepted: t("youAccepted"),
+          youDeclined: t("youDeclined"),
+          opponentAccepted: t("opponentAccepted"),
+          opponentDeclinedLabel: t("opponentDeclinedLabel"),
+          preparingCombat: t("preparingCombat"),
         }}
       />
     </main>

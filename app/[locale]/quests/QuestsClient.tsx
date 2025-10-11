@@ -5,7 +5,8 @@ import { useCallback, useState, useEffect } from "react";
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import type { Ludus } from "@/types/ludus";
-import type { Quest, QuestStatus } from "@/types/quest";
+import type { Quest } from "@/types/quest";
+import { QuestStatus } from "@/types/quest";
 import { useRealtimeRow } from "@/lib/supabase/realtime";
 
 import LogoutButton from "@/app/components/auth/LogoutButton";
@@ -125,7 +126,7 @@ export default function QuestsClient({ ludus, initialQuests, questDurationMinute
         q.id === questId
           ? {
               ...q,
-              status: data.result.questFailed ? 'failed' : 'completed',
+              status: data.result.questFailed ? QuestStatus.FAILED : QuestStatus.COMPLETED,
               completedAt: new Date().toISOString(),
               result: data.result.whatHappened,
               healthLost: data.result.healthLost,

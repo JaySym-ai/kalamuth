@@ -247,13 +247,15 @@ function normalizeGladiator(row: Record<string, unknown>, locale: string): Comba
     };
   };
 
+  const maxHealth = row.health as number;
   return {
     id: row.id as string,
     name: row.name as string,
     surname: row.surname as string,
     avatarUrl: row.avatarUrl as string,
     rankingPoints: row.rankingPoints as number,
-    health: row.health as number,
+    health: maxHealth,
+    currentHealth: maxHealth,
     userId: row.userId as string,
     ludusId: row.ludusId as string,
     alive: row.alive as boolean,
