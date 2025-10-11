@@ -3,7 +3,7 @@
     "badge": "GESTION DE GLADIATEURS PROPULSÉE PAR L'IA",
     "title": "Entrez dans l'Arène des Légendes",
     "description": {
-      "line1": "Ce jeu est propulsé par l'IA. Vous gérerez un ludus qui aura des gladiateurs IA. Vous pourrez leur parler, en savoir plus sur eux, les faire s'entraîner en utilisant le langage naturel, les faire combattre pour la gloire contre d'autres gladiateurs IA gérés par d'autres utilisateurs et plus encore.",
+      "line1": "",
       "line2": "Votre objectif sera d'être le Ludus le plus prospère du serveur. Vous décidez du chemin à suivre, chaque combat et action sera impacté par vos décisions.",
       "question": "Serez-vous dans la légende ou votre maison s'effondrera-t-elle comme un château de cartes ?"
     },

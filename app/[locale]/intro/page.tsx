@@ -88,7 +88,7 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
               {t("description.line1")}
             </p>
 
-            <div className="grid md:grid-cols-2 gap-3 my-3">
+            <div className="grid md:grid-cols-3 gap-3 my-3">
               <div className="bg-black/40 backdrop-blur-sm border border-amber-900/30 rounded-lg p-3 hover:border-amber-700/50 transition-all duration-300 text-center">
                 <div className="text-xl mb-1">⚔️</div>
                 <h3 className="text-amber-400 font-bold mb-1 text-xs">{t("features.combat.title")}</h3>
@@ -101,11 +101,7 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
                 <p className="text-gray-400 text-xs">{t("features.interaction.description")}</p>
               </div>
 
-              <div className="bg-black/40 backdrop-blur-sm border border-amber-900/30 rounded-lg p-3 hover:border-amber-700/50 transition-all duration-300 text-center">
-                <div className="text-xl mb-1">🏛️</div>
-                <h3 className="text-amber-400 font-bold mb-1 text-xs">{t("features.management.title")}</h3>
-                <p className="text-gray-400 text-xs">{t("features.management.description")}</p>
-              </div>
+
 
               <div className="bg-black/40 backdrop-blur-sm border border-amber-900/30 rounded-lg p-3 hover:border-amber-700/50 transition-all duration-300 text-center">
                 <div className="text-xl mb-1">👑</div>
@@ -114,9 +110,7 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
               </div>
             </div>
 
-            <p className="text-center text-base">
-              {t("description.line2")}
-            </p>
+
 
             <p className="text-center text-lg font-bold text-amber-400">
               {t("description.question")}
