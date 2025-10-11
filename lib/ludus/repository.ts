@@ -15,6 +15,11 @@ function getLudusMaxGladiators(serverId: string): number {
   return s?.config.ludusMaxGladiators ?? 5;
 }
 
+export function getQuestDurationMinutes(serverId: string): number {
+  const s = SERVERS.find((s) => s.id === serverId) ?? SERVERS.find((s) => s.id === DEFAULT_SERVER_ID);
+  return s?.config.questDurationMinutes ?? 60;
+}
+
 function withDefaults(input: Partial<Ludus> & { userId: string; serverId: string; name: string; logoUrl: string }): LudusFromZod {
   const maxGladiators = input.maxGladiators ?? getLudusMaxGladiators(input.serverId);
   const model: Ludus = {

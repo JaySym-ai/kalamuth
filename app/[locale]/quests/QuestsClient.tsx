@@ -17,8 +17,6 @@ import QuestOngoingComponent from "./components/QuestOngoingComponent";
 import QuestResultsComponent from "./components/QuestResultsComponent";
 import QuestHistoryComponent from "./components/QuestHistoryComponent";
 
-const QUEST_DURATION_MS = 3600000; // 1 hour in milliseconds
-
 interface QuestsTranslations {
   title: string;
   subtitle: string;
@@ -77,10 +75,11 @@ interface Props {
   ludus: Ludus & { id: string };
   initialQuests: Quest[];
   locale: string;
+  questDurationMinutes: number;
   translations: QuestsTranslations;
 }
 
-export default function QuestsClient({ ludus, initialQuests, locale, translations: t }: Props) {
+export default function QuestsClient({ ludus, initialQuests, locale, questDurationMinutes, translations: t }: Props) {
   const router = useRouter();
   const currentLocale = useLocale();
   const [quests, setQuests] = useState<Quest[]>(initialQuests);
@@ -107,6 +106,7 @@ export default function QuestsClient({ ludus, initialQuests, locale, translation
   });
 
   const currentLudus = realtimeLudus ?? ludus;
+  const questDurationMs = questDurationMinutes * 60 * 1000;
 
   // Check for active quest and handle completion
   useEffect(() => {
@@ -119,12 +119,12 @@ export default function QuestsClient({ ludus, initialQuests, locale, translation
       const now = new Date().getTime();
       const elapsed = now - startTime;
 
-      if (elapsed >= QUEST_DURATION_MS) {
+      if (elapsed >= questDurationMs) {
         // Quest duration has passed, complete it
         completeQuest(activeQuest.id);
       } else {
         // Set a timer to complete the quest when time is up
-        const remainingTime = QUEST_DURATION_MS - elapsed;
+        const remainingTime = questDurationMs - elapsed;
         const timer = setTimeout(() => {
           completeQuest(activeQuest.id);
         }, remainingTime);
@@ -132,7 +132,7 @@ export default function QuestsClient({ ludus, initialQuests, locale, translation
         return () => clearTimeout(timer);
       }
     }
-  }, [quests]);
+  }, [quests, questDurationMs]);
 
   const completeQuest = async (questId: string) => {
     try {
@@ -312,6 +312,7 @@ export default function QuestsClient({ ludus, initialQuests, locale, translation
             <QuestOngoingComponent
               quest={currentQuest}
               onCancel={() => handleCancelQuest(currentQuest.id)}
+              questDurationMinutes={questDurationMinutes}
               translations={t}
             />
           )}

@@ -12,6 +12,8 @@ export const ServerConfigZ = z
     ludusMaxGladiators: z.number().int().min(1).default(5),
     // How many gladiators to auto-generate when a new ludus is created
     initialGladiatorsPerLudus: z.number().int().min(0).default(0),
+    // How many minutes it takes to complete a quest on this server
+    questDurationMinutes: z.number().int().min(1).default(60),
   })
   .strict()
   .superRefine((cfg, ctx) => {

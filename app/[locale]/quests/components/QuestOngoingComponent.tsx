@@ -7,14 +7,17 @@ import type { Quest } from "@/types/quest";
 interface QuestOngoingComponentProps {
   quest: Quest;
   onCancel: () => void;
+  questDurationMinutes: number;
   translations: any;
 }
 
 export default function QuestOngoingComponent({
   quest,
   onCancel,
+  questDurationMinutes,
   translations: t,
 }: QuestOngoingComponentProps) {
+  const questDurationMs = questDurationMinutes * 60 * 1000;
   const [timeRemaining, setTimeRemaining] = useState<string>("1:00:00");
   const [progress, setProgress] = useState(0);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -26,7 +29,7 @@ export default function QuestOngoingComponent({
       const startTime = new Date(quest.startedAt!).getTime();
       const now = new Date().getTime();
       const elapsed = now - startTime;
-      const totalDuration = 3600000; // 1 hour in milliseconds
+      const totalDuration = questDurationMs;
       const remaining = Math.max(0, totalDuration - elapsed);
 
       const hours = Math.floor(remaining / 3600000);
@@ -42,7 +45,7 @@ export default function QuestOngoingComponent({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [quest.startedAt]);
+  }, [quest.startedAt, questDurationMs]);
 
   return (
     <motion.div

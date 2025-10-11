@@ -37,6 +37,9 @@ export interface ServerConfig {
   /** Number of gladiators to auto-generate for a new ludus on this server. */
   initialGladiatorsPerLudus: number;
 
+  /** How many minutes it takes to complete a quest on this server. */
+  questDurationMinutes: number;
+
   /** Rarity percentage configuration for gladiator generation. */
   rarityConfig: RarityConfig;
 

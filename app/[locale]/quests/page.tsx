@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { getQuestDurationMinutes } from "@/lib/ludus/repository";
 import { debug_error } from "@/utils/debug";
 import QuestsClient from "./QuestsClient";
 import type { Ludus } from "@/types/ludus";
@@ -114,6 +115,7 @@ export default async function QuestsPage({ params }: { params: Promise<{ locale:
   }
 
   const t = await getTranslations("Quests");
+  const questDurationMinutes = getQuestDurationMinutes(ludusData!.serverId);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black">
@@ -121,6 +123,7 @@ export default async function QuestsPage({ params }: { params: Promise<{ locale:
         ludus={ludusData!}
         initialQuests={quests}
         locale={locale}
+        questDurationMinutes={questDurationMinutes}
         translations={{
           title: t("title"),
           subtitle: t("subtitle"),

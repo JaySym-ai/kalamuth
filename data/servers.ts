@@ -20,6 +20,7 @@ export const SERVERS: GameServer[] = [
       gladiatorStatMax: 100,
       ludusMaxGladiators: 5,
       initialGladiatorsPerLudus: 3,
+      questDurationMinutes: 60,
       rarityConfig: {
         bad: 5,
         common: 30,
@@ -47,6 +48,7 @@ export const SERVERS: GameServer[] = [
       gladiatorStatMax: 100,
       ludusMaxGladiators: 5,
       initialGladiatorsPerLudus: 3,
+      questDurationMinutes: 60,
       rarityConfig: {
         bad: 5,
         common: 30,
@@ -75,6 +77,7 @@ export const SERVERS: GameServer[] = [
       gladiatorStatMax: 200,
       ludusMaxGladiators: 10,
       initialGladiatorsPerLudus: 1,
+      questDurationMinutes: 1,
       rarityConfig: {
         bad: 14.29,
         common: 14.29,
