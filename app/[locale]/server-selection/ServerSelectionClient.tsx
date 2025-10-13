@@ -35,7 +35,8 @@ export default function ServerSelectionClient({ servers }: Props) {
   return (
     <div className="space-y-6">
       {/* Server Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="overflow-x-auto pb-4 custom-scrollbar">
+        <div className="flex gap-6 min-w-max">
         {servers.map((server, index) => (
           <motion.div
             key={server.id}
@@ -48,7 +49,7 @@ export default function ServerSelectionClient({ servers }: Props) {
               onClick={() => setSelectedServer(server.id)}
               disabled={loading}
               className={`
-                w-full text-left transition-all duration-300 transform hover:scale-105
+                w-80 text-left transition-all duration-300 transform hover:scale-105 flex-shrink-0
                 ${selectedServer === server.id ? "scale-105" : ""}
               `}
               data-testid={`server-${server.id}`}
@@ -148,6 +149,7 @@ export default function ServerSelectionClient({ servers }: Props) {
             </button>
           </motion.div>
         ))}
+        </div>
       </div>
 
       {/* Continue Button */}

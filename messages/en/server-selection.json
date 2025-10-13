@@ -2,7 +2,7 @@
   "ServerSelection": {
     "badge": "CHOOSE YOUR WORLD",
     "title": "Select Your Server",
-    "subtitle": "Each server offers a unique experience. Choose wisely, as this will be your home for glory and conquest.",
+    "subtitle": "",
     "status": {
       "new": "NEW",
       "live": "LIVE",

@@ -79,7 +79,7 @@ export default async function LudusCreationPage({ params }: { params: Promise<{ 
               </span>
             </h1>
 
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-300 max-w-xl mx-auto">
+            <p className="text-xs sm:text-sm text-gray-400 max-w-xl mx-auto">
               {t("subtitle")}
             </p>
           </div>

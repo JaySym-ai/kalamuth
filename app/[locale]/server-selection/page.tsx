@@ -66,9 +66,6 @@ export default async function ServerSelectionPage({ params }: { params: Promise<
 
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
-        <div className="absolute top-4 right-4">
-          <LogoutButton />
-        </div>
         <div className="max-w-6xl mx-auto w-full">
           {/* Header */}
           <div className="text-center mb-8 sm:mb-12">

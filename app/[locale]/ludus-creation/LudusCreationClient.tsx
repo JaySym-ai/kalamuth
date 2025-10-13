@@ -122,15 +122,16 @@ export default function LudusCreationClient() {
           {t("form.city.label")}
         </label>
 
-        {/* City Grid - No scrollbar needed for 12 cities */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+        {/* City Grid - Horizontal scroll */}
+        <div className="overflow-x-auto pb-4 custom-scrollbar">
+          <div className="flex gap-2 min-w-max">
           {CITIES.map((city) => (
             <button
               key={city.id}
               type="button"
               onClick={() => setSelectedCity(city.id)}
               className={`
-                p-3 rounded-lg border transition-all duration-200 text-left
+                p-3 rounded-lg border transition-all duration-200 text-left w-48 flex-shrink-0
                 ${selectedCity === city.id
                   ? "bg-amber-900/40 border-amber-500 shadow-lg shadow-amber-500/20"
                   : "bg-black/30 border-amber-900/30 hover:border-amber-700/50 hover:bg-amber-900/20"
@@ -146,6 +147,7 @@ export default function LudusCreationClient() {
               </div>
             </button>
           ))}
+          </div>
         </div>
 
         {/* Show selected city description */}
@@ -165,24 +167,7 @@ export default function LudusCreationClient() {
         </p>
       </div>
 
-      {/* Motto (Optional) */}
-      <div>
-        <label className="block text-sm font-medium text-amber-400 mb-2">
-          {t("form.motto.label")}
-        </label>
-        <textarea
-          value={motto}
-          onChange={(e) => setMotto(e.target.value)}
-          placeholder={t("form.motto.placeholder")}
-          className="w-full px-4 py-3 bg-black/50 border border-amber-700/50 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 transition-colors resize-none"
-          rows={3}
-          maxLength={200}
-          data-testid="motto-input"
-        />
-        <p className="mt-1 text-xs text-gray-500">
-          {t("form.motto.hint")}
-        </p>
-      </div>
+
 
       {/* Error Message */}
       {error && (
