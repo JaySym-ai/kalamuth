@@ -10,8 +10,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-export default async function LudusCreationPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function LudusCreationPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ server?: string }>;
+}) {
   const { locale } = await params;
+  const { server } = await searchParams;
   const supabase = createClient(await cookies());
   const { data } = await supabase.auth.getUser();
   const user = data.user;
@@ -19,17 +26,29 @@ export default async function LudusCreationPage({ params }: { params: Promise<{ 
   // Must be authenticated
   if (!user) redirect(`/${locale}/auth`);
 
-  // Check if user already has a ludus
+  // If server is provided, store it in session storage for the client component
+  if (server) {
+    // We'll handle this in the client component
+  }
+
+  // Check if user already has a ludus on the SAME server (if server is specified)
+  // If no server is specified, check if they have any ludus
   try {
-    const { data: ludus } = await supabase
+    let query = supabase
       .from("ludi")
       .select("id")
-      .eq("userId", user.id)
-      .limit(1)
-      .maybeSingle();
+      .eq("userId", user.id);
+
+    // If a specific server is provided, only check for ludus on that server
+    if (server) {
+      query = query.eq("serverId", server);
+    }
+
+    const { data: ludus } = await query.limit(1).maybeSingle();
 
     if (ludus) {
-      // User already has a ludus: proceed into the app
+      // User already has a ludus on this server (or any server if no server specified)
+      // Proceed into the app
       redirect(`/${locale}/dashboard`);
     }
   } catch (error) {

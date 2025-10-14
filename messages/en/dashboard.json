@@ -30,6 +30,7 @@
     "location": "Location",
     "motto": "Motto",
     "createdAt": "Established",
+    "connectedServer": "Connected to",
     "facilityDescriptions": {
       "ludus": {
         "1": "A hastily fenced yard with chipped training posts and anxious recruits.",
@@ -234,5 +235,19 @@
     "fear": "Fear",
     "handicap": "Handicap",
     "uniquePower": "Unique Power"
+  },
+  "ChangeServer": {
+    "button": "Change Server",
+    "title": "Select a Server",
+    "subtitle": "Choose which server to play on",
+    "hasLudus": "✓ Ludus exists",
+    "noLudus": "Create new ludus",
+    "selectButton": "Select",
+    "selectingButton": "Selecting...",
+    "close": "Close",
+    "confirmTitle": "Switch Server?",
+    "confirmMessage": "You don't have a ludus on this server. You'll need to create one. Continue?",
+    "confirmYes": "Yes, Create Ludus",
+    "confirmNo": "Cancel"
   }
 }

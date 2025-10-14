@@ -34,38 +34,36 @@ export default function ServerSelectionClient({ servers }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Server Grid */}
-      <div className="overflow-x-auto pb-4 custom-scrollbar">
-        <div className="flex gap-6 min-w-max">
+      {/* Server List */}
+      <div className="space-y-3 max-w-2xl mx-auto w-full px-4">
         {servers.map((server, index) => (
           <motion.div
             key={server.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="relative"
           >
             <button
               onClick={() => setSelectedServer(server.id)}
               disabled={loading}
               className={`
-                w-80 text-left transition-all duration-300 transform hover:scale-105 flex-shrink-0
-                ${selectedServer === server.id ? "scale-105" : ""}
+                w-full text-left transition-all duration-300
+                ${selectedServer === server.id ? "" : ""}
               `}
               data-testid={`server-${server.id}`}
             >
               <div
                 className={`
-                  relative bg-black/40 backdrop-blur-sm border-2 rounded-xl p-6
+                  relative bg-black/40 backdrop-blur-sm border-2 rounded-lg p-4
                   transition-all duration-300
                   ${selectedServer === server.id
-                    ? "border-amber-500 shadow-2xl shadow-amber-500/30"
+                    ? "border-amber-500 shadow-lg shadow-amber-500/30"
                     : "border-amber-900/30 hover:border-amber-700/50"
                   }
                 `}
               >
                 {/* Server Status Badge */}
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-3 right-3">
                   {server.status === "new" && (
                     <span className="px-2 py-1 bg-green-500/20 border border-green-500/50 rounded-full text-green-400 text-xs font-medium">
                       {t("status.new")}
@@ -149,7 +147,6 @@ export default function ServerSelectionClient({ servers }: Props) {
             </button>
           </motion.div>
         ))}
-        </div>
       </div>
 
       {/* Continue Button */}

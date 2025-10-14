@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import type { Ludus } from "@/types/ludus";
 import type { Quest } from "@/types/quest";
 import { QuestStatus } from "@/types/quest";
-import { useRealtimeRow } from "@/lib/supabase/realtime";
+import { useRealtimeRow, useRealtimeCollection } from "@/lib/supabase/realtime";
 
 import LogoutButton from "@/app/components/auth/LogoutButton";
 import PageLayout from "@/components/layout/PageLayout";
@@ -81,7 +81,6 @@ interface Props {
 
 export default function QuestsClient({ ludus, initialQuests, questDurationMinutes, translations: t }: Props) {
   const currentLocale = useLocale();
-  const [quests, setQuests] = useState<Quest[]>(initialQuests);
   const [currentQuest, setCurrentQuest] = useState<Quest | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +103,18 @@ export default function QuestsClient({ ludus, initialQuests, questDurationMinute
     }, [ludus]),
   });
 
+  // Real-time quests subscription
+  const { data: realtimeQuests } = useRealtimeCollection<Quest>({
+    table: "quests",
+    select: "id, userId, ludusId, serverId, gladiatorId, gladiatorName, title, description, volunteerMessage, reward, dangerPercentage, sicknessPercentage, deathPercentage, status, startedAt, completedAt, result, healthLost, sicknessContracted, injuryContracted, questFailed, gladiatorDied, createdAt, updatedAt",
+    match: { ludusId: ludus.id },
+    initialData: initialQuests,
+    orderBy: { column: "createdAt", ascending: false },
+    primaryKey: "id",
+  });
+
+  const quests = realtimeQuests;
+
   const questDurationMs = questDurationMinutes * 60 * 1000;
 
   const completeQuest = useCallback(async (questId: string) => {
@@ -111,7 +122,7 @@ export default function QuestsClient({ ludus, initialQuests, questDurationMinute
       const response = await fetch("/api/quests/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ questId }),
+        body: JSON.stringify({ questId, locale: currentLocale }),
       });
 
       if (!response.ok) {
@@ -119,30 +130,13 @@ export default function QuestsClient({ ludus, initialQuests, questDurationMinute
         throw new Error(data.error || "Failed to complete quest");
       }
 
-      const data = await response.json();
-
-      // Update quest with results
-      setQuests(quests.map(q =>
-        q.id === questId
-          ? {
-              ...q,
-              status: data.result.questFailed ? QuestStatus.FAILED : QuestStatus.COMPLETED,
-              completedAt: new Date().toISOString(),
-              result: data.result.whatHappened,
-              healthLost: data.result.healthLost,
-              sicknessContracted: data.result.sicknessContracted,
-              injuryContracted: data.result.injuryContracted,
-              questFailed: data.result.questFailed,
-              gladiatorDied: data.result.gladiatorDied,
-              reward: data.result.rewardEarned,
-            }
-          : q
-      ));
+      // Real-time subscription will automatically update the UI
+      // No need to manually update state
     } catch (err) {
       debug_error("Quest completion error:", err);
       setError(err instanceof Error ? err.message : "Failed to complete quest");
     }
-  }, [quests]);
+  }, [currentLocale]);
 
   // Check for active quest and handle completion
   useEffect(() => {
@@ -186,8 +180,7 @@ export default function QuestsClient({ ludus, initialQuests, questDurationMinute
         throw new Error(data.error || "Failed to generate quest");
       }
 
-      const data = await response.json();
-      setQuests([data.quest, ...quests]);
+      // Real-time subscription will automatically add the new quest
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -208,12 +201,7 @@ export default function QuestsClient({ ludus, initialQuests, questDurationMinute
         throw new Error(data.error || "Failed to accept quest");
       }
 
-      // Update quest status
-      setQuests(quests.map(q => 
-        q.id === questId 
-          ? { ...q, status: 'active' as QuestStatus, startedAt: new Date().toISOString() }
-          : q
-      ));
+      // Real-time subscription will automatically update the quest status
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     }
@@ -232,12 +220,7 @@ export default function QuestsClient({ ludus, initialQuests, questDurationMinute
         throw new Error(data.error || "Failed to cancel quest");
       }
 
-      // Update quest status
-      setQuests(quests.map(q =>
-        q.id === questId
-          ? { ...q, status: 'cancelled' as QuestStatus }
-          : q
-      ));
+      // Real-time subscription will automatically update the quest status
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     }
@@ -258,8 +241,7 @@ export default function QuestsClient({ ludus, initialQuests, questDurationMinute
         throw new Error(data.error || "Failed to reroll quest");
       }
 
-      // Remove quest from list
-      setQuests(quests.filter(q => q.id !== questId));
+      // Real-time subscription will automatically remove the old quest and add the new one
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     }

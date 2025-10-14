@@ -30,6 +30,7 @@
     "location": "Emplacement",
     "motto": "Devise",
     "createdAt": "Établi",
+    "connectedServer": "Connecté à",
     "facilityDescriptions": {
       "ludus": {
         "1": "Une cour clôturée à la hâte avec des piquets ébréchés et des recrues anxieuses.",
@@ -234,5 +235,19 @@
     "fear": "Peur",
     "handicap": "Handicap",
     "uniquePower": "Pouvoir Unique"
+  },
+  "ChangeServer": {
+    "button": "Changer de Serveur",
+    "title": "Sélectionner un Serveur",
+    "subtitle": "Choisissez sur quel serveur jouer",
+    "hasLudus": "✓ Ludus existe",
+    "noLudus": "Créer un nouveau ludus",
+    "selectButton": "Sélectionner",
+    "selectingButton": "Sélection en cours...",
+    "close": "Fermer",
+    "confirmTitle": "Changer de Serveur ?",
+    "confirmMessage": "Vous n'avez pas de ludus sur ce serveur. Vous devrez en créer un. Continuer ?",
+    "confirmYes": "Oui, Créer un Ludus",
+    "confirmNo": "Annuler"
   }
 }

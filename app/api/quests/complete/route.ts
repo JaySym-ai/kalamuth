@@ -19,6 +19,7 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}));
     const questId = typeof body?.questId === 'string' ? body.questId.trim() : null;
+    const locale = typeof body?.locale === 'string' ? body.locale.trim() : 'en';
 
     if (!questId) {
       return NextResponse.json({ error: "missing_quest_id" }, { status: 400 });
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
     ensureOpenRouterKey();
 
     // Generate quest results
-    const resultPrompt = buildResultPrompt(quest, gladiator);
+    const resultPrompt = buildResultPrompt(quest, gladiator, locale);
     const resultCompletion = await openrouter.chat.completions.create({
       model: MODEL_STORYTELLING,
       messages: [{ role: "user", content: resultPrompt }],
@@ -63,9 +64,11 @@ export async function POST(req: Request) {
     });
 
     const resultContent = resultCompletion.choices[0]?.message?.content?.trim() || "";
+    debug_error("AI Response for quest completion:", resultContent);
     const result = parseResultResponse(resultContent);
 
     if (!result) {
+      debug_error("Failed to parse AI response as JSON:", resultContent);
       return NextResponse.json({ error: "result_generation_failed" }, { status: 500 });
     }
 
@@ -160,7 +163,9 @@ export async function POST(req: Request) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildResultPrompt(quest: any, gladiator: any): string {
+function buildResultPrompt(quest: any, gladiator: any, locale: string = 'en'): string {
+  const language = locale === 'fr' ? 'French' : 'English';
+
   return `You are a quest narrator for a Roman gladiator game. Generate the outcome of a quest that just completed.
 
 QUEST DETAILS:
@@ -175,7 +180,8 @@ GLADIATOR:
 - Health: ${gladiator.current_health}/${gladiator.health}
 - Personality: ${gladiator.personality}
 
-Generate a quest outcome in JSON format:
+Generate a quest outcome in ${language}. You must respond with ONLY a JSON object. No markdown, no explanations, no code blocks.
+
 {
   "result": "A 3-4 sentence narrative describing what happened during the quest",
   "healthLost": <number 0-50>,
@@ -187,26 +193,48 @@ Generate a quest outcome in JSON format:
 
 The outcome should:
 - Be immersive and dramatic
-- Reflect the quest's danger level
+- Reflect the quest's danger level (${quest.dangerPercentage}% danger risk)
 - Consider the gladiator's personality
 - Be historically accurate
 - Include consequences based on risk percentages
+- Be written entirely in ${language}
 
-IMPORTANT: Return ONLY valid JSON, no other text.`;
+CRITICAL: Respond with ONLY the JSON object. No \`\`\`json wrapper, no explanations, no additional text.`;
 }
 
 function parseResultResponse(content: string): QuestResult | null {
   try {
-    const json = JSON.parse(content);
+    // Try to extract JSON from the content, handling markdown code blocks
+    let jsonContent = content;
+    
+    // Remove markdown code block markers if present
+    if (content.includes('```')) {
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[1].trim();
+      }
+    }
+    
+    // Try to find JSON object in the content if it's wrapped in text
+    if (!jsonContent.startsWith('{')) {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[0];
+      }
+    }
+    
+    const json = JSON.parse(jsonContent);
     return {
       result: String(json.result || 'The quest concluded.'),
-      healthLost: Math.max(0, Number(json.healthLost) || 0),
+      healthLost: Math.max(0, Math.min(50, Number(json.healthLost) || 0)),
       sicknessContracted: json.sicknessContracted ? String(json.sicknessContracted) : undefined,
       injuryContracted: json.injuryContracted ? String(json.injuryContracted) : undefined,
       questFailed: Boolean(json.questFailed),
       gladiatorDied: Boolean(json.gladiatorDied),
     };
-  } catch {
+  } catch (error) {
+    debug_error("JSON parsing error:", error);
+    debug_error("Content that failed to parse:", content);
     return null;
   }
 }

@@ -12,8 +12,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 
-export default async function ServerSelectionPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function ServerSelectionPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ switchServer?: string }>;
+}) {
   const { locale } = await params;
+  const { switchServer } = await searchParams;
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
   const { data } = await supabase.auth.getUser();
@@ -21,6 +28,11 @@ export default async function ServerSelectionPage({ params }: { params: Promise<
 
   // Must be authenticated to select a server
   if (!user) redirect(`/${locale}/auth`);
+
+  // If switching to a specific server, redirect to ludus creation with server parameter
+  if (switchServer) {
+    redirect(`/${locale}/ludus-creation?server=${switchServer}`);
+  }
 
   // Check if user already has a ludus (server already selected)
   let hasLudus = false;

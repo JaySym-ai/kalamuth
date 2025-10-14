@@ -6,9 +6,11 @@ import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import type { Ludus } from "@/types/ludus";
+import type { GameServer } from "@/types/server";
 import { useRealtimeRow } from "@/lib/supabase/realtime";
 
 import LogoutButton from "@/app/components/auth/LogoutButton";
+import ChangeServerButton from "@/app/components/dashboard/ChangeServerButton";
 import LudusStats from "./LudusStats";
 import PageLayout from "@/components/layout/PageLayout";
 
@@ -36,15 +38,17 @@ interface DashboardTranslations {
   location: string;
   motto: string;
   createdAt: string;
+  connectedServer: string;
 }
 
 interface Props {
   ludus: Ludus & { id: string };
   locale: string;
+  server?: GameServer;
   translations: DashboardTranslations;
 }
 
-export default function DashboardClient({ ludus, translations: t }: Props) {
+export default function DashboardClient({ ludus, server, translations: t }: Props) {
   const router = useRouter();
   const currentLocale = useLocale();
 
@@ -73,9 +77,26 @@ export default function DashboardClient({ ludus, translations: t }: Props) {
       title={currentLudus.name}
       subtitle={currentLudus.motto ? `"${currentLudus.motto}"` : undefined}
       background="arena"
-      rightActions={<LogoutButton />}
+      rightActions={
+        <div className="flex items-center gap-3">
+          <ChangeServerButton />
+          <LogoutButton />
+        </div>
+      }
       showBackButton={false}
     >
+      {/* Server Tagline */}
+      {server && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 px-4 py-2 bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-700/50 rounded-lg text-center"
+        >
+          <p className="text-xs sm:text-sm text-amber-100">
+            {t.connectedServer}: <span className="font-semibold text-amber-50">{server.name}</span>
+          </p>
+        </motion.div>
+      )}
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-[clamp(0.75rem,2vw,1.5rem)] pb-[clamp(0.75rem,2vw,1.5rem)]">
         {/* Left Column - Ludus Overview */}

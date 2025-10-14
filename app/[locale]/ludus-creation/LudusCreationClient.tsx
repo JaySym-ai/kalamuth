@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { CITIES } from "@/data/cities";
@@ -12,6 +12,7 @@ export default function LudusCreationClient() {
   const tCities = useTranslations("Cities");
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [ludusName, setLudusName] = useState("");
   const [selectedCity, setSelectedCity] = useState(CITIES[0]?.id || "");
@@ -21,15 +22,22 @@ export default function LudusCreationClient() {
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get selected server from session storage
-    const serverId = sessionStorage.getItem("selectedServerId");
+    // Get selected server from URL parameter first, then session storage
+    const serverFromUrl = searchParams.get("server");
+    const serverFromSession = sessionStorage.getItem("selectedServerId");
+    const serverId = serverFromUrl || serverFromSession;
+    
     if (!serverId) {
       // No server selected, redirect back to server selection
       router.push(`/${locale}/server-selection`);
     } else {
       setSelectedServerId(serverId);
+      // Store it in session storage for future use
+      if (serverFromUrl) {
+        sessionStorage.setItem("selectedServerId", serverId);
+      }
     }
-  }, [locale, router]);
+  }, [locale, router, searchParams]);
 
   const handleCreateLudus = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +86,18 @@ export default function LudusCreationClient() {
 
       // Store ludus ID for the next step
       sessionStorage.setItem("ludusId", data.ludusId);
+
+      // Set this server as favorite
+      try {
+        await fetch("/api/user/favorite-server", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ serverId: selectedServerId }),
+        });
+      } catch (err) {
+        debug_error("Error setting favorite server:", err);
+        // Don't fail the ludus creation if setting favorite fails
+      }
 
       // Navigate immediately to gladiator display - generation will start there
       router.push(`/${locale}/initial-gladiators`);
