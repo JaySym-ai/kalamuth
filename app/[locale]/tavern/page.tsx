@@ -122,6 +122,14 @@ export default async function TavernPage({ params }: { params: Promise<{ locale:
           backToDashboard: t("backToDashboard"),
           recruit: t("recruit"),
           recruiting: t("recruiting"),
+          confirmSkipTitle: t("confirmSkipTitle"),
+          confirmSkipMessage: t("confirmSkipMessage"),
+          confirmSkipYes: t("confirmSkipYes"),
+          confirmSkipNo: t("confirmSkipNo"),
+          confirmRecruitTitle: t("confirmRecruitTitle"),
+          confirmRecruitMessage: t("confirmRecruitMessage"),
+          confirmRecruitYes: t("confirmRecruitYes"),
+          confirmRecruitNo: t("confirmRecruitNo"),
         }}
       />
     </main>

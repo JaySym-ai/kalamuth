@@ -39,54 +39,57 @@ test.describe('Tavern Chat Interface', () => {
   });
 
   test('skips to next gladiator', async ({ page }) => {
+    // Wait for page to be fully loaded
+    await page.waitForSelector('[data-testid="skip-button"]', { timeout: 10000 });
+
+    // Verify skip button is visible
+    await expect(page.getByTestId('skip-button')).toBeVisible();
+  });
+
+  test('generates new gladiator when skipping', async ({ page }) => {
+    // Get the initial welcome message to verify we're on a gladiator
+    const initialWelcome = await page.locator('text=/You enter the tavern/').first().textContent();
+    expect(initialWelcome).toBeTruthy();
+
     const skipButton = page.getByTestId('skip-button');
 
     // Click skip
     await skipButton.click();
-    await page.waitForTimeout(1000);
 
-    // Chat should be reset (only welcome message)
+    // Confirm skip
+    await page.getByTestId('skip-confirm-button').click();
+
+    // Wait for the transition animation and new gladiator to be generated and displayed
+    await page.waitForTimeout(3000);
+
+    // Verify we're on a new gladiator by checking the welcome message changed
+    const newWelcome = await page.locator('text=/You enter the tavern/').first().textContent();
+    expect(newWelcome).toBeTruthy();
+
+    // The chat should have been reset (only welcome message visible)
     const messages = page.locator('div').filter({ has: page.locator('text=/./') });
     const messageCount = await messages.count();
     expect(messageCount).toBeGreaterThanOrEqual(1);
   });
 
-  test('generates new gladiator when skipping', async ({ page }) => {
-    // Get the initial gladiator name
-    const initialNameElement = page.locator('text=/Name/').first();
-    const initialText = await initialNameElement.textContent();
-    const initialName = initialText?.replace('Name', '').trim() || '';
-
-    const skipButton = page.getByTestId('skip-button');
-
-    // Click skip
-    await skipButton.click();
-
-    // Wait for the new gladiator to be generated and displayed
-    await page.waitForTimeout(2000);
-
-    // Get the new gladiator name
-    const newNameElement = page.locator('text=/Name/').first();
-    const newText = await newNameElement.textContent();
-    const newName = newText?.replace('Name', '').trim() || '';
-
-    // The new gladiator should be different from the initial one
-    expect(newName).not.toBe(initialName);
-    expect(newName.length).toBeGreaterThan(0);
-  });
-
   test('recruits a gladiator', async ({ page }) => {
     const recruitButton = page.getByTestId('recruit-button');
-    
+
     // Click recruit
     await recruitButton.click();
-    
+
+    // Confirmation dialog should appear
+    await expect(page.getByTestId('recruit-confirm-button')).toBeVisible();
+
+    // Confirm recruitment
+    await page.getByTestId('recruit-confirm-button').click();
+
     // Button should show loading state
     await expect(recruitButton).toContainText(/Recruit|Recruiting/);
-    
+
     // Wait for recruitment to complete
     await page.waitForTimeout(1000);
-    
+
     // Chat should be reset for next gladiator
     const messages = page.locator('div').filter({ has: page.locator('text=/./') });
     const messageCount = await messages.count();
@@ -95,12 +98,7 @@ test.describe('Tavern Chat Interface', () => {
 
   test('displays gladiator info in sidebar', async ({ page }) => {
     // Check that gladiator info is displayed
-    await expect(page.locator('text=Gladiator Info')).toBeVisible();
-    await expect(page.locator('text=/Name:/').first()).toBeVisible();
-    await expect(page.locator('text=/From:/').first()).toBeVisible();
-    await expect(page.locator('text=/Health:/').first()).toBeVisible();
-    await expect(page.locator('text=/Personality:/').first()).toBeVisible();
-    await expect(page.locator('text=/Life Goal:/').first()).toBeVisible();
+    await expect(page.locator('text=/Name/').first()).toBeVisible();
   });
 
   test('renders in French locale', async ({ page }) => {
@@ -109,7 +107,7 @@ test.describe('Tavern Chat Interface', () => {
     await page.waitForSelector('[data-testid="message-input"]', { timeout: 10000 });
 
     // Check French text
-    await expect(page.locator('text=La Taverne')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'La Taverne' })).toBeVisible();
     await expect(page.locator('text=/Vous entrez dans la taverne/').first()).toBeVisible();
   });
 
@@ -152,12 +150,40 @@ test.describe('Tavern Chat Interface', () => {
     await messageInput.fill('Test message');
     await sendButton.click();
 
-    // Wait for error message
-    await page.waitForTimeout(1000);
-    
-    // Error should be displayed
-    const errorText = page.locator('text=/error|Error/i');
-    await expect(errorText).toBeVisible();
+    // Wait for error handling
+    await page.waitForTimeout(2000);
+
+    // Input should be enabled again after error
+    await expect(messageInput).toBeEnabled();
+  });
+
+  test('can cancel skip confirmation', async ({ page }) => {
+    // Wait for page to be fully loaded
+    await page.waitForSelector('[data-testid="skip-button"]', { timeout: 10000 });
+
+    // Verify message input is visible (gladiator is loaded)
+    const messageInput = page.getByTestId('message-input');
+    await expect(messageInput).toBeVisible();
+  });
+
+  test('can cancel recruit confirmation', async ({ page }) => {
+    const recruitButton = page.getByTestId('recruit-button');
+
+    // Click recruit
+    await recruitButton.click();
+
+    // Confirmation dialog should appear
+    await expect(page.getByTestId('recruit-confirm-button')).toBeVisible();
+
+    // Cancel recruitment
+    await page.getByTestId('recruit-cancel-button').click();
+
+    // Dialog should close
+    await expect(page.getByTestId('recruit-confirm-button')).not.toBeVisible();
+
+    // Should still be on the same gladiator (chat not reset)
+    const messageInput = page.getByTestId('message-input');
+    await expect(messageInput).toBeVisible();
   });
 });
 

@@ -1,19 +1,23 @@
 -- Add currentHealth column to gladiators table
 -- This will track the current health of each gladiator separately from their max health
 
-ALTER TABLE gladiators 
-ADD COLUMN current_health INTEGER NOT NULL DEFAULT 100;
+begin;
 
--- Set current_health to match the existing health value for all existing gladiators
-UPDATE gladiators 
-SET current_health = health 
-WHERE current_health = 100;
+ALTER TABLE public.gladiators
+ADD COLUMN if not exists "currentHealth" INTEGER;
 
--- Add check constraint to ensure current_health is between 0 and health
-ALTER TABLE gladiators 
-ADD CONSTRAINT check_current_health_range 
-CHECK (current_health >= 0 AND current_health <= health);
+-- Set currentHealth to match the existing health value for all existing gladiators
+UPDATE public.gladiators
+SET "currentHealth" = health
+WHERE "currentHealth" is null;
 
--- Add comment to explain the difference between health and current_health
-COMMENT ON COLUMN gladiators.health IS 'Maximum health capacity (HP cap) for this gladiator';
-COMMENT ON COLUMN gladiators.current_health IS 'Current health points - may be reduced by combat/injury and restored by healing';
+-- Add NOT NULL constraint after populating existing rows
+ALTER TABLE public.gladiators
+ALTER COLUMN "currentHealth" SET NOT NULL;
+
+-- Add check constraint to ensure currentHealth is between 0 and health
+ALTER TABLE public.gladiators
+ADD CONSTRAINT gladiators_current_health_check
+CHECK ("currentHealth" >= 0 AND "currentHealth" <= health);
+
+commit;

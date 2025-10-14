@@ -55,7 +55,8 @@ export async function POST(req: Request) {
     }
 
     // Fetch tavern gladiator
-    const { data: tavernGladiator, error: tavernErr } = await supabase
+    const serviceSupabase = createServiceRoleClient();
+    const { data: tavernGladiator, error: tavernErr } = await serviceSupabase
       .from('tavern_gladiators')
       .select('*')
       .eq('id', tavernGladiatorId)
@@ -66,13 +67,51 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "gladiator_not_found" }, { status: 404 });
     }
 
-    // Move tavern gladiator to main gladiators table
+    // Move tavern gladiator to main gladiators table (map explicitly and clamp health fields)
     const now = nowIso();
-    const { error: insertErr } = await supabase.from('gladiators').insert({
-      ...tavernGladiator,
+    const maxHealth = Math.max(30, Math.min(300, tavernGladiator.health ?? 30));
+    const currentHealth = Math.min(Math.max(0, tavernGladiator.currentHealth ?? maxHealth), maxHealth);
+
+    const insertData = {
+      // relations
+      ludusId: tavernGladiator.ludusId,
+      userId: tavernGladiator.userId,
+      serverId: tavernGladiator.serverId ?? null,
+      // identity
+      name: tavernGladiator.name,
+      surname: tavernGladiator.surname,
+      avatarUrl: tavernGladiator.avatarUrl,
+      birthCity: tavernGladiator.birthCity,
+      // vitals
+      health: maxHealth,
+      currentHealth,
+      alive: tavernGladiator.alive ?? true,
+      // attributes
+      stats: tavernGladiator.stats,
+      // narrative / conditions
+      lifeGoal: tavernGladiator.lifeGoal,
+      personality: tavernGladiator.personality,
+      backstory: tavernGladiator.backstory,
+      weakness: tavernGladiator.weakness,
+      fear: tavernGladiator.fear,
+      likes: tavernGladiator.likes,
+      dislikes: tavernGladiator.dislikes,
+      handicap: tavernGladiator.handicap ?? null,
+      uniquePower: tavernGladiator.uniquePower ?? null,
+      physicalCondition: tavernGladiator.physicalCondition,
+      notableHistory: tavernGladiator.notableHistory,
+      injury: tavernGladiator.injury ?? null,
+      injuryTimeLeftHours: tavernGladiator.injuryTimeLeftHours ?? null,
+      sickness: tavernGladiator.sickness ?? null,
+      // combat / ranking
+      rankingPoints: tavernGladiator.rankingPoints ?? 1000,
+      rarity: tavernGladiator.rarity ?? 'common',
+      // timestamps
       createdAt: now,
       updatedAt: now,
-    });
+    } as const;
+
+    const { error: insertErr } = await supabase.from('gladiators').insert(insertData);
 
     if (insertErr) {
       debug_error("Failed to insert gladiator:", insertErr);
@@ -80,7 +119,6 @@ export async function POST(req: Request) {
     }
 
     // Delete from tavern using service role client to ensure deletion works
-    const serviceSupabase = createServiceRoleClient();
     const { error: deleteErr } = await serviceSupabase
       .from('tavern_gladiators')
       .delete()
@@ -102,7 +140,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "update_failed" }, { status: 500 });
     }
 
-    // Generate replacement tavern gladiator
+    // Generate replacement tavern gladiator immediately to maintain backup system
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (apiKey) {
       try {
@@ -132,7 +170,7 @@ export async function POST(req: Request) {
             const rarity = rarityConfig ? rollRarity(rarityConfig) : 'common';
 
             const g = await generateOneGladiator(client, {
-              jobId: `tavern-replace-${ludusId}`,
+              jobId: `tavern-replace-${ludusId}-${Date.now()}`,
               attempt: 1,
               existingNames: Array.from(existingNames),
               rarity

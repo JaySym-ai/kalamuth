@@ -198,7 +198,15 @@
     "birthCity": "From",
     "personality": "Personality",
     "lifeGoal": "Life Goal",
-    "name": "Name"
+    "name": "Name",
+    "confirmSkipTitle": "Skip this gladiator?",
+    "confirmSkipMessage": "Are you sure you want to skip this gladiator? This will cost 1 sestertii and you'll move to the next one.",
+    "confirmSkipYes": "Yes, Skip",
+    "confirmSkipNo": "No, Continue Talking",
+    "confirmRecruitTitle": "Recruit this gladiator?",
+    "confirmRecruitMessage": "Are you sure you want to recruit this gladiator to your ludus?",
+    "confirmRecruitYes": "Yes, Recruit",
+    "confirmRecruitNo": "No, Keep Talking"
   },
   "GladiatorDetail": {
     "backToDashboard": "Back to Dashboard",

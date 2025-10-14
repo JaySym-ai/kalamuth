@@ -198,7 +198,15 @@
     "birthCity": "Originaire de",
     "personality": "Personnalité",
     "lifeGoal": "Objectif de Vie",
-    "name": "Nom"
+    "name": "Nom",
+    "confirmSkipTitle": "Passer ce gladiateur ?",
+    "confirmSkipMessage": "Êtes-vous sûr de vouloir passer ce gladiateur ? Cela coûtera 1 sesterce et vous passerez au suivant.",
+    "confirmSkipYes": "Oui, Passer",
+    "confirmSkipNo": "Non, Continuer à Parler",
+    "confirmRecruitTitle": "Recruter ce gladiateur ?",
+    "confirmRecruitMessage": "Êtes-vous sûr de vouloir recruter ce gladiateur dans votre ludus ?",
+    "confirmRecruitYes": "Oui, Recruter",
+    "confirmRecruitNo": "Non, Continuer à Parler"
   },
   "GladiatorDetail": {
     "backToDashboard": "Retour au Tableau de Bord",
