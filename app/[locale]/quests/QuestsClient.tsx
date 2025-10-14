@@ -116,6 +116,24 @@ export default function QuestsClient({ ludus, initialQuests, questDurationMinute
 
   const questDurationMs = questDurationMinutes * 60 * 1000;
 
+  // Cleanup old completed quests when component mounts or quests change
+  useEffect(() => {
+    const cleanupOldQuests = async () => {
+      try {
+        await fetch("/api/quests/cleanup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ludusId: ludus.id }),
+        });
+      } catch (err) {
+        // Silently fail cleanup - it's not critical for the UI
+        console.debug("Quest cleanup failed:", err);
+      }
+    };
+
+    cleanupOldQuests();
+  }, [ludus.id]);
+
   const completeQuest = useCallback(async (questId: string) => {
     try {
       const response = await fetch("/api/quests/complete", {

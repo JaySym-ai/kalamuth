@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Quest } from "@/types/quest";
 
 interface QuestHistoryComponentProps {
@@ -13,7 +14,14 @@ export default function QuestHistoryComponent({
   quests,
   translations: t,
 }: QuestHistoryComponentProps) {
-  if (quests.length === 0) {
+  const [isMinimized, setIsMinimized] = useState(false);
+  
+  // Show only last 3 completed quests
+  const recentQuests = quests
+    .filter(q => q.status === 'completed' || q.status === 'failed' || q.status === 'cancelled')
+    .slice(0, 3);
+
+  if (recentQuests.length === 0) {
     return null;
   }
 
@@ -47,12 +55,37 @@ export default function QuestHistoryComponent({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-6 space-y-4"
+      className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl overflow-hidden"
     >
-      <h3 className="text-lg font-bold text-amber-100">{t.questHistory}</h3>
+      {/* Header with minimize/maximize button */}
+      <div 
+        className="flex justify-between items-center p-6 pb-4 cursor-pointer"
+        onClick={() => setIsMinimized(!isMinimized)}
+      >
+        <h3 className="text-lg font-bold text-amber-100">{t.questHistory}</h3>
+        <motion.div
+          animate={{ rotate: isMinimized ? 180 : 0 }}
+          transition={{ duration: 0.3 }}
+          className="text-amber-400"
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </motion.div>
+      </div>
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
-        {quests.map((quest, index) => (
+      {/* Quest list with animation */}
+      <AnimatePresence>
+        {!isMinimized && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="px-6 pb-6"
+          >
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {recentQuests.map((quest, index) => (
           <motion.div
             key={quest.id}
             initial={{ opacity: 0, x: -10 }}
@@ -93,8 +126,11 @@ export default function QuestHistoryComponent({
               </p>
             )}
           </motion.div>
-        ))}
-      </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
