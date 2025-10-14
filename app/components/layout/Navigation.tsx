@@ -1,8 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import NavLink from "../ui/NavLink";
-import { useTranslations } from "next-intl";
 import LanguageSwitcher from "../ui/LanguageSwitcher";
 import LogoutButton from "../auth/LogoutButton";
 import { usePathname } from "next/navigation";

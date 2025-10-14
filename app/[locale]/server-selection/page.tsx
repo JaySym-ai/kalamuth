@@ -6,7 +6,6 @@ import { debug_error } from "@/utils/debug";
 import ServerSelectionClient from "./ServerSelectionClient";
 import { SERVERS } from "@/data/servers";
 import { hasTestServerAccess } from "@/lib/server/test-users";
-import LogoutButton from "../../components/auth/LogoutButton";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

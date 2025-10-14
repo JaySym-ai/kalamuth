@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import AnimatedText from "../ui/AnimatedText";
-import AnimatedCounter from "../ui/AnimatedCounter";
 import GlowButton from "../ui/GlowButton";
-import ScrollIndicator from "../ui/ScrollIndicator";
 import ParticleEffect from "../effects/ParticleEffect";
 import LanguageSwitcher from "../ui/LanguageSwitcher";
 import { useLocale, useTranslations } from "next-intl";

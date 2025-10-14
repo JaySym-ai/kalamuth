@@ -6,7 +6,6 @@ import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import type { Ludus } from "@/types/ludus";
 import type { Quest } from "@/types/quest";
-import { QuestStatus } from "@/types/quest";
 import { useRealtimeRow, useRealtimeCollection } from "@/lib/supabase/realtime";
 
 import LogoutButton from "@/app/components/auth/LogoutButton";

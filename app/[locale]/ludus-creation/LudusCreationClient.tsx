@@ -16,7 +16,6 @@ export default function LudusCreationClient() {
   
   const [ludusName, setLudusName] = useState("");
   const [selectedCity, setSelectedCity] = useState(CITIES[0]?.id || "");
-  const [motto, setMotto] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
@@ -45,7 +44,6 @@ export default function LudusCreationClient() {
       ludusName,
       selectedServerId,
       selectedCity,
-      motto
     });
 
     if (!ludusName.trim()) {
@@ -72,7 +70,6 @@ export default function LudusCreationClient() {
           logoUrl: "🏛️", // Default temple logo for now
           serverId: selectedServerId,
           locationCity: selectedCity,
-          motto: motto.trim() || undefined,
         }),
       });
 
