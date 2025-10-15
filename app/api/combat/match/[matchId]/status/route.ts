@@ -1,0 +1,53 @@
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * Get the current status of a combat match
+ * This endpoint is used by the client to determine whether to use start or watch endpoint
+ */
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ matchId: string }> }
+) {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+  const { data: auth } = await supabase.auth.getUser();
+  const user = auth.user;
+
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const { matchId } = await params;
+
+  // Fetch match status
+  const { data: match, error: matchError } = await supabase
+    .from("combat_matches")
+    .select("status, winnerId, winnerMethod, gladiator1Id, gladiator2Id")
+    .eq("id", matchId)
+    .maybeSingle();
+
+  if (matchError || !match) {
+    return new Response("Match not found", { status: 404 });
+  }
+
+  // Verify user is a participant (optional check for status endpoint)
+  const { data: participantCheck } = await supabase
+    .from("gladiators")
+    .select("id")
+    .in("id", [match.gladiator1Id, match.gladiator2Id])
+    .eq("userId", user.id);
+
+  if (!participantCheck || participantCheck.length === 0) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  return Response.json({
+    status: match.status,
+    winnerId: match.winnerId,
+    winnerMethod: match.winnerMethod,
+  });
+}

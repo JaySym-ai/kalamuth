@@ -99,19 +99,30 @@ export default function CombatStream({
     };
   }, [isStreaming, battleState.isComplete]);
 
-  const startBattle = useCallback(() => {
+  const startBattle = useCallback(async () => {
     if (isStreaming) return;
 
     setIsStreaming(true);
     setError(null);
     setReconnectAttempts(0);
 
-    // Try to start the battle, but if it's already in progress, watch instead
-    const startUrl = `/api/combat/match/${matchId}/start?locale=${locale}`;
-    const watchUrl = `/api/combat/match/${matchId}/watch?locale=${locale}`;
+    // First, check the match status to determine which endpoint to use
+    let shouldUseWatchEndpoint = false;
+    try {
+      const statusResponse = await fetch(`/api/combat/match/${matchId}/status`);
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json();
+        shouldUseWatchEndpoint = statusData.status !== "pending";
+      }
+    } catch (err) {
+      debug_error("Failed to check match status, defaulting to start endpoint:", err);
+    }
 
-    const eventSource = new EventSource(startUrl);
-    let isWatching = false;
+    const url = shouldUseWatchEndpoint
+      ? `/api/combat/match/${matchId}/watch?locale=${locale}`
+      : `/api/combat/match/${matchId}/start?locale=${locale}`;
+
+    const eventSource = new EventSource(url);
 
     const handleMessage = (event: MessageEvent) => {
       try {
@@ -164,54 +175,24 @@ export default function CombatStream({
     eventSource.onmessage = handleMessage;
 
     eventSource.onerror = () => {
-      // If start fails, try watching instead
-      if (!isWatching) {
-        isWatching = true;
-        eventSource.close();
-        const watchSource = new EventSource(watchUrl);
-        watchSource.onmessage = handleMessage;
-        watchSource.onerror = () => {
-          watchSource.close();
-          
-          // Clear any existing reconnect timeout
-          if (reconnectTimeoutRef.current) {
-            clearTimeout(reconnectTimeoutRef.current);
-          }
+      eventSource.close();
 
-          // Only attempt reconnection if we haven't exceeded max attempts
-          if (reconnectAttempts < 5) {
-            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000); // Exponential backoff, max 10s
-            
-            reconnectTimeoutRef.current = setTimeout(() => {
-              setReconnectAttempts(prev => prev + 1);
-              startBattle();
-            }, delay);
-          } else {
-            // After max attempts, just stop streaming but don't show error
-            setIsStreaming(false);
-          }
-        };
-        eventSourceRef.current = watchSource;
+      // Clear any existing reconnect timeout
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+
+      // Only attempt reconnection if we haven't exceeded max attempts
+      if (reconnectAttempts < 5) {
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000); // Exponential backoff, max 10s
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          setReconnectAttempts(prev => prev + 1);
+          startBattle();
+        }, delay);
       } else {
-        eventSource.close();
-        
-        // Clear any existing reconnect timeout
-        if (reconnectTimeoutRef.current) {
-          clearTimeout(reconnectTimeoutRef.current);
-        }
-
-        // Only attempt reconnection if we haven't exceeded max attempts
-        if (reconnectAttempts < 5) {
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000); // Exponential backoff, max 10s
-          
-          reconnectTimeoutRef.current = setTimeout(() => {
-            setReconnectAttempts(prev => prev + 1);
-            startBattle();
-          }, delay);
-        } else {
-          // After max attempts, just stop streaming but don't show error
-          setIsStreaming(false);
-        }
+        // After max attempts, just stop streaming but don't show error
+        setIsStreaming(false);
       }
     };
 

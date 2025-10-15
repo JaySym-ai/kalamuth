@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
 import type { CombatLogEntry } from "@/types/combat";
 import { debug_error } from "@/utils/debug";
 
@@ -47,6 +47,9 @@ export async function GET(
     return new Response("Forbidden", { status: 403 });
   }
 
+  // Use service role for system operations to bypass RLS
+  const serviceRole = createServiceRoleClient();
+
   // Create SSE stream
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -57,8 +60,8 @@ export async function GET(
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
         };
 
-        // Fetch all existing logs for this match
-        const { data: existingLogs, error: logsError } = await supabase
+        // Fetch all existing logs for this match using service role
+        const { data: existingLogs, error: logsError } = await serviceRole
           .from("combat_logs")
           .select("*")
           .eq("matchId", matchId)
@@ -107,8 +110,8 @@ export async function GET(
           // Poll for new logs every 1 second
           const pollInterval = setInterval(async () => {
             try {
-              // Check if match is complete
-              const { data: updatedMatch } = await supabase
+              // Check if match is complete using service role
+              const { data: updatedMatch } = await serviceRole
                 .from("combat_matches")
                 .select("status, winnerId, winnerMethod")
                 .eq("id", matchId)
@@ -126,8 +129,8 @@ export async function GET(
                 return;
               }
 
-              // Fetch new logs since last action
-              const { data: newLogs } = await supabase
+              // Fetch new logs since last action using service role
+              const { data: newLogs } = await serviceRole
                 .from("combat_logs")
                 .select("*")
                 .eq("matchId", matchId)

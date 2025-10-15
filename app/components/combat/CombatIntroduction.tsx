@@ -47,18 +47,41 @@ export default function CombatIntroduction({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(251,191,36,0.3),transparent_50%)]" />
       </div>
 
-      {/* Arena name */}
-      <div className="relative z-10 text-center mb-4 sm:mb-6">
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-black/40 border border-amber-700/40"
-        >
-          <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
-          <span className="text-xs sm:text-sm font-semibold text-amber-100">{t.arena}</span>
-          <span className="text-xs sm:text-sm text-gray-300">{arenaName}</span>
-        </motion.div>
+      {/* Header with back button and arena name */}
+      <div className="relative z-10 mb-4 sm:mb-6">
+        <div className="flex items-center justify-between">
+          {/* Back button - left side */}
+          <motion.div
+            initial={{ x: -20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Link
+              href={`/${locale}/arena/${arenaSlug}`}
+              className="inline-flex items-center gap-1 px-3 sm:px-4 py-2 text-xs sm:text-sm text-amber-400 hover:text-amber-300 transition-colors border border-amber-700/40 rounded-full bg-black/40 hover:bg-black/60 shadow-lg shadow-amber-500/20"
+            >
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+              {backToArenaText}
+            </Link>
+          </motion.div>
+
+          {/* Arena name - center */}
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="absolute left-1/2 transform -translate-x-1/2"
+          >
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-black/40 border border-amber-700/40">
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
+              <span className="text-xs sm:text-sm font-semibold text-amber-100">{t.arena}</span>
+              <span className="text-xs sm:text-sm text-gray-300">{arenaName}</span>
+            </div>
+          </motion.div>
+
+          {/* Spacer for balance - right side */}
+          <div className="w-[120px] sm:w-[140px]" />
+        </div>
       </div>
 
       {/* Gladiators */}
@@ -71,7 +94,7 @@ export default function CombatIntroduction({
           initial={{ scale: 0, rotate: -180 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ delay: 0.5, duration: 0.5, type: "spring" }}
-          className="flex flex-col items-center justify-center gap-3 sm:gap-4"
+          className="flex items-center justify-center"
         >
           <div className="relative">
             <motion.div
@@ -83,22 +106,6 @@ export default function CombatIntroduction({
               <Swords className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
           </div>
-
-          {/* Back to Arena Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="mt-2"
-           >
-             <Link
-              href={`/${locale}/arena/${arenaSlug}`}
-              className="inline-flex items-center gap-1 px-3 sm:px-4 py-2 text-xs sm:text-sm text-amber-400 hover:text-amber-300 transition-colors border border-amber-700/40 rounded-full bg-black/40 hover:bg-black/60 shadow-lg shadow-amber-500/20"
-            >
-              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-              {backToArenaText}
-            </Link>
-          </motion.div>
         </motion.div>
 
         {/* Gladiator 2 */}

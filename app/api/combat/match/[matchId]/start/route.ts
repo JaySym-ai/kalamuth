@@ -12,6 +12,172 @@ export const dynamic = "force-dynamic";
 // Model for storytelling/narration
 const MODEL_STORYTELLING = "google/gemini-2.5-flash-lite";
 
+// Helper function to create a watch stream for existing matches
+async function createWatchStream(
+  matchId: string,
+  locale: string
+): Promise<Response> {
+  // Use service role for system operations to bypass RLS
+  const serviceRole = createServiceRoleClient();
+
+  // Create SSE stream
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        // Helper to send SSE message
+        const sendEvent = (data: unknown) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        };
+
+        // Fetch all existing logs for this match using service role
+        const { data: existingLogs, error: logsError } = await serviceRole
+          .from("combat_logs")
+          .select("*")
+          .eq("matchId", matchId)
+          .order("actionNumber", { ascending: true });
+
+        if (logsError) {
+          throw new Error(`Failed to fetch logs: ${logsError.message}`);
+        }
+
+        // Send existing logs
+        if (existingLogs && existingLogs.length > 0) {
+          for (const log of existingLogs) {
+            const logEntry: CombatLogEntry = {
+              id: log.id,
+              matchId: log.matchId,
+              actionNumber: log.actionNumber,
+              message: log.message,
+              createdAt: log.createdAt,
+              type: log.type,
+              locale: log.locale,
+              gladiator1Health: log.gladiator1Health,
+              gladiator2Health: log.gladiator2Health,
+            };
+            sendEvent({ type: "log", log: logEntry });
+          }
+        }
+
+        // Check current match status using service role
+        const { data: match } = await serviceRole
+          .from("combat_matches")
+          .select("status, winnerId, winnerMethod")
+          .eq("id", matchId)
+          .maybeSingle();
+
+        // If match is completed, send completion event and close
+        if (match?.status === "completed") {
+          sendEvent({
+            type: "complete",
+            winnerId: match.winnerId,
+            winnerMethod: match.winnerMethod,
+          });
+          controller.close();
+          return;
+        }
+
+        // If match is in progress, poll for new logs
+        if (match?.status === "in_progress") {
+          let lastActionNumber = existingLogs && existingLogs.length > 0
+            ? Math.max(...existingLogs.map((log) => log.actionNumber))
+            : 0;
+          let isComplete = false;
+
+          // Poll for new logs every 1 second
+          const pollInterval = setInterval(async () => {
+            try {
+              // Check if match is complete using service role
+              const { data: updatedMatch } = await serviceRole
+                .from("combat_matches")
+                .select("status, winnerId, winnerMethod")
+                .eq("id", matchId)
+                .maybeSingle();
+
+              if (updatedMatch?.status === "completed" && !isComplete) {
+                isComplete = true;
+                sendEvent({
+                  type: "complete",
+                  winnerId: updatedMatch.winnerId,
+                  winnerMethod: updatedMatch.winnerMethod,
+                });
+                clearInterval(pollInterval);
+                controller.close();
+                return;
+              }
+
+              // Fetch new logs since last action using service role
+              const { data: newLogs } = await serviceRole
+                .from("combat_logs")
+                .select("*")
+                .eq("matchId", matchId)
+                .gt("actionNumber", lastActionNumber)
+                .order("actionNumber", { ascending: true });
+
+              if (newLogs && newLogs.length > 0) {
+                for (const log of newLogs) {
+                  const logEntry: CombatLogEntry = {
+                    id: log.id,
+                    matchId: log.matchId,
+                    actionNumber: log.actionNumber,
+                    message: log.message,
+                    createdAt: log.createdAt,
+                    type: log.type,
+                    locale: log.locale,
+                    gladiator1Health: log.gladiator1Health,
+                    gladiator2Health: log.gladiator2Health,
+                  };
+                  sendEvent({ type: "log", log: logEntry });
+                  lastActionNumber = Math.max(lastActionNumber, log.actionNumber);
+                }
+              }
+            } catch (error) {
+              debug_error("Poll error:", error);
+              clearInterval(pollInterval);
+            }
+          }, 1000);
+
+          // Handle client disconnect
+          const originalClose = controller.close.bind(controller);
+          controller.close = () => {
+            clearInterval(pollInterval);
+            originalClose();
+          };
+        }
+
+        // Send periodic ping to keep connection alive
+        const pingInterval = setInterval(() => {
+          sendEvent({ type: "ping" });
+        }, 30000);
+
+        // Handle client disconnect
+        const originalClose = controller.close.bind(controller);
+        controller.close = () => {
+          clearInterval(pingInterval);
+          originalClose();
+        };
+      } catch (error) {
+        debug_error("Watch stream error:", error);
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ type: "error", message: "Failed to watch match" })}\n\n`)
+        );
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET",
+      "Access-Control-Allow-Headers": "Cache-Control",
+    },
+  });
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ matchId: string }> }
@@ -56,11 +222,9 @@ export async function GET(
 
   // Check if match is already in progress or completed
   if (match.status !== "pending") {
-    // Match already started - redirect to watch endpoint to get existing logs
+    // Match already started - stream existing logs like the watch endpoint
     // This handles the case where both users try to start simultaneously
-    const watchUrl = new URL(req.url);
-    watchUrl.pathname = `/api/combat/match/${matchId}/watch`;
-    return fetch(watchUrl.toString());
+    return createWatchStream(matchId, locale);
   }
 
   // Update match status to in_progress
