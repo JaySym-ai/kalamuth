@@ -46,7 +46,7 @@ export async function POST(
     // Cancel the match
     const { error: updateError } = await serviceRole
       .from("combat_matches")
-      .update({ 
+      .update({
         status: "cancelled",
         acceptanceDeadline: null
       })
@@ -55,6 +55,16 @@ export async function POST(
     if (updateError) {
       debug_error("Error cancelling match:", updateError);
       return NextResponse.json({ error: "failed_to_cancel" }, { status: 500 });
+    }
+
+    // Delete all acceptance records for this cancelled match
+    const { error: acceptanceDeleteError } = await serviceRole
+      .from("combat_match_acceptances")
+      .delete()
+      .eq("matchId", matchId);
+
+    if (acceptanceDeleteError) {
+      debug_error("Error deleting acceptances:", acceptanceDeleteError);
     }
 
     // Remove both gladiators from the queue

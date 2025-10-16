@@ -10,7 +10,7 @@ alter table public.combat_matches
   add column if not exists "deathChancePercent" integer not null default 0,
   add column if not exists "injuryChancePercent" integer not null default 15,
   add column if not exists "winnerId" uuid references public.gladiators(id) on delete set null,
-  add column if not exists "winnerMethod" text, -- 'submission', 'knockout', 'death', 'forfeit'
+  add column if not exists "winnerMethod" text, -- 'submission', 'knockout', 'death', 'forfeit', 'decision'
   add column if not exists "totalActions" integer not null default 0,
   add column if not exists "durationSeconds" integer;
 
@@ -70,4 +70,3 @@ create policy "Service role can insert logs"
   with check (true);
 
 commit;
-

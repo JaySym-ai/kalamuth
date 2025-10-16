@@ -284,7 +284,17 @@ export function useRealtimeCollection<T extends object>(
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // After we are fully subscribed, refresh once to avoid race conditions
+        // where an INSERT/UPDATE happens between initial fetch and subscription setup.
+        if (status === "SUBSCRIBED" && fetchOnMount) {
+          try {
+            refreshRef.current();
+          } catch (e) {
+            // no-op
+          }
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

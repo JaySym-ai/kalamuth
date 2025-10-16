@@ -4,7 +4,7 @@ import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
 import { ARENAS } from "@/data/arenas";
 import { getCombatConfigForArena } from "@/lib/combat/config";
 import type { CombatGladiator, CombatLogEntry, BattleState } from "@/types/combat";
-import { debug_error } from "@/utils/debug";
+import { debug_error, debug_log } from "@/utils/debug";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,9 +25,19 @@ async function createWatchStream(
   const stream = new ReadableStream({
     async start(controller) {
       try {
+        // Track if controller is closed to prevent sending events after close
+        let isClosed = false;
+
         // Helper to send SSE message
         const sendEvent = (data: unknown) => {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          if (isClosed) return; // Don't send if controller is closed
+          try {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          } catch (error) {
+            // Controller might be closed, mark it and stop trying to send
+            isClosed = true;
+            debug_error("Failed to send event (controller likely closed):", error);
+          }
         };
 
         // Fetch all existing logs for this match using service role
@@ -77,6 +87,9 @@ async function createWatchStream(
           return;
         }
 
+        // Track intervals for cleanup
+        let pollInterval: NodeJS.Timeout | null = null;
+
         // If match is in progress, poll for new logs
         if (match?.status === "in_progress") {
           let lastActionNumber = existingLogs && existingLogs.length > 0
@@ -85,7 +98,7 @@ async function createWatchStream(
           let isComplete = false;
 
           // Poll for new logs every 1 second
-          const pollInterval = setInterval(async () => {
+          pollInterval = setInterval(async () => {
             try {
               // Check if match is complete using service role
               const { data: updatedMatch } = await serviceRole
@@ -101,7 +114,7 @@ async function createWatchStream(
                   winnerId: updatedMatch.winnerId,
                   winnerMethod: updatedMatch.winnerMethod,
                 });
-                clearInterval(pollInterval);
+                if (pollInterval) clearInterval(pollInterval);
                 controller.close();
                 return;
               }
@@ -133,16 +146,9 @@ async function createWatchStream(
               }
             } catch (error) {
               debug_error("Poll error:", error);
-              clearInterval(pollInterval);
+              if (pollInterval) clearInterval(pollInterval);
             }
           }, 1000);
-
-          // Handle client disconnect
-          const originalClose = controller.close.bind(controller);
-          controller.close = () => {
-            clearInterval(pollInterval);
-            originalClose();
-          };
         }
 
         // Send periodic ping to keep connection alive
@@ -150,9 +156,11 @@ async function createWatchStream(
           sendEvent({ type: "ping" });
         }, 30000);
 
-        // Handle client disconnect
+        // Handle client disconnect - clean up all intervals
         const originalClose = controller.close.bind(controller);
         controller.close = () => {
+          isClosed = true; // Mark as closed to prevent further sends
+          if (pollInterval) clearInterval(pollInterval);
           clearInterval(pingInterval);
           originalClose();
         };
@@ -266,12 +274,22 @@ export async function GET(
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
+      // Track if controller is closed to prevent sending events after close
+      let isClosed = false;
+
       try {
         ensureOpenRouterKey();
 
         // Helper to send SSE message
         const sendEvent = (data: unknown) => {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          if (isClosed) return; // Don't send if controller is closed
+          try {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          } catch (error) {
+            // Controller might be closed, mark it and stop trying to send
+            isClosed = true;
+            debug_error("Failed to send event (controller likely closed):", error);
+          }
         };
 
         // Initialize battle state
@@ -331,42 +349,93 @@ export async function GET(
           await new Promise((resolve) => setTimeout(resolve, config.actionIntervalSeconds * 1000));
         }
 
-        // Send victory message if complete
-        if (battleState.isComplete && battleState.winnerId) {
-          const winnerName = battleState.winnerId === gladiator1.id
-            ? `${gladiator1.name} ${gladiator1.surname}`
-            : `${gladiator2.name} ${gladiator2.surname}`;
+        // Handle end-of-match outcomes (decision or draw)
+        if (!battleState.isComplete) {
+          battleState.isComplete = true;
 
-          const victoryMessage = await generateVictory(winnerName, battleState.winnerMethod || "knockout", locale);
-          const victoryLog = await saveLog(supabase, matchId, battleState.actionNumber + 1, "victory", victoryMessage, locale, battleState);
-          sendEvent({ type: "log", log: victoryLog });
+          const remainingHealth1 = battleState.gladiator1Health;
+          const remainingHealth2 = battleState.gladiator2Health;
 
-          // Update match with winner
-          await serviceRole
+          if (remainingHealth1 === remainingHealth2) {
+            const drawMessage = locale === "fr"
+              ? `Après ${battleState.actionNumber} actions, ${gladiator1.name} ${gladiator1.surname} et ${gladiator2.name} ${gladiator2.surname} restent tous deux debout. Les juges déclarent un match nul.`
+              : `After ${battleState.actionNumber} actions, ${gladiator1.name} ${gladiator1.surname} and ${gladiator2.name} ${gladiator2.surname} both remain standing. The judges declare the bout a draw.`;
+            const drawLog = await saveLog(
+              supabase,
+              matchId,
+              battleState.actionNumber + 1,
+              "system",
+              drawMessage,
+              locale,
+              battleState
+            );
+            sendEvent({ type: "log", log: drawLog });
+          } else {
+            const decisionWinner = remainingHealth1 > remainingHealth2 ? gladiator1 : gladiator2;
+            battleState.winnerId = decisionWinner.id;
+            battleState.winnerMethod = "decision";
+          }
+        }
+
+        if (battleState.isComplete) {
+          if (battleState.winnerId) {
+            const winnerName = battleState.winnerId === gladiator1.id
+              ? `${gladiator1.name} ${gladiator1.surname}`
+              : `${gladiator2.name} ${gladiator2.surname}`;
+            const loser = battleState.winnerId === gladiator1.id ? gladiator2 : gladiator1;
+
+            const victoryMessage = battleState.winnerMethod === "decision"
+              ? locale === "fr"
+                ? `Après ${battleState.actionNumber} actions, les juges accordent la décision à ${winnerName} face à ${loser.name} ${loser.surname}.`
+                : `After ${battleState.actionNumber} actions, the judges award the decision to ${winnerName} over ${loser.name} ${loser.surname}.`
+              : await generateVictory(winnerName, battleState.winnerMethod || "knockout", locale);
+            const victoryLog = await saveLog(supabase, matchId, battleState.actionNumber + 1, "victory", victoryMessage, locale, battleState);
+            sendEvent({ type: "log", log: victoryLog });
+          }
+
+          // Update match record (completed for both victory and draw)
+          const { error: updateError } = await serviceRole
             .from("combat_matches")
             .update({
               status: "completed",
               completedAt: new Date().toISOString(),
-              winnerId: battleState.winnerId,
-              winnerMethod: battleState.winnerMethod,
+              winnerId: battleState.winnerId ?? null,
+              winnerMethod: battleState.winnerMethod ?? null,
               totalActions: battleState.actionNumber,
             })
             .eq("id", matchId);
 
+          if (updateError) {
+            debug_error("Failed to update match status to completed:", updateError);
+            sendEvent({ type: "error", message: "Failed to save match result" });
+          } else {
+            debug_log(`✅ Match ${matchId} marked as completed`);
+          }
+
           // Remove both gladiators from the queue
-          await serviceRole
+          const { error: queueError } = await serviceRole
             .from("combat_queue")
             .delete()
             .in("gladiatorId", [match.gladiator1Id, match.gladiator2Id]);
 
+          if (queueError) {
+            debug_error("Failed to remove gladiators from queue:", queueError);
+          } else {
+            debug_log(`✅ Removed gladiators from queue: ${match.gladiator1Id}, ${match.gladiator2Id}`);
+          }
+
           sendEvent({ type: "complete", winnerId: battleState.winnerId, winnerMethod: battleState.winnerMethod });
         }
 
+        isClosed = true;
         controller.close();
       } catch (error) {
         debug_error("Combat stream error:", error);
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", message: errorMessage })}\n\n`));
+        if (!isClosed) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", message: errorMessage })}\n\n`));
+        }
+        isClosed = true;
         controller.close();
       }
     },
@@ -619,4 +688,3 @@ IMPORTANT: Write ONLY the announcement. Do NOT include phrases like "Voici l'ann
   const rawContent = completion.choices[0]?.message?.content?.trim() || `${winnerName} is victorious!`;
   return cleanNarration(rawContent);
 }
-

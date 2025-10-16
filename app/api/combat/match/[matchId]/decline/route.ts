@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
-import type { CombatMatchAcceptance } from "@/types/combat";
 import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
@@ -52,27 +51,10 @@ export async function POST(
       return NextResponse.json({ error: "not_participant" }, { status: 403 });
     }
 
-    // Update the existing acceptance record
-    const { data: acceptance, error: acceptanceError } = await serviceRole
-      .from("combat_match_acceptances")
-      .update({
-        status: "declined",
-        respondedAt: new Date().toISOString(),
-      })
-      .eq("matchId", matchId)
-      .eq("gladiatorId", participant.id)
-      .select("*")
-      .single();
-
-    if (acceptanceError) {
-      debug_error("Error updating acceptance:", acceptanceError);
-      return NextResponse.json({ error: "failed_to_decline" }, { status: 500 });
-    }
-
     // Cancel the match since one player declined
     const { error: updateError } = await serviceRole
       .from("combat_matches")
-      .update({ 
+      .update({
         status: "cancelled",
         acceptanceDeadline: null // Clear the deadline
       })
@@ -81,6 +63,16 @@ export async function POST(
     if (updateError) {
       debug_error("Error cancelling match:", updateError);
       return NextResponse.json({ error: "failed_to_cancel_match" }, { status: 500 });
+    }
+
+    // Delete all acceptance records for this cancelled match
+    const { error: acceptanceDeleteError } = await serviceRole
+      .from("combat_match_acceptances")
+      .delete()
+      .eq("matchId", matchId);
+
+    if (acceptanceDeleteError) {
+      debug_error("Error deleting acceptances:", acceptanceDeleteError);
     }
 
     // Remove the other gladiator from the queue if they're still there
@@ -101,7 +93,6 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      acceptance: acceptance as CombatMatchAcceptance,
       matchCancelled: true,
     });
   } catch (error) {

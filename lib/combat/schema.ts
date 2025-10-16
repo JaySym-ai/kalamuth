@@ -5,7 +5,7 @@ const NonEmpty = z.string().trim().min(1);
 export const QueueStatusZ = z.enum(['waiting', 'matched', 'cancelled']);
 export const MatchStatusZ = z.enum(['pending', 'in_progress', 'completed', 'cancelled']);
 export const CombatLogTypeZ = z.enum(['introduction', 'action', 'injury', 'death', 'victory', 'system']);
-export const WinnerMethodZ = z.enum(['submission', 'knockout', 'death', 'forfeit']);
+export const WinnerMethodZ = z.enum(['submission', 'knockout', 'death', 'forfeit', 'decision']);
 
 export const CombatQueueEntryZ = z
   .object({

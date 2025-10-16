@@ -112,7 +112,7 @@ New fields:
 - `deathChancePercent` - Death probability 0-100 (default: 0)
 - `injuryChancePercent` - Injury probability 0-100 (default: 15)
 - `winnerId` - UUID of winning gladiator
-- `winnerMethod` - How victory was achieved (submission/knockout/death/forfeit)
+- `winnerMethod` - How victory was achieved (submission/knockout/death/forfeit/decision)
 - `totalActions` - Actual number of actions executed
 - `durationSeconds` - Total battle duration
 
@@ -308,4 +308,3 @@ See task: "Test combat system end-to-end"
 - [ ] Environmental effects
 - [ ] Crowd reactions
 - [ ] Post-battle rewards and ranking updates
-

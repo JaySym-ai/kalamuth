@@ -58,8 +58,8 @@
       "submission": "Soumission",
       "knockout": "K.O.",
       "death": "Mort",
-      "forfeit": "Abandon"
+      "forfeit": "Abandon",
+      "decision": "Décision"
     }
   }
 }
-

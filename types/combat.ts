@@ -104,7 +104,7 @@ export interface CombatMatchAcceptance {
 
 
 export type CombatLogType = "introduction" | "action" | "injury" | "death" | "victory" | "system";
-export type WinnerMethod = "submission" | "knockout" | "death" | "forfeit";
+export type WinnerMethod = "submission" | "knockout" | "death" | "forfeit" | "decision";
 
 export interface CombatLogEntry {
   id: string;

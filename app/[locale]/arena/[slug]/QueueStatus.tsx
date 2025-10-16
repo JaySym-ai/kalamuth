@@ -20,7 +20,9 @@ interface Props {
     queuedAt: string;
     waitingForMatch: string;
     matchmaking: string;
+    opponentGladiator: string;
   };
+
 }
 
 export default function QueueStatus({
@@ -55,7 +57,7 @@ export default function QueueStatus({
         </h2>
         <div className="flex items-center gap-2 px-3 py-1 bg-amber-900/20 rounded-full">
           <span className="text-amber-300 font-semibold">{queue.length}</span>
-          <span className="text-gray-400 text-sm">waiting</span>
+          <span className="text-gray-400 text-sm">{t.matchmaking}</span>
         </div>
       </div>
 
@@ -135,7 +137,7 @@ export default function QueueStatus({
                       </>
                     ) : (
                       <>
-                        <h4 className="font-semibold text-gray-400">Unknown Gladiator</h4>
+                        <h4 className="font-semibold text-gray-400">{t.opponentGladiator}</h4>
                       </>
                     )}
                   </div>

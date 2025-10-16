@@ -96,7 +96,7 @@ export default async function ArenaDetailPage({
       .select("*")
       .eq("arenaSlug", slug)
       .eq("serverId", serverId)
-      .in("status", ["pending", "in_progress"]);
+      .in("status", ["pending_acceptance", "pending", "in_progress"]);
 
     if (activeMatches) {
       initialActiveMatches = activeMatches as CombatMatch[];

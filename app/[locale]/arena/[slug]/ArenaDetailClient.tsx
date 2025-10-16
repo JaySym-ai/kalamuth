@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -131,12 +131,22 @@ export default function ArenaDetailClient({
 }: Props) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const [userId, setUserId] = useState<string | null>(null);
   const [selectedGladiatorId, setSelectedGladiatorId] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [activeMatchDetails, setActiveMatchDetails] = useState<CombatMatchDetails | null>(null);
   const [isMatchLoading, setIsMatchLoading] = useState(false);
   const [matchDetailsError, setMatchDetailsError] = useState<string | null>(null);
+
+  // Load current user id for targeted acceptance subscription (recipient-safe)
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (mounted) setUserId(data.user?.id ?? null);
+    }).catch(() => {});
+    return () => { mounted = false; };
+  }, [supabase]);
 
 
   const userGladiatorIds = useMemo(
@@ -167,7 +177,7 @@ export default function ArenaDetailClient({
   });
 
   const userQueueMatch = ludusId
-    ? { serverId, status: "waiting", ludusId }
+    ? { serverId, ludusId }
     : undefined;
 
   const {
@@ -183,7 +193,7 @@ export default function ArenaDetailClient({
     fetchOnMount: Boolean(ludusId),
   });
 
-  const { data: matchesData } = useRealtimeCollection<CombatMatch>({
+  const { data: matchesData, mutate: mutateMatches } = useRealtimeCollection<CombatMatch>({
     table: "combat_matches",
     select: "*",
     match: matchFilters,
@@ -253,7 +263,7 @@ export default function ArenaDetailClient({
     };
   }, [activeMatchId, activeMatch?.status]);
 
-  // Subscribe to match acceptances for real-time updates with proper filtering
+  // Subscribe to match acceptances for the current match (detail updates)
   const { data: acceptancesData } = useRealtimeCollection<CombatMatchAcceptance>({
     table: "combat_match_acceptances",
     select: "*",
@@ -261,6 +271,17 @@ export default function ArenaDetailClient({
     initialData: initialAcceptances,
     orderBy: { column: "createdAt", ascending: true },
     fetchOnMount: false, // We handle initial loading manually
+  });
+
+  // Separate subscription: pending acceptances for current user
+  // This acts as a reliable trigger for recipients to become aware of a new match
+  // even if the combat_matches INSERT event is missed due to timing.
+  const { data: myPendingAcceptances } = useRealtimeCollection<CombatMatchAcceptance>({
+    table: "combat_match_acceptances",
+    select: "*",
+    match: userId ? { userId, status: "pending" } : { id: "__never__" },
+    orderBy: { column: "createdAt", ascending: false },
+    fetchOnMount: Boolean(userId),
   });
 
   const acceptanceRecords = useMemo(() => {
@@ -299,6 +320,28 @@ export default function ArenaDetailClient({
 
     return result;
   }, [activeMatch, activeMatchDetails?.acceptances, initialAcceptances, acceptancesData]);
+  // Determine if both players accepted
+  const bothAccepted = useMemo(() => {
+    if (!activeMatch) return false;
+    const accepted = new Set(
+      acceptanceRecords.filter((a) => a.status === "accepted").map((a) => a.gladiatorId)
+    );
+    return accepted.size >= 2;
+  }, [activeMatch, acceptanceRecords]);
+
+  // Auto-navigate to combat when both accepted or when match transitions to pending/in_progress
+  const autoNavRef = useRef(false);
+  useEffect(() => {
+    if (autoNavRef.current) return;
+    const matchId = activeMatch?.id;
+    const status = activeMatch?.status;
+    if (!matchId) return;
+    if (bothAccepted || status === "pending" || status === "in_progress") {
+      autoNavRef.current = true;
+      router.push(`/${locale}/combat/${matchId}`);
+    }
+  }, [bothAccepted, activeMatch?.status, activeMatch?.id, locale, router]);
+
 
   // Enhanced error handling for realtime connection issues
   useEffect(() => {
@@ -306,6 +349,58 @@ export default function ArenaDetailClient({
       debug_log('📡 Realtime acceptances data received:', acceptancesData.length);
     }
   }, [acceptancesData]);
+
+  // If we get a pending acceptance for the current user but haven't yet
+  // received the combat_matches row, fetch the match and inject it to matchesData
+  useEffect(() => {
+    if (!userId || myPendingAcceptances.length === 0) return;
+
+    const process = async (matchId: string) => {
+      const alreadyHave = matchesData.some((m) => m.id === matchId);
+      if (alreadyHave) return;
+      try {
+        const res = await fetch(`/api/combat/match/${matchId}`);
+        if (!res.ok) return;
+        const details = (await res.json()) as CombatMatchDetails;
+        if (!details?.match) return;
+        mutateMatches((current) => {
+          if (current.some((m) => m.id === details.match.id)) return current;
+          return [details.match as CombatMatch, ...current];
+        });
+        debug_log('🔔 Injected match from acceptance trigger', { matchId });
+      } catch (e) {
+        // swallow
+      }
+    };
+
+    for (const acc of myPendingAcceptances) {
+      if (acc?.matchId) void process(acc.matchId);
+    }
+  }, [userId, myPendingAcceptances, matchesData, mutateMatches]);
+  // Fallback: if our user queue entry turns matched, inject its match
+  useEffect(() => {
+    if (!ludusId) return;
+    const matchedEntry = userQueueData.find(e => e.status === "matched" && e.matchId);
+    const matchId = matchedEntry?.matchId;
+    if (!matchId) return;
+    if (matchesData.some(m => m.id === matchId)) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/combat/match/${matchId}`);
+        if (!res.ok) return;
+        const details = (await res.json()) as CombatMatchDetails;
+        if (!details?.match) return;
+        mutateMatches((current) => {
+          if (current.some((m) => m.id === details.match.id)) return current;
+          return [details.match as CombatMatch, ...current];
+        });
+        debug_log('📥 Injected match from queue fallback', { matchId });
+      } catch (e) {
+        // no-op
+      }
+    })();
+  }, [ludusId, userQueueData, matchesData, mutateMatches]);
+
 
   // Debug: Log acceptances data changes
   useEffect(() => {
@@ -380,7 +475,7 @@ export default function ArenaDetailClient({
   // Check if user has a gladiator in queue
   const userQueueEntry = queueData.find(entry =>
     entry.arenaSlug === arenaSlug && gladiators.some(g => g.id === entry.gladiatorId)
-  ) ?? userQueueData.find(entry =>
+  ) ?? userQueueData.filter(e => e.status === "waiting").find(entry =>
     entry.arenaSlug === arenaSlug && gladiators.some(g => g.id === entry.gladiatorId)
   );
   const toCombatantSummary = useCallback(
@@ -452,7 +547,7 @@ export default function ArenaDetailClient({
   const resolvedMatch = activeMatchDetails?.match ?? activeMatch ?? null;
 
   const queuedGladiatorIds = new Set(
-    [...queueData, ...userQueueData].map(entry => entry.gladiatorId)
+    [...queueData, ...userQueueData.filter(e => e.status === "waiting")].map(entry => entry.gladiatorId)
   );
 
   const shouldAutoExpandGladiatorList =
@@ -840,6 +935,7 @@ export default function ArenaDetailClient({
                     queuedAt: t.queuedAt,
                     waitingForMatch: t.waitingForMatch,
                     matchmaking: t.matchmaking,
+                    opponentGladiator: t.opponentGladiator,
                   }}
                 />
               </>
