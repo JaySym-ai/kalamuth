@@ -4,6 +4,8 @@
     "ludusOverview": "Vue d'ensemble du Ludus",
     "arena": "Arène",
     "tavern": "Taverne",
+    "shop": "Boutique",
+    "inventory": "Inventaire",
     "arenaCityLabel": "Ville",
     "arenaAllowsDeath": "Combats mortels autorisés",
     "arenaNoDeath": "Combats non létaux",

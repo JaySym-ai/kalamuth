@@ -49,18 +49,33 @@ export async function POST(req: Request) {
     if (ludusErr || !ludus) return NextResponse.json({ error: "ludus_not_found" }, { status: 404 });
     if (ludus.userId !== user.id) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-    // Check if ludus is full
-    if ((ludus.gladiatorCount ?? 0) >= (ludus.maxGladiators ?? 0)) {
+    // Get actual gladiator count from database to avoid stale count issues
+    const { count: actualGladiatorCount, error: countErr } = await supabase
+      .from('gladiators')
+      .select('id', { count: 'exact', head: true })
+      .eq('ludusId', ludusId);
+
+    if (countErr) {
+      debug_error("Failed to count gladiators:", countErr);
+      return NextResponse.json({ error: "count_failed" }, { status: 500 });
+    }
+
+    const currentCount = actualGladiatorCount ?? 0;
+    const maxAllowed = ludus.maxGladiators ?? 0;
+
+    // Check if ludus is full using actual count
+    if (currentCount >= maxAllowed) {
       return NextResponse.json({ error: "ludus_full" }, { status: 400 });
     }
 
-    // Fetch tavern gladiator
+    // Fetch tavern gladiator - ensure it's from the correct server
     const serviceSupabase = createServiceRoleClient();
     const { data: tavernGladiator, error: tavernErr } = await serviceSupabase
       .from('tavern_gladiators')
       .select('*')
       .eq('id', tavernGladiatorId)
       .eq('ludusId', ludusId)
+      .eq('serverId', ludus.serverId) // CRITICAL: Filter by current server to prevent cross-server contamination
       .maybeSingle();
 
     if (tavernErr || !tavernGladiator) {
@@ -129,10 +144,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "cleanup_failed" }, { status: 500 });
     }
 
-    // Update ludus gladiator count
+    // Update ludus gladiator count using actual count
     const { error: updateErr } = await supabase
       .from('ludi')
-      .update({ gladiatorCount: (ludus.gladiatorCount ?? 0) + 1, updatedAt: now })
+      .update({ gladiatorCount: currentCount + 1, updatedAt: now })
       .eq('id', ludusId);
 
     if (updateErr) {

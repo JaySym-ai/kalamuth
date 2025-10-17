@@ -70,6 +70,8 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
   let cities: {default: Record<string, unknown>};
   let arena: {default: Record<string, unknown>};
   let arenaDetail: {default: Record<string, unknown>};
+  let shop: {default: Record<string, unknown>};
+  let inventory: {default: Record<string, unknown>};
 
   try { auth = await import(`./messages/${activeLocale}/auth.json`); } catch { auth = { default: {} }; }
   try { intro = await import(`./messages/${activeLocale}/intro.json`); } catch { intro = { default: {} }; }
@@ -80,6 +82,8 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
   try { cities = await import(`./messages/${activeLocale}/cities.json`); } catch { cities = { default: {} }; }
   try { arena = await import(`./messages/${activeLocale}/arena.json`); } catch { arena = { default: {} }; }
   try { arenaDetail = await import(`./messages/${activeLocale}/arena-detail.json`); } catch { arenaDetail = { default: {} }; }
+  try { shop = await import(`./messages/${activeLocale}/shop.json`); } catch { shop = { default: {} }; }
+  try { inventory = await import(`./messages/${activeLocale}/inventory.json`); } catch { inventory = { default: {} }; }
 
   const sources = [
     common.default,
@@ -99,7 +103,9 @@ export default getRequestConfig(async ({locale, requestLocale}) => {
     cities.default,
     arena.default,
     arenaDetail.default,
-    quests.default
+    quests.default,
+    shop.default,
+    inventory.default
   ].map((m) => deepifyMessages(m as Record<string, unknown>));
 
   const messages = Object.assign({}, ...sources);

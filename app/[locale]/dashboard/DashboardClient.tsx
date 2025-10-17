@@ -19,6 +19,8 @@ interface DashboardTranslations {
   ludusOverview: string;
   arena: string;
   tavern: string;
+  shop: string;
+  inventory: string;
   arenaCityLabel: string;
   arenaAllowsDeath: string;
   arenaNoDeath: string;
@@ -204,6 +206,54 @@ export default function DashboardClient({ ludus, server, translations: t }: Prop
               </div>
               <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
                 {t.yourGladiators}
+              </span>
+            </div>
+          </motion.button>
+
+          {/* Shop Button */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.25 }}
+            onClick={() => router.push(`/${currentLocale}/shop`)}
+            className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
+            data-testid="shop-button"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <div className="relative w-5 h-5">
+                <Image
+                  src="/assets/icon/shop.png"
+                  alt="Shop"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
+                {t.shop}
+              </span>
+            </div>
+          </motion.button>
+
+          {/* Inventory Button */}
+          <motion.button
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            onClick={() => router.push(`/${currentLocale}/inventory`)}
+            className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-3 hover:border-amber-600/60 hover:bg-amber-900/10 transition-all duration-300 hover:scale-[1.02] group"
+            data-testid="inventory-button"
+          >
+            <div className="flex items-center justify-center gap-2">
+              <div className="relative w-5 h-5">
+                <Image
+                  src="/assets/icon/inventory.png"
+                  alt="Inventory"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors">
+                {t.inventory}
               </span>
             </div>
           </motion.button>

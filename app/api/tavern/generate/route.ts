@@ -46,11 +46,12 @@ export async function POST(req: Request) {
     if (ludusErr || !ludus) return NextResponse.json({ error: "ludus_not_found" }, { status: 404 });
     if (ludus.userId !== user.id) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-    // Check if tavern gladiators already exist
+    // Check if tavern gladiators already exist - filter by current server to prevent cross-server contamination
     const { count: existingCount } = await supabase
       .from('tavern_gladiators')
       .select('id', { count: 'exact', head: true })
-      .eq('ludusId', ludusId);
+      .eq('ludusId', ludusId)
+      .eq('serverId', ludus.serverId); // CRITICAL: Filter by current server
 
     if ((existingCount ?? 0) >= 2) {
       return NextResponse.json({ ok: true, created: 0, reason: 'already_satisfied' }, { status: 200 });

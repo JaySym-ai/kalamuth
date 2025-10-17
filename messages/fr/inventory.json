@@ -1,0 +1,10 @@
+{
+  "Inventory": {
+    "title": "Inventaire",
+    "subtitle": "Objets et équipement de votre ludus",
+    "backToDashboard": "Retour au Tableau de Bord",
+    "noItems": "Votre inventaire est vide",
+    "description": "Achetez des objets dans la boutique pour les voir ici."
+  }
+}
+

@@ -4,6 +4,8 @@
     "ludusOverview": "Ludus Overview",
     "arena": "Arena",
     "tavern": "Tavern",
+    "shop": "Shop",
+    "inventory": "Inventory",
     "arenaCityLabel": "City",
     "arenaAllowsDeath": "Fatal bouts permitted",
     "arenaNoDeath": "Non-lethal matches",

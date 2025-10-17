@@ -132,6 +132,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           ludusOverview: t("ludusOverview"),
           arena: t("arena"),
           tavern: t("tavern"),
+          shop: t("shop"),
+          inventory: t("inventory"),
           arenaCityLabel: t("arenaCityLabel"),
           arenaAllowsDeath: t("arenaAllowsDeath"),
           arenaNoDeath: t("arenaNoDeath"),

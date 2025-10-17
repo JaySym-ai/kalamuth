@@ -71,11 +71,11 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
   const [isTransitioning, setIsTransitioning] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Realtime subscription to tavern gladiators
+  // Realtime subscription to tavern gladiators - filter by both ludusId AND serverId to prevent cross-server contamination
   const { data: realtimeTavernGladiators, refresh: refreshTavernGladiators } = useRealtimeCollection<NormalizedGladiator>({
     table: "tavern_gladiators",
     select: "id, ludusId, serverId, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear, physicalCondition, notableHistory, alive",
-    match: { ludusId: ludus.id },
+    match: { ludusId: ludus.id, serverId: ludus.serverId }, // CRITICAL: Filter by both ludus AND server to prevent cross-server contamination
     initialData: tavernGladiators,
     orderBy: { column: "createdAt", ascending: false },
     primaryKey: "id",

@@ -1,0 +1,10 @@
+{
+  "Inventory": {
+    "title": "Inventory",
+    "subtitle": "Your ludus items and equipment",
+    "backToDashboard": "Back to Dashboard",
+    "noItems": "Your inventory is empty",
+    "description": "Purchase items from the shop to see them here."
+  }
+}
+

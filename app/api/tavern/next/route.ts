@@ -51,12 +51,13 @@ export async function POST(req: Request) {
     if (ludusErr || !ludus) return NextResponse.json({ error: "ludus_not_found" }, { status: 404 });
     if (ludus.userId !== user.id) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-    // Fetch current gladiator to verify ownership
+    // Fetch current gladiator to verify ownership - ensure it's from the correct server
     const { data: currentGladiator, error: currentErr } = await supabase
       .from('tavern_gladiators')
       .select('id')
       .eq('id', currentGladiatorId)
       .eq('ludusId', ludusId)
+      .eq('serverId', ludus.serverId) // CRITICAL: Filter by current server to prevent cross-server contamination
       .maybeSingle();
 
     if (currentErr || !currentGladiator) {
@@ -128,6 +129,7 @@ export async function POST(req: Request) {
         .from('tavern_gladiators')
         .select('name, surname')
         .eq('ludusId', ludusId)
+        .eq('serverId', ludus.serverId) // CRITICAL: Filter by current server to prevent cross-server contamination
         .neq('id', currentGladiatorId); // Exclude the one we're about to delete
 
       const existingNames = new Set<string>(
@@ -203,11 +205,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "generation_failed" }, { status: 500 });
     }
 
-    // Now delete the current (skipped) gladiator using service role
+    // Now delete the current (skipped) gladiator using service role - ensure it's from the correct server
     const { error: deleteErr } = await serviceSupabase
       .from('tavern_gladiators')
       .delete()
-      .eq('id', currentGladiatorId);
+      .eq('id', currentGladiatorId)
+      .eq('serverId', ludus.serverId); // CRITICAL: Only delete from current server
 
     if (deleteErr) {
       debug_error("Failed to delete skipped gladiator:", deleteErr);

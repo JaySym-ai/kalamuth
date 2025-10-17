@@ -9,8 +9,6 @@ You are implementing or modifying features in a mobile-first web app that will b
 Goals
 	1.	Ship UI/UX that follows Android & iOS mobile best practices.
 	2.	Never hardcode user-visible text; all strings must use i18n with EN + FR.
-	3.	Add/adjust Playwright E2E tests for every change and keep the full suite green.
-
 ⸻
 
 Hard Requirements
@@ -34,21 +32,9 @@ common.json, nav.json, hero.json, features.json, gladiators.json, battle.json, c
 /locales/en/{common.json,nav.json,hero.json,features.json,gladiators.json,battle.json,cta.json,footer.json}
 /locales/fr/{common.json,nav.json,hero.json,features.json,gladiators.json,battle.json,cta.json,footer.json}
 
-
 	•	When touching a feature, migrate or add only the needed keys into the relevant namespace(s). Keep keys semantic, not UI-positional.
 	•	Provide both EN & FR entries. If unsure of perfect phrasing, add a clear TODO comment and a sensible placeholder (no English leaks in FR UI).
 	•	Keep existing useTranslations("Namespace") calls. Prefer reusing namespaces over adding new ones.
-
-C) Playwright E2E (add/maintain)
-	•	For each PR:
-	•	Add/extend Playwright specs that cover the new/changed behavior.
-	•	Update selectors to use stable hooks: data-testid (avoid brittle text selectors).
-	•	Ensure suite passes locally (npx playwright test) and is CI-ready (headless).
-	•	Include at least:
-	•	happy path test,
-	•	one edge/validation case,
-	•	basic i18n toggle/locale render check (EN/FR for the changed surface).
-	•	If refactoring breaks flows, update existing tests accordingly—no skipped tests left behind.
 
 ⸻
 
@@ -69,7 +55,6 @@ Definition of Done (checklist)
 	•	UI verified on iPhone & Android viewports (e.g., 360×800 and 390×844).
 	•	Tap targets ≥ 48px; safe-area respected; no overlap with system gestures.
 	•	EN & FR strings exist and render; fallbacks avoided.
-	•	Playwright: new/updated specs for this change; suite is green.
 	•	Accessibility basics: labels for inputs, focus states visible, color contrast ~WCAG AA.
 
 ⸻
@@ -124,46 +109,11 @@ export function BattleCTA() {
   "start_aria": "Démarrer un nouveau combat"
 }
 
-Playwright test (stable selectors + i18n spot check)
-
-import { test, expect } from '@playwright/test';
-
-test.describe('Battle CTA', () => {
-  test('renders and starts battle (EN)', async ({ page }) => {
-    await page.goto('/en/arena');
-    await expect(page.getByTestId('cta-start-battle')).toBeVisible();
-    await page.getByTestId('cta-start-battle').click();
-    await expect(page).toHaveURL(/\/en\/battle\/setup/);
-  });
-
-  test('renders in FR locale', async ({ page }) => {
-    await page.goto('/fr/arena');
-    await expect(page.getByRole('heading', { name: 'Prêt pour le combat ?' })).toBeVisible();
-  });
-});
-
-
-⸻
-
-Guardrails / Do & Don’t
-	•	Do use data-testid for any element interacted with in tests.
-	•	Do keep namespace keys descriptive (battle.start.label) not positional (button3).
-	•	Don’t introduce regressions to existing tests—update them alongside code.
-	•	Don’t rely on pixel-perfect layouts; favor flexible mobile spacing and wrapping.
-
-⸻
-Task Output Format (what you return)
-	1.	Summary of change (2–5 lines).
-	2.	Files touched (paths).
-	3.	New/updated i18n keys (EN + FR).
-	4.	Playwright specs added/updated (paths) + scenarios list.
-	5.	Any risks/TODOs.
-⸻
-
-For testing you can use one of theses accounts:
+For testing the changes:
+You can test the modification using mcp playwright to validate if it's working, here is 3 accounts you can use:
 test2@hotmail.com / qplsk8hothot
 test3@hotmail.com / qplsk8hothot
 test4@hotmail.com / qplsk8hothot
 
-They all have access to a test server, this test server should always be used for testing changes.
+They all have access to a test-server-1, this test server should always be used for testing changes.
 

@@ -22,17 +22,55 @@ export default async function GladiatorsPage({ params }: { params: Promise<{ loc
   let gladiators: NormalizedGladiator[] = [];
 
   try {
-    const { data: ludus } = await supabase
+    // First, get user's favorite server
+    const { data: userData } = await supabase
+      .from("users")
+      .select("favoriteServerId")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const favoriteServerId = userData?.favoriteServerId;
+
+    // Fetch ludus from favorite server, or first available ludus if no favorite
+    let query = supabase
       .from("ludi")
       .select(
         "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt"
       )
-      .eq("userId", user.id)
-      .limit(1)
-      .maybeSingle();
+      .eq("userId", user.id);
+
+    if (favoriteServerId) {
+      query = query.eq("serverId", favoriteServerId);
+    }
+
+    let ludus = (await query.limit(1).maybeSingle()).data;
 
     if (!ludus) {
-      redirect(`/${locale}/server-selection`);
+      // If we have a favorite server but no ludus there, fall back to any ludus
+      if (favoriteServerId) {
+        const { data: anyLudus } = await supabase
+          .from("ludi")
+          .select(
+            "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt"
+          )
+          .eq("userId", user.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (anyLudus) {
+          // Use the first available ludus and update favorite server
+          await supabase
+            .from("users")
+            .update({ favoriteServerId: anyLudus.serverId })
+            .eq("id", user.id);
+
+          ludus = anyLudus;
+        } else {
+          redirect(`/${locale}/server-selection`);
+        }
+      } else {
+        redirect(`/${locale}/server-selection`);
+      }
     }
 
     const treasurySource = (ludus.treasury as { currency?: string; amount?: unknown } | null) ?? {};
