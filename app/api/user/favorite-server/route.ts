@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
 
@@ -9,12 +8,9 @@ export const runtime = "nodejs";
  * Returns the user's favorite server ID
  */
 export async function GET() {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const u = auth.user;
-  if (!u) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
   try {
+    const { user: u, supabase } = await requireAuthAPI();
+
     const { data: userRow, error } = await supabase
       .from("users")
       .select("favoriteServerId")
@@ -29,6 +25,9 @@ export async function GET() {
       favoriteServerId: userRow?.favoriteServerId ?? null,
     });
   } catch (err) {
+    if (err instanceof Error && err.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     const error = err as Error;
     return NextResponse.json(
       { error: error.message || "Internal server error" },
@@ -42,12 +41,9 @@ export async function GET() {
  * Sets the user's favorite server
  */
 export async function POST(req: Request) {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const u = auth.user;
-  if (!u) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
   try {
+    const { user: u, supabase } = await requireAuthAPI();
+
     const body = await req.json();
     const { serverId } = body;
 
@@ -73,6 +69,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, favoriteServerId: serverId });
   } catch (err) {
+    if (err instanceof Error && err.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     const error = err as Error;
     return NextResponse.json(
       { error: error.message || "Internal server error" },

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
 import OpenAI from "openai";
 import { debug_error } from "@/utils/debug";
 
@@ -38,10 +37,7 @@ interface GladiatorContext {
 
 export async function POST(req: Request) {
   try {
-    const supabase = createClient(await cookies());
-    const { data: auth } = await supabase.auth.getUser();
-    const user = auth.user;
-    if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const { user, supabase } = await requireAuthAPI();
 
     const body = await req.json().catch(() => ({}));
     const message = typeof body?.message === 'string' ? body.message.trim() : null;
@@ -210,6 +206,9 @@ You are ${context.name} ${context.surname}. Make the user believe they're talkin
 
     return NextResponse.json({ response }, { status: 200 });
   } catch (e) {
+    if (e instanceof Error && e.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     if (process.env.NODE_ENV !== 'production') {
       debug_error('[api/tavern/chat] failed', e);
     }

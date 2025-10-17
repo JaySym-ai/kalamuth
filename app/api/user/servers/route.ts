@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
 
@@ -9,10 +8,8 @@ export const runtime = "nodejs";
  * Returns list of servers where user has ludus
  */
 export async function GET() {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const u = auth.user;
-  if (!u) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    const { user: u, supabase } = await requireAuthAPI();
 
   try {
     // Get all ludus for this user across all servers
@@ -37,6 +34,12 @@ export async function GET() {
       { error: error.message || "Internal server error" },
       { status: 500 }
     );
+  }
+  } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 

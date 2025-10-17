@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Clock, Zap, Activity, Trophy } from "lucide-react";
+import { formatDuration } from "@/lib/utils/time";
 
 interface CombatStatsProps {
   currentAction: number;
@@ -27,14 +28,6 @@ export default function CombatStats({
   winnerId,
   translations: t,
 }: CombatStatsProps) {
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-
-
   return (
     <div className="space-y-1">
       {/* Stats row - horizontal on mobile */}
@@ -54,7 +47,7 @@ export default function CombatStats({
         <StatCard
           icon={<Clock className="w-4 h-4" />}
           label={t.elapsed}
-          value={formatTime(elapsedSeconds)}
+          value={formatDuration(elapsedSeconds)}
           color="text-blue-400"
           bgColor="bg-blue-900/20"
           borderColor="border-blue-700/40"

@@ -1,11 +1,12 @@
 import { getTranslations } from "next-intl/server";
-import { redirect, notFound } from "next/navigation";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { notFound, redirect } from "next/navigation";
+import { getCurrentUserLudus } from "@/lib/ludus/repository";
+import { getGladiatorsByLudus } from "@/lib/gladiator/repository";
+import { requireAuthPage } from "@/lib/auth/server";
 import { ARENAS } from "@/data/arenas";
 import { CITIES } from "@/data/cities";
 import ArenaDetailClient from "./ArenaDetailClient";
-import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
+import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 import type { CombatQueueEntry, CombatMatch } from "@/types/combat";
 
 export const runtime = "nodejs";
@@ -17,12 +18,7 @@ export default async function ArenaDetailPage({
   params: Promise<{ locale: string; slug: string }>
 }) {
   const { locale, slug } = await params;
-  const supabase = createClient(await cookies());
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
-
-  // Must be authenticated
-  if (!user) redirect(`/${locale}/auth`);
+  const { user, supabase } = await requireAuthPage(locale);
 
   // Find arena by slug (using English slug)
   const arena = ARENAS.find(a =>
@@ -36,13 +32,8 @@ export default async function ArenaDetailPage({
   // Find city details
   const city = CITIES.find(c => c.name === arena.city);
 
-  // Fetch user's ludus and gladiators
-  const { data: ludus } = await supabase
-    .from("ludi")
-    .select("id, serverId")
-    .eq("userId", user.id)
-    .limit(1)
-    .maybeSingle();
+  // Get user's current ludus (with server isolation logic)
+  const ludus = await getCurrentUserLudus(user.id, "id, serverId");
 
   let gladiators: NormalizedGladiator[] = [];
   let serverId = "";
@@ -56,19 +47,8 @@ export default async function ArenaDetailPage({
     serverId = ludus.serverId as string;
     ludusId = ludus.id as string;
 
-    // Fetch user's gladiators
-    const { data: glads } = await supabase
-      .from("gladiators")
-      .select(
-        "id, name, surname, avatarUrl, birthCity, health, stats, rankingPoints, alive, injury, sickness, ludusId, serverId"
-      )
-      .eq("ludusId", ludus.id);
-
-    if (glads) {
-      gladiators = glads.map(doc =>
-        normalizeGladiator(doc.id as string, doc as unknown as Record<string, unknown>, locale)
-      );
-    }
+    // Fetch user's gladiators (minimal fields for arena)
+    gladiators = await getGladiatorsByLudus(ludus.id, locale, true);
 
     const { data: arenaQueue } = await supabase
       .from("combat_queue")

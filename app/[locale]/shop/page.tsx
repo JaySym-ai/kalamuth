@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUserLudus } from "@/lib/ludus/repository";
+import { requireAuthPage } from "@/lib/auth/server";
 import ShopClient from "./ShopClient";
 import type { Ludus } from "@/types/ludus";
 
@@ -10,23 +10,17 @@ export const dynamic = "force-dynamic";
 
 export default async function ShopPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const supabase = createClient(await cookies());
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
-  if (!user) redirect(`/${locale}/auth`);
+  const { user } = await requireAuthPage(locale);
 
   // Fetch user's ludus
   let ludusData: (Ludus & { id: string }) | null = null;
 
   try {
-    const { data: ludus } = await supabase
-      .from("ludi")
-      .select(
-        "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt"
-      )
-      .eq("userId", user.id)
-      .limit(1)
-      .maybeSingle();
+    // Get user's current ludus (with server isolation logic)
+    const ludus = await getCurrentUserLudus(
+      user.id,
+      "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt"
+    );
 
     if (!ludus) {
       redirect(`/${locale}/server-selection`);

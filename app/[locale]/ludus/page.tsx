@@ -1,31 +1,19 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUserLudus } from "@/lib/ludus/repository";
+import { requireAuthPage } from "@/lib/auth/server";
 import LudusDetailClient from "./LudusDetailClient";
 
 export default async function LudusPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const supabase = createClient(await cookies());
+  const { user } = await requireAuthPage(locale);
   const t = await getTranslations();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Get user's current ludus (with server isolation logic)
+  const ludus = await getCurrentUserLudus(user.id);
 
-  if (!user) {
-    redirect(`/${locale}/auth`);
-  }
-
-  // Get user's ludus
-  const { data: ludus, error } = await supabase
-    .from("ludi")
-    .select("*")
-    .eq("userId", user.id)
-    .single();
-
-  if (error || !ludus) {
-    redirect(`/${locale}/ludus-creation`);
+  if (!ludus) {
+    redirect(`/${locale}/server-selection`);
   }
 
   const translations = {

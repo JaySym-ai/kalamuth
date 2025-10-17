@@ -190,14 +190,23 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ matchId: string }> }
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
+  // Note: Auth check is done inside try-catch to handle streaming errors properly
+  let user;
+  let supabase;
 
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  try {
+    const authResult = await (async () => {
+      const { cookies: cookiesFn } = await import("next/headers");
+      const { createClient } = await import("@/utils/supabase/server");
+      const cookieStore = await cookiesFn();
+      const sb = createClient(cookieStore);
+      const { data: auth } = await sb.auth.getUser();
+      if (!auth.user) throw new Error("unauthorized");
+      return { user: auth.user, supabase: sb };
+    })();
+
+    user = authResult.user;
+    supabase = authResult.supabase;
 
   const { matchId } = await params;
   const url = new URL(req.url);
@@ -448,6 +457,12 @@ export async function GET(
       "Connection": "keep-alive",
     },
   });
+  } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    return new Response("Internal server error", { status: 500 });
+  }
 }
 
 // Helper functions

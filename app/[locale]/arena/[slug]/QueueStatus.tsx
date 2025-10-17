@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Users, Clock, Swords, Heart } from "lucide-react";
 import type { CombatQueueEntry } from "@/types/combat";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
+import { formatRelativeTime } from "@/lib/utils/time";
 
 interface QueueEntryWithGladiator extends CombatQueueEntry {
   gladiator?: NormalizedGladiator;
@@ -32,21 +33,6 @@ export default function QueueStatus({
 }: Props) {
   const userPosition = queue.findIndex(entry => entry.gladiatorId === userGladiatorId);
   const isUserInQueue = userPosition >= 0;
-
-  const formatQueueTime = (queuedAt: string) => {
-    const now = new Date();
-    const queued = new Date(queuedAt);
-    const diffMs = now.getTime() - queued.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 1) return "Just now";
-    if (diffMins === 1) return "1 min ago";
-    if (diffMins < 60) return `${diffMins} mins ago`;
-    
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours === 1) return "1 hour ago";
-    return `${diffHours} hours ago`;
-  };
 
   return (
     <div className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6">
@@ -146,7 +132,7 @@ export default function QueueStatus({
                   <div className="text-right">
                     <div className="flex items-center gap-1 text-xs text-gray-500">
                       <Clock className="w-3 h-3" />
-                      <span>{formatQueueTime(entry.queuedAt)}</span>
+                      <span>{formatRelativeTime(entry.queuedAt)}</span>
                     </div>
                   </div>
                 </div>

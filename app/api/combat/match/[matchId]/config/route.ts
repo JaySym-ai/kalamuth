@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
 import { ARENAS } from "@/data/arenas";
 import { getCombatConfigForArena } from "@/lib/combat/config";
 
@@ -10,14 +9,8 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ matchId: string }> }
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-
-  if (!user) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  try {
+    const { supabase } = await requireAuthAPI();
 
   const { matchId } = await params;
 
@@ -63,5 +56,11 @@ export async function GET(
       deathEnabled: arena.deathEnabled,
     },
   });
+  } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
 }
 

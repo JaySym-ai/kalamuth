@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
+import { createServiceRoleClient } from "@/utils/supabase/server";
 import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
 import type { QuestResult } from "@/types/quest";
 import { debug_error } from "@/utils/debug";
@@ -12,10 +12,7 @@ const MODEL_STORYTELLING = "google/gemini-2.5-flash-lite";
 
 export async function POST(req: Request) {
   try {
-    const supabase = createClient(await cookies());
-    const { data: auth } = await supabase.auth.getUser();
-    const user = auth.user;
-    if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const { user, supabase } = await requireAuthAPI();
 
     const body = await req.json().catch(() => ({}));
     const questId = typeof body?.questId === 'string' ? body.questId.trim() : null;
@@ -157,6 +154,9 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     debug_error("Quest completion error:", error);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

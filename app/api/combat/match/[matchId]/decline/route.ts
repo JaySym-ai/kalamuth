@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
+import { createServiceRoleClient } from "@/utils/supabase/server";
 import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
@@ -10,20 +10,17 @@ export const runtime = "nodejs";
  * Decline a combat match request
  */
 export async function POST(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ matchId: string }> }
 ) {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
-  const { matchId } = await params;
-  if (!matchId) {
-    return NextResponse.json({ error: "missing matchId" }, { status: 400 });
-  }
-
   try {
+    const { user } = await requireAuthAPI();
+
+    const { matchId } = await params;
+    if (!matchId) {
+      return NextResponse.json({ error: "missing matchId" }, { status: 400 });
+    }
+
     // Use service role client to bypass RLS temporarily
     const serviceRole = createServiceRoleClient();
 
@@ -96,6 +93,9 @@ export async function POST(
       matchCancelled: true,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     debug_error("Error declining match:", error);
     return NextResponse.json(
       { error: "Internal server error" },

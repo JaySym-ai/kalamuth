@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthPage } from "@/lib/auth/server";
 import { debug_error } from "@/utils/debug";
 import LudusCreationClient from "./LudusCreationClient";
 import LogoutButton from "../../components/auth/LogoutButton";
@@ -19,12 +18,7 @@ export default async function LudusCreationPage({
 }) {
   const { locale } = await params;
   const { server } = await searchParams;
-  const supabase = createClient(await cookies());
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
-
-  // Must be authenticated
-  if (!user) redirect(`/${locale}/auth`);
+  const { user, supabase } = await requireAuthPage(locale);
 
   // If server is provided, store it in session storage for the client component
   if (server) {

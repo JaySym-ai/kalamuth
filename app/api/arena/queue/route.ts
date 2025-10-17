@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
+import { createServiceRoleClient } from "@/utils/supabase/server";
 import type { CombatQueueEntry } from "@/types/combat";
 import { debug_error } from "@/utils/debug";
 
@@ -11,10 +11,8 @@ export const runtime = "nodejs";
  * Fetch current queue for a specific arena on a server
  */
 export async function GET(req: Request) {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    const { user, supabase } = await requireAuthAPI();
 
   const url = new URL(req.url);
   const arenaSlug = url.searchParams.get("arenaSlug");
@@ -44,6 +42,9 @@ export async function GET(req: Request) {
       count: queueEntries?.length || 0,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     debug_error("Error fetching queue:", error);
     return NextResponse.json(
       { error: "Failed to fetch queue" },
@@ -58,10 +59,8 @@ export async function GET(req: Request) {
  * Body: { arenaSlug: string, serverId: string, gladiatorId: string }
  */
 export async function POST(req: Request) {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    const { user, supabase } = await requireAuthAPI();
 
   try {
     const body = await req.json();
@@ -152,6 +151,13 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+  } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    debug_error("Queue join error:", error);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
 }
 
 /**
@@ -159,10 +165,8 @@ export async function POST(req: Request) {
  * Leave the queue
  */
 export async function DELETE(req: Request) {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    const { user, supabase } = await requireAuthAPI();
 
   const url = new URL(req.url);
   const queueId = url.searchParams.get("queueId");
@@ -193,6 +197,13 @@ export async function DELETE(req: Request) {
       { status: 500 }
     );
   }
+  } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    debug_error("Queue leave error:", error);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
 }
 
 /**
@@ -200,7 +211,7 @@ export async function DELETE(req: Request) {
  * and create a match that requires mutual acceptance.
  */
 async function attemptMatchmaking(
-  supabase: ReturnType<typeof createClient>,
+  supabase: ReturnType<typeof createServiceRoleClient>,
   arenaSlug: string,
   serverId: string
 ) {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
+import { createServiceRoleClient } from "@/utils/supabase/server";
 import OpenAI from "openai";
 import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 import { SERVERS } from "@/data/servers";
@@ -28,10 +28,7 @@ const SKIP_COST = 1; // Cost in sestertii to skip a gladiator
 
 export async function POST(req: Request) {
   try {
-    const supabase = createClient(await cookies());
-    const { data: auth } = await supabase.auth.getUser();
-    const user = auth.user;
-    if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const { user, supabase } = await requireAuthAPI();
 
     const body = await req.json().catch(() => ({}));
     const ludusId = typeof body?.ludusId === 'string' ? body.ludusId.trim() : null;
@@ -219,6 +216,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, newGladiator }, { status: 200 });
   } catch (e) {
+    if (e instanceof Error && e.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     if (process.env.NODE_ENV !== 'production') debug_error('[api/tavern/next] failed', e);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }

@@ -1,35 +1,30 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUserLudus } from "@/lib/ludus/repository";
+import { getTavernGladiatorsByLudus } from "@/lib/gladiator/repository";
+import { requireAuthPage } from "@/lib/auth/server";
 import { debug_error } from "@/utils/debug";
 import TavernClient from "./TavernClient";
 import type { Ludus } from "@/types/ludus";
-import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
+import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function TavernPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const supabase = createClient(await cookies());
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
-  if (!user) redirect(`/${locale}/auth`);
+  const { user } = await requireAuthPage(locale);
 
   // Fetch user's ludus
   let ludusData: (Ludus & { id: string }) | null = null;
   let tavernGladiators: NormalizedGladiator[] = [];
 
   try {
-    const { data: ludus } = await supabase
-      .from("ludi")
-      .select(
-        "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt"
-      )
-      .eq("userId", user.id)
-      .limit(1)
-      .maybeSingle();
+    // Get user's current ludus (with server isolation logic)
+    const ludus = await getCurrentUserLudus(
+      user.id,
+      "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt"
+    );
 
     if (!ludus) {
       redirect(`/${locale}/server-selection`);
@@ -75,19 +70,7 @@ export default async function TavernPage({ params }: { params: Promise<{ locale:
     } as Ludus & { id: string };
 
     // Fetch tavern gladiators for this ludus
-    const { data: glads } = await supabase
-      .from("tavern_gladiators")
-      .select(
-        "id, name, surname, avatarUrl, birthCity, health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, ludusId, serverId, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear, physicalCondition, notableHistory, alive, rankingPoints"
-      )
-      .eq("ludusId", ludus.id)
-      .order("createdAt", { ascending: false });
-
-    if (glads) {
-      tavernGladiators = glads.map(doc =>
-        normalizeGladiator(doc.id as string, doc as unknown as Record<string, unknown>, locale)
-      );
-    }
+    tavernGladiators = await getTavernGladiatorsByLudus(ludus.id, locale);
   } catch (error) {
     debug_error("Error loading tavern data:", error);
     redirect(`/${locale}/server-selection`);

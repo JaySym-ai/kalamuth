@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
+import { createServiceRoleClient } from "@/utils/supabase/server";
 import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
@@ -10,10 +10,7 @@ const CANCEL_COST = 2; // sestertii
 
 export async function POST(req: Request) {
   try {
-    const supabase = createClient(await cookies());
-    const { data: auth } = await supabase.auth.getUser();
-    const user = auth.user;
-    if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const { user, supabase } = await requireAuthAPI();
 
     const body = await req.json().catch(() => ({}));
     const questId = typeof body?.questId === 'string' ? body.questId.trim() : null;
@@ -93,6 +90,9 @@ export async function POST(req: Request) {
       newTreasuryAmount: newAmount,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     debug_error("Quest cancellation error:", error);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }

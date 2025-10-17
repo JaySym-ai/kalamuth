@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
 import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
@@ -10,10 +9,8 @@ export const runtime = "nodejs";
  * Debug endpoint to check acceptances for a match
  */
 export async function GET(req: Request) {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    const { supabase } = await requireAuthAPI();
 
   const url = new URL(req.url);
   const matchId = url.searchParams.get("matchId");
@@ -57,6 +54,13 @@ export async function GET(req: Request) {
       { error: "Internal server error" },
       { status: 500 }
     );
+  }
+  } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    debug_error("Debug acceptances error:", error);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }
 

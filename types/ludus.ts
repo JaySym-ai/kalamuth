@@ -1,7 +1,7 @@
 /**
  * Ludus (gladiator school) domain model.
- * Each Ludus belongs to exactly one Firebase user and one game server/world.
- * Stored in Firestore in collection "ludi" (plural of ludus).
+ * Each Ludus belongs to exactly one Supabase user and one game server/world.
+ * Stored in Supabase "ludi" table (plural of ludus).
  */
 
 export type Currency = "sestertii" | "denarii";
@@ -26,10 +26,10 @@ export interface Facilities {
 }
 
 export interface Ludus {
-  /** Firestore doc id (injected by converters on read). */
+  /** Supabase row id. */
   id?: string;
 
-  /** Firebase Auth UID of the owner. */
+  /** Supabase Auth UID of the owner. */
   userId: string;
   /** Server/world id, e.g., "alpha-1". */
   serverId: string;

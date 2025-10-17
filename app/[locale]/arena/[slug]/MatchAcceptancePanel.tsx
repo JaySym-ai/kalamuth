@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Swords, Clock, Check, X, AlertCircle } from "lucide-react";
 import type { CombatMatch, CombatMatchAcceptance, CombatantSummary } from "@/types/combat";
 import { debug_log, debug_error } from "@/utils/debug";
+import { formatDurationPadded } from "@/lib/utils/time";
 
 interface Props {
   match: CombatMatch;
@@ -85,13 +86,6 @@ export default function MatchAcceptancePanel({
 
     return () => clearInterval(interval);
   }, [match.acceptanceDeadline, checkTimeout]);
-
-  // Format time as MM:SS
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
 
   // Get user's acceptance status by gladiator ID instead of userId
   const userAcceptance = acceptances.find(a => a.gladiatorId === player?.id);
@@ -260,7 +254,7 @@ export default function MatchAcceptancePanel({
           >
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              <span>{formatTime(timeLeft)}</span>
+              <span>{formatDurationPadded(timeLeft)}</span>
             </div>
           </div>
         </div>

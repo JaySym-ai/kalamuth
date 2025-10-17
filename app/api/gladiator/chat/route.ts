@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
 import { openrouter } from "@/lib/ai/openrouter";
-import { cookies } from "next/headers";
 
 interface ChatMessage {
   id: string;
@@ -12,12 +11,7 @@ interface ChatMessage {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(await cookies());
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const { user, supabase } = await requireAuthAPI();
 
     const { message, gladiatorId, conversationHistory, locale } = await request.json();
 
@@ -119,6 +113,9 @@ ${responseLanguage} Respond in character, keeping responses relatively concise (
     return NextResponse.json({ response });
 
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Gladiator chat error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

@@ -1,6 +1,5 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthPage } from "@/lib/auth/server";
 import { getTranslations } from "next-intl/server";
 import type { CombatGladiator } from "@/types/combat";
 import { debug_error } from "@/utils/debug";
@@ -25,14 +24,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function CombatPage({ params }: PageProps) {
   const { locale, matchId } = await params;
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  // Check auth
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) {
-    redirect(`/${locale}/login`);
-  }
+  const { user: auth, supabase } = await requireAuthPage(locale);
 
   // Fetch match
   const { data: match, error: matchError } = await supabase
@@ -56,7 +48,7 @@ export default async function CombatPage({ params }: PageProps) {
     .from("gladiators")
     .select("id")
     .in("id", [match.gladiator1Id, match.gladiator2Id])
-    .eq("userId", auth.user.id);
+    .eq("userId", auth.id);
 
   if (participantError) {
     debug_error("Combat page - Participant check error:", participantError);
@@ -89,7 +81,7 @@ export default async function CombatPage({ params }: PageProps) {
       matchId,
       gladiator1Id: match.gladiator1Id,
       gladiator2Id: match.gladiator2Id,
-      userId: auth.user.id
+      userId: auth.id
     });
     debug_error("⚠️  If you see PGRST116 error, run migration: npx supabase db push");
     debug_error("⚠️  See FIX_GLADIATOR_VISIBILITY.md for details");
@@ -101,7 +93,7 @@ export default async function CombatPage({ params }: PageProps) {
       hasG1: !!gladiator1Data,
       hasG2: !!gladiator2Data,
       matchId,
-      userId: auth.user.id
+      userId: auth.id
     });
     debug_error("⚠️  This usually means RLS is blocking opponent gladiator access");
     debug_error("⚠️  Run migration: npx supabase db push");

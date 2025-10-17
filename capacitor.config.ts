@@ -15,8 +15,6 @@ const config: CapacitorConfig = {
     cleartext: false,
     allowNavigation: [
       "www.kalamuth.com",
-      "kalamuth-97de4.firebaseapp.com",
-      "kalamuth-97de4.firebasestorage.app",
       "accounts.google.com",
       "*.googleusercontent.com",
       "*.gstatic.com",

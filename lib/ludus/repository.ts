@@ -5,6 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 import { LudusZ, type LudusFromZod } from "@/lib/ludus/schema";
 import type { Ludus } from "@/types/ludus";
 import { DEFAULT_SERVER_ID, SERVERS } from "@/data/servers";
+import { transformLudusData } from "./transform";
 
 function nowIso() {
   return new Date().toISOString();
@@ -66,6 +67,96 @@ export async function getUserLudusOnServer(userId: string, serverId: string) {
     .maybeSingle();
   if (error && error.code !== "PGRST116") throw error;
   return (data as Ludus & { id: string }) ?? null;
+}
+
+/**
+ * Get the user's current ludus based on their favorite server.
+ * This function handles the server isolation logic:
+ * 1. Fetches user's favoriteServerId
+ * 2. Queries ludus for that server
+ * 3. Falls back to any ludus if favorite server has no ludus
+ * 4. Updates favoriteServerId if fallback is used
+ *
+ * @param userId - The user's ID
+ * @param selectFields - Optional: specific fields to select (defaults to all fields)
+ * @returns The user's current ludus or null if none exists
+ */
+export async function getCurrentUserLudus(
+  userId: string,
+  selectFields: string = "*"
+): Promise<(Ludus & { id: string }) | null> {
+  const s = await supa();
+
+  // First, get user's favorite server
+  const { data: userData } = await s
+    .from("users")
+    .select("favoriteServerId")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const favoriteServerId = userData?.favoriteServerId;
+
+  // Fetch ludus from favorite server, or first available ludus if no favorite
+  let query = s
+    .from("ludi")
+    .select(selectFields)
+    .eq("userId", userId);
+
+  if (favoriteServerId) {
+    query = query.eq("serverId", favoriteServerId);
+  }
+
+  const { data: ludusData } = await query.limit(1).maybeSingle();
+  let ludus: (Ludus & { id: string }) | null = ludusData ? (ludusData as unknown as Ludus & { id: string }) : null;
+
+  if (!ludus) {
+    // If we have a favorite server but no ludus there, fall back to any ludus
+    if (favoriteServerId) {
+      const { data: anyLudusData } = await s
+        .from("ludi")
+        .select(selectFields)
+        .eq("userId", userId)
+        .limit(1)
+        .maybeSingle();
+
+      if (anyLudusData) {
+        const anyLudus = anyLudusData as unknown as Ludus & { id: string };
+        // Use the first available ludus and update favorite server
+        await s
+          .from("users")
+          .update({ favoriteServerId: anyLudus.serverId })
+          .eq("id", userId);
+
+        ludus = anyLudus;
+      }
+    }
+  }
+
+  return ludus;
+}
+
+/**
+ * Get the user's current ludus with full data transformation.
+ * This is a convenience wrapper around getCurrentUserLudus that:
+ * 1. Fetches the ludus with server isolation logic
+ * 2. Transforms the raw data into a properly typed Ludus object
+ *
+ * Use this when you need a fully transformed ludus object for display.
+ *
+ * @param userId - The user's ID
+ * @returns Fully transformed ludus or null if none exists
+ */
+export async function getCurrentUserLudusTransformed(
+  userId: string
+): Promise<(Ludus & { id: string }) | null> {
+  const selectFields = "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt";
+  const rawLudus = await getCurrentUserLudus(userId, selectFields);
+
+  if (!rawLudus) {
+    return null;
+  }
+
+  return transformLudusData(rawLudus as unknown as Record<string, unknown>, userId);
 }
 
 export async function createLudus(input: Partial<Ludus> & { userId: string; serverId: string; name: string; logoUrl: string }) {

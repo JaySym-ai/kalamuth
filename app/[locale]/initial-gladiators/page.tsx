@@ -1,11 +1,12 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { getCurrentUserLudus } from "@/lib/ludus/repository";
+import { getInitialGladiatorsByLudus } from "@/lib/gladiator/repository";
+import { requireAuthPage } from "@/lib/auth/server";
 import { debug_error } from "@/utils/debug";
 import InitialGladiatorsClient from "./InitialGladiatorsClient";
 import { SERVERS } from "@/data/servers";
-import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
+import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,12 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function InitialGladiatorsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const supabase = createClient(await cookies());
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
-
-  // Must be authenticated
-  if (!user) redirect(`/${locale}/auth`);
+  const { user, supabase } = await requireAuthPage(locale);
 
   // Check if user has already completed onboarding
   const { data: userRow } = await supabase
@@ -39,35 +35,21 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
   let minRequired = 3;
 
   try {
-    const { data: ludus } = await supabase
-      .from("ludi")
-      .select("id,name,serverId")
-      .eq("userId", user.id)
-      .limit(1)
-      .maybeSingle();
+    // Get user's current ludus (with server isolation logic)
+    const ludus = await getCurrentUserLudus(user.id, "id,name,serverId");
 
     if (!ludus) {
-      // No ludus found, redirect to server selection
       redirect(`/${locale}/server-selection`);
     }
 
     ludusData = { id: ludus.id, name: ludus.name, serverId: ludus.serverId };
 
     // Check if gladiators already exist for this ludus
-    const { data: glads } = await supabase
-      .from("gladiators")
-      .select("id, name, surname, avatarUrl, birthCity, health, current_health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, physicalCondition, notableHistory, alive")
-      .eq("ludusId", ludus.id);
+    gladiators = await getInitialGladiatorsByLudus(ludus.id, locale);
 
     // Determine required initial count from server config
     const server = SERVERS.find(s => s.id === (ludusData?.serverId ?? ""));
     minRequired = server ? server.config.initialGladiatorsPerLudus : 3;
-
-    if (glads && glads.length) {
-      gladiators = glads.map(doc =>
-        normalizeGladiator(doc.id as string, doc as unknown as Record<string, unknown>, locale)
-      );
-    }
 
     // Do not generate here anymore; generation is now async via job + Supabase listener (future)
   } catch (error) {

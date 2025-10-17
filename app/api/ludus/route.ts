@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
+import { createServiceRoleClient } from "@/utils/supabase/server";
 import { Ludus } from "@/types/ludus";
 import { SERVERS } from "@/data/servers";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
   try {
+    const { user, supabase } = await requireAuthAPI();
     const body = await req.json();
     const { name, logoUrl, serverId, locationCity, motto } = body;
 
@@ -82,6 +78,9 @@ export async function POST(req: Request) {
       initialGladiatorCount: server.config.initialGladiatorsPerLudus,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
     return NextResponse.json(
       { error: "Failed to create ludus", details: (error as Error).message },
       { status: 500 }

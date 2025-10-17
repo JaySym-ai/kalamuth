@@ -1,8 +1,7 @@
 import { getTranslations } from "next-intl/server";
-import { redirect, notFound } from "next/navigation";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
-import { normalizeGladiator } from "@/lib/gladiator/normalize";
+import { notFound } from "next/navigation";
+import { requireAuthPage } from "@/lib/auth/server";
+import { getGladiatorById } from "@/lib/gladiator/repository";
 import GladiatorChatClient from "./GladiatorChatClient";
 
 export const runtime = "nodejs";
@@ -14,21 +13,12 @@ export default async function GladiatorDetailPage({
   params: Promise<{ locale: string; id: string }>
 }) {
   const { locale, id } = await params;
-  const supabase = createClient(await cookies());
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
-
-  // Must be authenticated
-  if (!user) redirect(`/${locale}/auth`);
+  const { user, supabase } = await requireAuthPage(locale);
 
   // Fetch the gladiator
-  const { data: gladiatorData, error } = await supabase
-    .from("gladiators")
-    .select("id, ludusId, serverId, name, surname, avatarUrl, birthCity, health, current_health, stats, personality, backstory, lifeGoal, likes, dislikes, createdAt, updatedAt, injury, injuryTimeLeftHours, sickness, handicap, uniquePower, weakness, fear, physicalCondition, notableHistory, alive")
-    .eq("id", id)
-    .maybeSingle();
+  const gladiator = await getGladiatorById(id, locale);
 
-  if (error || !gladiatorData) {
+  if (!gladiator) {
     notFound();
   }
 
@@ -37,15 +27,13 @@ export default async function GladiatorDetailPage({
     .from("ludi")
     .select("id")
     .eq("userId", user.id)
-    .eq("id", gladiatorData.ludusId)
+    .eq("id", gladiator.ludusId)
     .maybeSingle();
 
   if (!ludusData) {
     // Gladiator doesn't belong to user's ludus
     notFound();
   }
-
-  const gladiator = normalizeGladiator(gladiatorData.id, gladiatorData, locale);
 
   // Get translations with proper namespace
   const t = await getTranslations({ locale, namespace: "GladiatorDetail" });

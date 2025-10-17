@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
 import type { CombatantSummary, CombatLogEntry, CombatMatchAcceptance } from "@/types/combat";
 import { debug_error } from "@/utils/debug";
 
@@ -10,14 +9,8 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ matchId: string }> },
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-
-  if (!user) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  try {
+    const { user, supabase } = await requireAuthAPI();
 
   const { matchId } = await params;
 
@@ -113,5 +106,12 @@ export async function GET(
     acceptances,
     logs,
   });
+  } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    debug_error("Match fetch error:", error);
+    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+  }
 }
 

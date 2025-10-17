@@ -117,3 +117,5 @@ test4@hotmail.com / qplsk8hothot
 
 They all have access to a test-server-1, this test server should always be used for testing changes.
 
+Important rules: 
+- We should not have duplicate code, we should always have reusable block of code and call them when needed. Please validate if the current code we are doing can be refactored for clearer codebase.

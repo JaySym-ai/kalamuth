@@ -1,5 +1,4 @@
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,14 +11,8 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ matchId: string }> }
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
-
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  try {
+    const { user, supabase } = await requireAuthAPI();
 
   const { matchId } = await params;
 
@@ -57,4 +50,10 @@ export async function GET(
     winnerId: match.winnerId,
     winnerMethod: match.winnerMethod,
   });
+  } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    return new Response("Internal server error", { status: 500 });
+  }
 }

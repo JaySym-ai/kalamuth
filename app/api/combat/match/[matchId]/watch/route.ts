@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
+import { createServiceRoleClient } from "@/utils/supabase/server";
 import type { CombatLogEntry } from "@/types/combat";
 import { debug_error } from "@/utils/debug";
 
@@ -11,54 +11,48 @@ export const dynamic = "force-dynamic";
  * Returns existing logs and streams new ones via SSE
  */
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ matchId: string }> }
 ) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
+  try {
+    const { user, supabase } = await requireAuthAPI();
 
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+    const { matchId } = await params;
 
-  const { matchId } = await params;
+    // Fetch match
+    const { data: match, error: matchError } = await supabase
+      .from("combat_matches")
+      .select("*")
+      .eq("id", matchId)
+      .maybeSingle();
 
-  // Fetch match
-  const { data: match, error: matchError } = await supabase
-    .from("combat_matches")
-    .select("*")
-    .eq("id", matchId)
-    .maybeSingle();
+    if (matchError || !match) {
+      return new Response("Match not found", { status: 404 });
+    }
 
-  if (matchError || !match) {
-    return new Response("Match not found", { status: 404 });
-  }
+    // Verify user is a participant
+    const { data: participantCheck } = await supabase
+      .from("gladiators")
+      .select("id")
+      .in("id", [match.gladiator1Id, match.gladiator2Id])
+      .eq("userId", user.id);
 
-  // Verify user is a participant
-  const { data: participantCheck } = await supabase
-    .from("gladiators")
-    .select("id")
-    .in("id", [match.gladiator1Id, match.gladiator2Id])
-    .eq("userId", user.id);
+    if (!participantCheck || participantCheck.length === 0) {
+      return new Response("Forbidden", { status: 403 });
+    }
 
-  if (!participantCheck || participantCheck.length === 0) {
-    return new Response("Forbidden", { status: 403 });
-  }
+    // Use service role for system operations to bypass RLS
+    const serviceRole = createServiceRoleClient();
 
-  // Use service role for system operations to bypass RLS
-  const serviceRole = createServiceRoleClient();
-
-  // Create SSE stream
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        // Helper to send SSE message
-        const sendEvent = (data: unknown) => {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-        };
+    // Create SSE stream
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // Helper to send SSE message
+          const sendEvent = (data: unknown) => {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+          };
 
         // Fetch all existing logs for this match using service role
         const { data: existingLogs, error: logsError } = await serviceRole
@@ -167,21 +161,27 @@ export async function GET(
             originalClose();
           };
         }
-      } catch (error) {
-        debug_error("Watch stream error:", error);
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", message: errorMessage })}\n\n`));
-        controller.close();
-      }
-    },
-  });
+        } catch (error) {
+          debug_error("Watch stream error:", error);
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", message: errorMessage })}\n\n`));
+          controller.close();
+        }
+      },
+    });
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-    },
-  });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "unauthorized") {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    return new Response("Internal server error", { status: 500 });
+  }
 }
 

@@ -1,14 +1,11 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const u = auth.user;
-  if (!u) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    const { user: u, supabase } = await requireAuthAPI();
 
   // Get user data
   const { data: userRow } = await supabase
@@ -31,13 +28,14 @@ export async function GET() {
     onboardingDone: Boolean(userRow?.onboardingDone),
     hasLudus,
   });
+  } catch (error) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
 }
 
 export async function POST(req: Request) {
-  const supabase = createClient(await cookies());
-  const { data: auth } = await supabase.auth.getUser();
-  const u = auth.user;
-  if (!u) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  try {
+    const { user: u, supabase } = await requireAuthAPI();
 
   const body = await req.json().catch(() => ({}));
   const onboardingDone = typeof body?.onboardingDone === "boolean" ? body.onboardingDone : false;
@@ -49,5 +47,8 @@ export async function POST(req: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
 }
 

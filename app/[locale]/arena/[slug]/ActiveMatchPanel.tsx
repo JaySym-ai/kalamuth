@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Swords, Heart, Shield, Activity, Clock, Play } from "lucide-react";
 import type { CombatMatch, CombatantSummary, CombatLogEntry } from "@/types/combat";
+import { formatTimestamp } from "@/lib/utils/time";
 
 interface Props {
   match: CombatMatch;
@@ -107,17 +108,6 @@ function GladiatorCard({
   );
 }
 
-function formatTime(value: string | undefined) {
-  if (!value) return "—";
-  try {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-  } catch {
-    return "—";
-  }
-}
-
 export default function ActiveMatchPanel({
   match,
   player,
@@ -203,7 +193,7 @@ export default function ActiveMatchPanel({
         <div className="mt-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 text-sm text-gray-400">
             <Clock className="h-4 w-4" />
-            <span>{formatTime(match.matchedAt)}</span>
+            <span>{formatTimestamp(match.matchedAt)}</span>
           </div>
 
           {/* Combat button */}
@@ -272,7 +262,7 @@ export default function ActiveMatchPanel({
                 <div>
                   <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-gray-400">
                     <Clock className="h-3 w-3" />
-                    <span>{formatTime(entry.createdAt)}</span>
+                    <span>{formatTimestamp(entry.createdAt)}</span>
                   </div>
                   <p className="mt-1 text-sm text-gray-200">{entry.message}</p>
                 </div>

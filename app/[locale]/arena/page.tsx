@@ -1,7 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
+import { requireAuthPage } from "@/lib/auth/server";
 import { ARENAS } from "@/data/arenas";
 import { CITIES } from "@/data/cities";
 import ArenaListClient from "./ArenaListClient";
@@ -23,12 +21,7 @@ export default async function ArenaListPage({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params;
-  const supabase = createClient(await cookies());
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
-
-  // Must be authenticated
-  if (!user) redirect(`/${locale}/auth`);
+  await requireAuthPage(locale);
 
   // Get translations
   const t = await getTranslations({ locale, namespace: "Arena" });
