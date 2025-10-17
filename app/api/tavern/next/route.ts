@@ -1,28 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
 import { createServiceRoleClient } from "@/utils/supabase/server";
-import OpenAI from "openai";
-import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 import { SERVERS } from "@/data/servers";
-import { rollRarity } from "@/lib/gladiator/rarity";
-import { debug_error, debug_log, debug_warn } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
+import { serializeError } from "@/utils/errors";
+import { getOpenRouterClient } from "@/lib/ai/client";
+import { getExistingGladiatorNames } from "@/lib/gladiator/names";
+import { generateAndInsertTavernGladiator } from "@/lib/gladiator/generation";
 
 export const runtime = "nodejs";
-
-function nowIso() { return new Date().toISOString(); }
-
-function serializeError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  if (typeof error === 'object' && error !== null) {
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return String(error);
-    }
-  }
-  return String(error);
-}
 
 const SKIP_COST = 1; // Cost in sestertii to skip a gladiator
 
@@ -98,104 +84,29 @@ export async function POST(req: Request) {
     }
 
     // Generate replacement gladiator FIRST (synchronously)
-    let newGladiator = null;
+    let newGladiator;
     try {
-      const apiKey = process.env.OPENROUTER_API_KEY;
-      if (!apiKey) {
-        return NextResponse.json({ error: "missing_api_key" }, { status: 500 });
-      }
-
-      const client = new OpenAI({
-        apiKey,
-        baseURL: 'https://openrouter.ai/api/v1',
-        defaultHeaders: { 'X-Title': 'Kalamuth' },
-        timeout: 60000 // 60 second timeout
-      });
-
-      // Get server config for rarity rolling
+      const client = getOpenRouterClient();
       const server = SERVERS.find(s => s.id === ludus.serverId);
       const rarityConfig = server?.config.rarityConfig;
+      const existingNames = await getExistingGladiatorNames(supabase, ludusId, ludus.serverId, currentGladiatorId);
 
-      // Fetch existing gladiator names (including tavern gladiators)
-      const { data: existingGladiators } = await supabase
-        .from('gladiators')
-        .select('name, surname')
-        .eq('ludusId', ludusId);
+      const result = await generateAndInsertTavernGladiator({
+        client,
+        jobId: `tavern-next-${ludusId}`,
+        existingNames,
+        rarityConfig,
+        supabase,
+        userId: user.id,
+        ludusId,
+        serverId: ludus.serverId || null,
+      });
 
-      const { data: existingTavernGladiators } = await supabase
-        .from('tavern_gladiators')
-        .select('name, surname')
-        .eq('ludusId', ludusId)
-        .eq('serverId', ludus.serverId) // CRITICAL: Filter by current server to prevent cross-server contamination
-        .neq('id', currentGladiatorId); // Exclude the one we're about to delete
-
-      const existingNames = new Set<string>(
-        [
-          ...(existingGladiators || []),
-          ...(existingTavernGladiators || [])
-        ].map(g =>
-          `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase()
-        )
-      );
-
-      let retries = 3;
-      let lastError: unknown = null;
-      while (retries > 0 && !newGladiator) {
-        try {
-          // Roll rarity for replacement gladiator
-          const rarity = rarityConfig ? rollRarity(rarityConfig) : 'common';
-
-          const g = await generateOneGladiator(client, {
-            jobId: `tavern-next-${ludusId}`,
-            attempt: 1,
-            existingNames: Array.from(existingNames),
-            rarity
-          });
-
-          const fullName = `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase();
-          if (!existingNames.has(fullName)) {
-            const now = nowIso();
-            const { data: insertedGladiator, error: insertErr } = await supabase
-              .from('tavern_gladiators')
-              .insert({
-                ...g,
-                userId: user.id,
-                ludusId,
-                serverId: ludus.serverId || null,
-                createdAt: now,
-                updatedAt: now,
-              })
-              .select()
-              .single();
-
-            if (insertErr) {
-              lastError = insertErr;
-              const errorMsg = serializeError(insertErr);
-              debug_error(`[tavern/next] Failed to insert replacement gladiator (retry ${4 - retries}/3): ${errorMsg}`);
-              retries--;
-              continue;
-            }
-
-            newGladiator = insertedGladiator;
-            debug_log(`[tavern/next] Successfully generated and inserted replacement gladiator: ${fullName}`);
-          } else {
-            lastError = `Duplicate name generated: ${fullName}`;
-            debug_warn(`[tavern/next] Duplicate name generated (retry ${4 - retries}/3): ${fullName}`);
-            retries--;
-          }
-        } catch (e) {
-          lastError = e;
-          const errorMsg = serializeError(e);
-          debug_error(`[tavern/next] Error generating replacement gladiator (retry ${4 - retries}/3): ${errorMsg}`);
-          retries--;
-        }
-      }
-
-      if (!newGladiator) {
-        const errorMsg = serializeError(lastError);
-        debug_error(`[tavern/next] Failed to generate replacement gladiator after 3 retries. Last error: ${errorMsg}`);
+      if (!result.success) {
         return NextResponse.json({ error: "failed_to_generate_replacement" }, { status: 500 });
       }
+
+      newGladiator = result.data;
     } catch (error) {
       const errorMsg = serializeError(error);
       debug_error(`[tavern/next] Failed to generate replacement gladiator: ${errorMsg}`);

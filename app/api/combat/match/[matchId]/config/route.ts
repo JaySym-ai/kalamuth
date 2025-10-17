@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ matchId: string }> }
 ) {
   try {
-    const { supabase } = await requireAuthAPI();
+    const { user, supabase } = await requireAuthAPI();
 
   const { matchId } = await params;
 

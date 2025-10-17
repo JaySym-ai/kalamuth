@@ -1,11 +1,12 @@
 import { getTranslations } from "next-intl/server";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getCurrentUserLudus } from "@/lib/ludus/repository";
 import { getGladiatorsByLudus } from "@/lib/gladiator/repository";
 import { requireAuthPage } from "@/lib/auth/server";
 import { ARENAS } from "@/data/arenas";
 import { CITIES } from "@/data/cities";
 import ArenaDetailClient from "./ArenaDetailClient";
+import BackgroundEffects from "@/components/ui/BackgroundEffects";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 import type { CombatQueueEntry, CombatMatch } from "@/types/combat";
 
@@ -101,7 +102,8 @@ export default async function ArenaDetailPage({
   const cityHistoricEvent = cityId ? tCities(`${cityId}.historicEvent`) : city?.historicEvent || '';
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black">
+    <main className="relative">
+      <BackgroundEffects variant="combat" />
       <ArenaDetailClient
         arenaSlug={slug}
         arenaName={arenaName}

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { requireAuthPage } from "@/lib/auth/server";
 import { debug_error } from "@/utils/debug";
 import LudusCreationClient from "./LudusCreationClient";
-import LogoutButton from "../../components/auth/LogoutButton";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

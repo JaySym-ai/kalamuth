@@ -16,10 +16,11 @@ import type {
 import { useRealtimeCollection } from "@/lib/supabase/realtime";
 import { createClient } from "@/utils/supabase/clients";
 import { debug_log, debug_error } from "@/utils/debug";
+import GameViewport from "@/components/layout/GameViewport";
+import ScrollableContent from "@/components/layout/ScrollableContent";
 import GladiatorSelector from "./GladiatorSelector";
 import ActiveMatchPanel from "./ActiveMatchPanel";
 import MatchAcceptancePanel from "./MatchAcceptancePanel";
-
 import QueueStatus from "./QueueStatus";
 
 interface Props {
@@ -724,328 +725,332 @@ export default function ArenaDetailClient({
   };
 
   return (
-    <div className="min-h-screen pb-[max(env(safe-area-inset-bottom),24px)] pt-8 px-4 max-w-6xl mx-auto">
-      {/* Arena Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <div className="flex items-center gap-4 mb-4">
-          <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            onClick={() => router.push(`/${locale}/dashboard`)}
-            className="flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors"
-            data-testid="back-to-dashboard"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            {t.backToDashboard}
-          </motion.button>
-          <h1 className="text-4xl md:text-5xl font-black">
-            <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent">
-              {arenaName}
-            </span>
-          </h1>
-        </div>
-        <div className="flex items-center gap-4 text-gray-400">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            <span>{cityName}</span>
-          </div>
-          {cityInhabitants > 0 && (
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span>{cityInhabitants.toLocaleString()} {t.population}</span>
-            </div>
-          )}
-        </div>
-      </motion.div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Queue System */}
+    <GameViewport>
+      <ScrollableContent>
+        <div className="pb-[max(env(safe-area-inset-bottom),24px)] pt-8 px-4 max-w-6xl mx-auto">
+          {/* Arena Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            className="mb-8"
           >
-            {activeMatch && resolvedMatch ? (
-              activeMatch.status === "pending_acceptance" ? (
-                <MatchAcceptancePanel
-                  match={resolvedMatch}
-                  player={playerGladiatorSummary}
-                  opponent={opponentGladiatorSummary}
-                  acceptances={acceptanceRecords}
-                  locale={locale}
-                  translations={{
-                    matchAcceptanceTitle: t.matchAcceptanceTitle,
-                    opponentFound: t.opponentFound,
-                    waitingForAcceptance: t.waitingForAcceptance,
-                    acceptMatch: t.acceptMatch,
-                    declineMatch: t.declineMatch,
-                    acceptanceTimeout: t.acceptanceTimeout,
-                    opponentDeclined: t.opponentDeclined,
-                    timeRemaining: t.timeRemaining,
-                    yourGladiator: t.yourGladiator,
-                    opponentGladiator: t.opponentGladiator,
-                    youAccepted: t.youAccepted,
-                    youDeclined: t.youDeclined,
-                    opponentAccepted: t.opponentAccepted,
-                    opponentDeclinedLabel: t.opponentDeclinedLabel,
-                    preparingCombat: t.preparingCombat,
-                  }}
-                />
-              ) : (
-                <ActiveMatchPanel
-                  match={resolvedMatch}
-                  player={playerGladiatorSummary}
-                  opponent={opponentGladiatorSummary}
-                  logs={matchLogs}
-                  loading={isMatchLoading}
-                  error={matchDetailsError}
-                  locale={locale}
-                  translations={{
-                    fightPanelTitle: t.activeMatch,
-                    yourGladiator: t.yourGladiator,
-                    opponentGladiator: t.opponentGladiator,
-                    combatLog: t.combatLog,
-                    awaitingCombat: t.awaitingCombat,
-                    noLogEntries: t.noLogEntries,
-                    matchStatusPending: t.matchStatusPending,
-                    matchStatusInProgress: t.matchStatusInProgress,
-                    matchStatusCompleted: t.matchStatusCompleted,
-                    matchStatusCancelled: t.matchStatusCancelled,
-                    loadingMatch: t.loadingMatch,
-                    failedToLoadMatch: t.failedToLoadMatch,
-                    healthStatus: t.healthStatus,
-                    rankingPoints: t.rankingPoints,
-                    statusReady: t.statusReady,
-                    statusIncapacitated: t.statusIncapacitated,
-                    startCombat: t.enterArena,
-                    viewCombat: t.viewMatch,
-                  }}
-                />
-              )
-            ) : (
-              <>
-                {!userQueueEntry && (
-                  <div className="mb-6">
-                    <GladiatorSelector
-                      gladiators={gladiators}
-                      selectedGladiatorId={selectedGladiatorId}
-                      onSelect={setSelectedGladiatorId}
-                      queuedGladiatorIds={queuedGladiatorIds}
-                      initiallyExpanded={shouldAutoExpandGladiatorList}
-                      translations={{
-                        selectGladiator: t.selectGladiator,
-                        selectGladiatorDesc: t.selectGladiatorDesc,
-                        showGladiators: t.showGladiators,
-                        hideGladiators: t.hideGladiators,
-                        availableGladiators: t.availableGladiators,
-                        noAvailableGladiators: t.noAvailableGladiators,
-                        rankingPoints: t.rankingPoints,
-                        healthStatus: t.healthStatus,
-                        gladiatorInjured: t.gladiatorInjured,
-                        gladiatorSick: t.gladiatorSick,
-                        gladiatorDead: t.gladiatorDead,
-                        gladiatorAlreadyQueued: t.gladiatorAlreadyQueued,
-                      }}
-                    />
-
-                    {selectedGladiatorId && (
-                      <motion.button
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        onClick={handleJoinQueue}
-                        disabled={isJoining}
-                        className="w-full mt-4 h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-900/30"
-                        data-testid="join-queue-button"
-                      >
-                        {isJoining ? t.matchmaking : t.joinQueue}
-                      </motion.button>
-                    )}
-
-                    {error && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="mt-3 p-3 bg-red-900/20 border border-red-700/50 rounded-lg text-red-300 text-sm"
-                      >
-                        {error}
-                      </motion.div>
-                    )}
-
-                    {successMessage && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="mt-3 p-3 bg-green-900/20 border border-green-700/50 rounded-lg text-green-300 text-sm"
-                      >
-                        {successMessage}
-                      </motion.div>
-                    )}
-                  </div>
-                )}
-
-                {userQueueEntry && (
-                  <div className="mb-6">
-                    <motion.button
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      onClick={handleLeaveQueue}
-                      disabled={isLeaving}
-                      className="w-full h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      data-testid="leave-queue-button"
-                    >
-                      {isLeaving ? t.matchmaking : t.leaveQueue}
-                    </motion.button>
-
-                    {error && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="mt-3 p-3 bg-red-900/20 border border-red-700/50 rounded-lg text-red-300 text-sm"
-                      >
-                        {error}
-                      </motion.div>
-                    )}
-
-                    {successMessage && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="mt-3 p-3 bg-green-900/20 border border-green-700/50 rounded-lg text-green-300 text-sm"
-                      >
-                        {successMessage}
-                      </motion.div>
-                    )}
-                  </div>
-                )}
-
-                <QueueStatus
-                  queue={enrichedQueue}
-                  userGladiatorId={userQueueEntry?.gladiatorId || null}
-                  translations={{
-                    currentQueue: t.currentQueue,
-                    noGladiatorsInQueue: t.noGladiatorsInQueue,
-                    queuePosition: t.queuePosition,
-                    rankingPoints: "", // Empty string to hide ranking points
-                    queuedAt: t.queuedAt,
-                    waitingForMatch: t.waitingForMatch,
-                    matchmaking: t.matchmaking,
-                    opponentGladiator: t.opponentGladiator,
-                  }}
-                />
-              </>
-            )}
-          </motion.div>
-
-          {/* City Description */}
-          {cityDescription && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
-            >
-              <h2 className="text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2">
-                <Scroll className="w-6 h-6" />
-                {t.description}
-              </h2>
-              <p className="text-gray-300 leading-relaxed mb-6">{cityDescription}</p>
-
-              <h3 className="text-xl font-semibold text-amber-300 mb-3">{t.historicEvent}</h3>
-              <p className="text-gray-400 leading-relaxed">{cityHistoricEvent}</p>
-            </motion.div>
-          )}
-
-          {/* Combat Rules */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
-          >
-            <h2 className="text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2">
-              <div className="relative w-6 h-6">
-                <Image
-                  src="/assets/icon/match.png"
-                  alt="Combat Rules"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              {t.combatRules}
-            </h2>
-
-            <div className={`p-6 rounded-xl border-2 ${
-              deathEnabled
-                ? 'bg-red-900/20 border-red-700/50'
-                : 'bg-emerald-900/20 border-emerald-700/50'
-            }`}>
-              <div className="flex items-start gap-4">
-                {deathEnabled ? (
-                  <Skull className="w-12 h-12 text-red-400 flex-shrink-0" />
-                ) : (
-                  <Shield className="w-12 h-12 text-emerald-400 flex-shrink-0" />
-                )}
-                <div>
-                  <h3 className={`text-xl font-bold mb-2 ${
-                    deathEnabled ? 'text-red-300' : 'text-emerald-300'
-                  }`}>
-                    {deathEnabled ? t.deathEnabled : t.deathDisabled}
-                  </h3>
-                  <p className={`leading-relaxed ${
-                    deathEnabled ? 'text-red-200/80' : 'text-emerald-200/80'
-                  }`}>
-                    {deathEnabled ? t.deathEnabledDesc : t.deathDisabledDesc}
-                  </p>
-                </div>
-              </div>
+            <div className="flex items-center gap-4 mb-4">
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                onClick={() => router.push(`/${locale}/dashboard`)}
+                className="flex items-center gap-2 text-amber-400 hover:text-amber-300 transition-colors"
+                data-testid="back-to-dashboard"
+              >
+                <ArrowLeft className="w-5 h-5" />
+                {t.backToDashboard}
+              </motion.button>
+              <h1 className="text-4xl md:text-5xl font-black">
+                <span className="bg-gradient-to-r from-amber-400 via-orange-500 to-red-600 bg-clip-text text-transparent">
+                  {arenaName}
+                </span>
+              </h1>
             </div>
-          </motion.div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="lg:col-span-1">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6 sticky top-8"
-          >
-            <h2 className="text-xl font-bold text-amber-400 mb-6">{t.arenaDetails}</h2>
-
-            {/* Arena Image Placeholder */}
-            <div className="aspect-video bg-gradient-to-br from-amber-900/30 to-red-900/30 rounded-xl mb-6 flex items-center justify-center border border-amber-700/30">
-              <div className="relative w-16 h-16">
-                <Image
-                  src="/assets/icon/arena.png"
-                  alt="Arena"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400 text-sm">{t.city}</span>
-                <span className="text-amber-300 font-semibold">{cityName}</span>
+            <div className="flex items-center gap-4 text-gray-400">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>{cityName}</span>
               </div>
               {cityInhabitants > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 text-sm">{t.population}</span>
-                  <span className="text-amber-300 font-semibold">{cityInhabitants.toLocaleString()}</span>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  <span>{cityInhabitants.toLocaleString()} {t.population}</span>
                 </div>
               )}
             </div>
           </motion.div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Main Content */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Queue System */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                {activeMatch && resolvedMatch ? (
+                  activeMatch.status === "pending_acceptance" ? (
+                    <MatchAcceptancePanel
+                      match={resolvedMatch}
+                      player={playerGladiatorSummary}
+                      opponent={opponentGladiatorSummary}
+                      acceptances={acceptanceRecords}
+                      locale={locale}
+                      translations={{
+                        matchAcceptanceTitle: t.matchAcceptanceTitle,
+                        opponentFound: t.opponentFound,
+                        waitingForAcceptance: t.waitingForAcceptance,
+                        acceptMatch: t.acceptMatch,
+                        declineMatch: t.declineMatch,
+                        acceptanceTimeout: t.acceptanceTimeout,
+                        opponentDeclined: t.opponentDeclined,
+                        timeRemaining: t.timeRemaining,
+                        yourGladiator: t.yourGladiator,
+                        opponentGladiator: t.opponentGladiator,
+                        youAccepted: t.youAccepted,
+                        youDeclined: t.youDeclined,
+                        opponentAccepted: t.opponentAccepted,
+                        opponentDeclinedLabel: t.opponentDeclinedLabel,
+                        preparingCombat: t.preparingCombat,
+                      }}
+                    />
+                  ) : (
+                    <ActiveMatchPanel
+                      match={resolvedMatch}
+                      player={playerGladiatorSummary}
+                      opponent={opponentGladiatorSummary}
+                      logs={matchLogs}
+                      loading={isMatchLoading}
+                      error={matchDetailsError}
+                      locale={locale}
+                      translations={{
+                        fightPanelTitle: t.activeMatch,
+                        yourGladiator: t.yourGladiator,
+                        opponentGladiator: t.opponentGladiator,
+                        combatLog: t.combatLog,
+                        awaitingCombat: t.awaitingCombat,
+                        noLogEntries: t.noLogEntries,
+                        matchStatusPending: t.matchStatusPending,
+                        matchStatusInProgress: t.matchStatusInProgress,
+                        matchStatusCompleted: t.matchStatusCompleted,
+                        matchStatusCancelled: t.matchStatusCancelled,
+                        loadingMatch: t.loadingMatch,
+                        failedToLoadMatch: t.failedToLoadMatch,
+                        healthStatus: t.healthStatus,
+                        rankingPoints: t.rankingPoints,
+                        statusReady: t.statusReady,
+                        statusIncapacitated: t.statusIncapacitated,
+                        startCombat: t.enterArena,
+                        viewCombat: t.viewMatch,
+                      }}
+                    />
+                  )
+                ) : (
+                  <>
+                    {!userQueueEntry && (
+                      <div className="mb-6">
+                        <GladiatorSelector
+                          gladiators={gladiators}
+                          selectedGladiatorId={selectedGladiatorId}
+                          onSelect={setSelectedGladiatorId}
+                          queuedGladiatorIds={queuedGladiatorIds}
+                          initiallyExpanded={shouldAutoExpandGladiatorList}
+                          translations={{
+                            selectGladiator: t.selectGladiator,
+                            selectGladiatorDesc: t.selectGladiatorDesc,
+                            showGladiators: t.showGladiators,
+                            hideGladiators: t.hideGladiators,
+                            availableGladiators: t.availableGladiators,
+                            noAvailableGladiators: t.noAvailableGladiators,
+                            rankingPoints: t.rankingPoints,
+                            healthStatus: t.healthStatus,
+                            gladiatorInjured: t.gladiatorInjured,
+                            gladiatorSick: t.gladiatorSick,
+                            gladiatorDead: t.gladiatorDead,
+                            gladiatorAlreadyQueued: t.gladiatorAlreadyQueued,
+                          }}
+                        />
+
+                        {selectedGladiatorId && (
+                          <motion.button
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            onClick={handleJoinQueue}
+                            disabled={isJoining}
+                            className="w-full mt-4 h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-amber-900/30"
+                            data-testid="join-queue-button"
+                          >
+                            {isJoining ? t.matchmaking : t.joinQueue}
+                          </motion.button>
+                        )}
+
+                        {error && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-3 p-3 bg-red-900/20 border border-red-700/50 rounded-lg text-red-300 text-sm"
+                          >
+                            {error}
+                          </motion.div>
+                        )}
+
+                        {successMessage && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-3 p-3 bg-green-900/20 border border-green-700/50 rounded-lg text-green-300 text-sm"
+                          >
+                            {successMessage}
+                          </motion.div>
+                        )}
+                      </div>
+                    )}
+
+                    {userQueueEntry && (
+                      <div className="mb-6">
+                        <motion.button
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          onClick={handleLeaveQueue}
+                          disabled={isLeaving}
+                          className="w-full h-12 rounded-lg font-bold text-lg bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-600 hover:to-gray-700 text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          data-testid="leave-queue-button"
+                        >
+                          {isLeaving ? t.matchmaking : t.leaveQueue}
+                        </motion.button>
+
+                        {error && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-3 p-3 bg-red-900/20 border border-red-700/50 rounded-lg text-red-300 text-sm"
+                          >
+                            {error}
+                          </motion.div>
+                        )}
+
+                        {successMessage && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-3 p-3 bg-green-900/20 border border-green-700/50 rounded-lg text-green-300 text-sm"
+                          >
+                            {successMessage}
+                          </motion.div>
+                        )}
+                      </div>
+                    )}
+
+                    <QueueStatus
+                      queue={enrichedQueue}
+                      userGladiatorId={userQueueEntry?.gladiatorId || null}
+                      translations={{
+                        currentQueue: t.currentQueue,
+                        noGladiatorsInQueue: t.noGladiatorsInQueue,
+                        queuePosition: t.queuePosition,
+                        rankingPoints: "", // Empty string to hide ranking points
+                        queuedAt: t.queuedAt,
+                        waitingForMatch: t.waitingForMatch,
+                        matchmaking: t.matchmaking,
+                        opponentGladiator: t.opponentGladiator,
+                      }}
+                    />
+                  </>
+                )}
+              </motion.div>
+
+              {/* City Description */}
+              {cityDescription && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
+                >
+                  <h2 className="text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2">
+                    <Scroll className="w-6 h-6" />
+                    {t.description}
+                  </h2>
+                  <p className="text-gray-300 leading-relaxed mb-6">{cityDescription}</p>
+
+                  <h3 className="text-xl font-semibold text-amber-300 mb-3">{t.historicEvent}</h3>
+                  <p className="text-gray-400 leading-relaxed">{cityHistoricEvent}</p>
+                </motion.div>
+              )}
+
+              {/* Combat Rules */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6"
+              >
+                <h2 className="text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2">
+                  <div className="relative w-6 h-6">
+                    <Image
+                      src="/assets/icon/match.png"
+                      alt="Combat Rules"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  {t.combatRules}
+                </h2>
+
+                <div className={`p-6 rounded-xl border-2 ${
+                  deathEnabled
+                    ? 'bg-red-900/20 border-red-700/50'
+                    : 'bg-emerald-900/20 border-emerald-700/50'
+                }`}>
+                  <div className="flex items-start gap-4">
+                    {deathEnabled ? (
+                      <Skull className="w-12 h-12 text-red-400 flex-shrink-0" />
+                    ) : (
+                      <Shield className="w-12 h-12 text-emerald-400 flex-shrink-0" />
+                    )}
+                    <div>
+                      <h3 className={`text-xl font-bold mb-2 ${
+                        deathEnabled ? 'text-red-300' : 'text-emerald-300'
+                      }`}>
+                        {deathEnabled ? t.deathEnabled : t.deathDisabled}
+                      </h3>
+                      <p className={`leading-relaxed ${
+                        deathEnabled ? 'text-red-200/80' : 'text-emerald-200/80'
+                      }`}>
+                        {deathEnabled ? t.deathEnabledDesc : t.deathDisabledDesc}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Sidebar */}
+            <div className="lg:col-span-1">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-2xl p-6 sticky top-8"
+              >
+                <h2 className="text-xl font-bold text-amber-400 mb-6">{t.arenaDetails}</h2>
+
+                {/* Arena Image Placeholder */}
+                <div className="aspect-video bg-gradient-to-br from-amber-900/30 to-red-900/30 rounded-xl mb-6 flex items-center justify-center border border-amber-700/30">
+                  <div className="relative w-16 h-16">
+                    <Image
+                      src="/assets/icon/arena.png"
+                      alt="Arena"
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400 text-sm">{t.city}</span>
+                    <span className="text-amber-300 font-semibold">{cityName}</span>
+                  </div>
+                  {cityInhabitants > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">{t.population}</span>
+                      <span className="text-amber-300 font-semibold">{cityInhabitants.toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </ScrollableContent>
+    </GameViewport>
   );
 }

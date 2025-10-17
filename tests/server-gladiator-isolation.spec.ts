@@ -15,13 +15,13 @@ test.describe('Server-specific Gladiator Isolation', () => {
     // Step 2: Check if we're on gladiators page (not redirected to server selection)
     expect(page.url()).toContain('/en/gladiators');
 
-    // Step 3: Get current server info from the page
-    const currentServerInfo = await page.evaluate(() => {
-      // Look for server information in the DOM
-      const serverElement = document.querySelector('[data-testid*="server"]') ||
-                           document.querySelector('[class*="server"]');
-      return serverElement ? serverElement.textContent : null;
-    });
+    // Step 3: Get current server info from the page (for debugging if needed)
+    // const currentServerInfo = await page.evaluate(() => {
+    //   // Look for server information in the DOM
+    //   const serverElement = document.querySelector('[data-testid*="server"]') ||
+    //                        document.querySelector('[class*="server"]');
+    //   return serverElement ? serverElement.textContent : null;
+    // });
 
     // Step 4: Note the gladiators we see
     const initialGladiatorNames = await page.evaluate(() => {

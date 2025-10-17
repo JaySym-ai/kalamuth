@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
+import { unauthorizedResponse, internalErrorResponse } from "@/lib/api/errors";
 
 export const runtime = "nodejs";
 
@@ -29,7 +30,7 @@ export async function GET() {
     hasLudus,
   });
   } catch (error) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 }
 
@@ -45,10 +46,10 @@ export async function POST(req: Request) {
     .upsert({ id: u.id, onboardingDone })
     .eq("id", u.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return internalErrorResponse(error, "Failed to update user onboarding status");
   return NextResponse.json({ ok: true });
   } catch (error) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return unauthorizedResponse();
   }
 }
 

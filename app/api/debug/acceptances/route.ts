@@ -10,16 +10,15 @@ export const runtime = "nodejs";
  */
 export async function GET(req: Request) {
   try {
-    const { supabase } = await requireAuthAPI();
+    const { user, supabase } = await requireAuthAPI();
 
-  const url = new URL(req.url);
-  const matchId = url.searchParams.get("matchId");
+    const url = new URL(req.url);
+    const matchId = url.searchParams.get("matchId");
 
-  if (!matchId) {
-    return NextResponse.json({ error: "Missing matchId" }, { status: 400 });
-  }
+    if (!matchId) {
+      return NextResponse.json({ error: "Missing matchId" }, { status: 400 });
+    }
 
-  try {
     // Fetch acceptances
     const { data: acceptances, error: acceptanceError } = await supabase
       .from("combat_match_acceptances")
@@ -28,9 +27,9 @@ export async function GET(req: Request) {
 
     if (acceptanceError) {
       debug_error("Error fetching acceptances:", acceptanceError);
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: "Failed to fetch acceptances",
-        details: acceptanceError 
+        details: acceptanceError
       }, { status: 500 });
     }
 
@@ -49,18 +48,11 @@ export async function GET(req: Request) {
       userId: user.id,
     });
   } catch (error) {
-    debug_error("Error in debug endpoint:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-  } catch (error) {
     if (error instanceof Error && error.message === "unauthorized") {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
     debug_error("Debug acceptances error:", error);
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
 import { createServiceRoleClient } from "@/utils/supabase/server";
-import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
+import { getOpenRouterClient } from "@/lib/ai/client";
 import type { QuestResult } from "@/types/quest";
 import { debug_error } from "@/utils/debug";
 
@@ -49,11 +49,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "gladiator_not_found" }, { status: 404 });
     }
 
-    ensureOpenRouterKey();
-
     // Generate quest results
     const resultPrompt = buildResultPrompt(quest, gladiator, locale);
-    const resultCompletion = await openrouter.chat.completions.create({
+    const client = getOpenRouterClient();
+    const resultCompletion = await client.chat.completions.create({
       model: MODEL_STORYTELLING,
       messages: [{ role: "user", content: resultPrompt }],
       temperature: 0.85,

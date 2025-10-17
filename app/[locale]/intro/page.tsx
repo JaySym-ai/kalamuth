@@ -3,6 +3,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import BackgroundEffects from "@/components/ui/BackgroundEffects";
+import GlowOrbs from "@/components/ui/GlowOrbs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,14 +52,8 @@ export default async function IntroPage({ params }: { params: Promise<{ locale: 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
       {/* Epic Background */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-red-950/30 to-black" />
-        <div className="absolute inset-0 bg-[url('/arena-bg.svg')] opacity-5" />
-
-        {/* Animated glows */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-600/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
+      <BackgroundEffects variant="intro" showArenaPattern />
+      <GlowOrbs variant="default" size="lg" />
 
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-4">

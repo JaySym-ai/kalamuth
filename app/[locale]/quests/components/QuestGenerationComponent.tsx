@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { BouncingDots } from "@/components/ui/LoadingSpinner";
 
 interface QuestGenerationComponentProps {
   isGenerating: boolean;
@@ -22,11 +23,7 @@ export default function QuestGenerationComponent({
     >
       {isGenerating ? (
         <div className="space-y-4">
-          <div className="flex items-center justify-center space-x-3">
-            <div className="w-3 h-3 bg-amber-500 rounded-full animate-bounce" />
-            <div className="w-3 h-3 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
-            <div className="w-3 h-3 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: "0.4s" }} />
-          </div>
+          <BouncingDots />
           <p className="text-center text-amber-200">{t.generating}</p>
           <p className="text-center text-gray-400 text-sm">{t.loadingVolunteer}</p>
         </div>

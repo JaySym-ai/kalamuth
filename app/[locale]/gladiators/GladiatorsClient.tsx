@@ -3,12 +3,12 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
-import { motion } from "framer-motion";
-import { Heart, AlertCircle, Activity } from "lucide-react";
 import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
-import { useRealtimeCollection, useRealtimeRow } from "@/lib/supabase/realtime";
+import { useRealtimeCollection } from "@/lib/supabase/realtime";
+import { useLudusRealtime } from "@/lib/ludus/hooks";
 import PageLayout from "@/components/layout/PageLayout";
+import GladiatorCard from "@/components/gladiator/GladiatorCard";
 
 interface GladiatorsTranslations {
   title: string;
@@ -31,127 +31,11 @@ interface Props {
   translations: GladiatorsTranslations;
 }
 
-function GladiatorCard({ gladiator, locale, translations: t }: { 
-  gladiator: NormalizedGladiator; 
-  locale: string; 
-  translations: Pick<GladiatorsTranslations, 'viewDetails' | 'health' | 'injured' | 'sick' | 'healthy'>;
-}) {
-  const router = useRouter();
-
-  const getHealthStatus = (gladiator: NormalizedGladiator) => {
-    if (gladiator.injury) return { label: t.injured, color: 'text-orange-400', icon: AlertCircle };
-    if (gladiator.sickness) return { label: t.sick, color: 'text-yellow-400', icon: Activity };
-    return { label: t.healthy, color: 'text-green-400', icon: Heart };
-  };
-
-  const healthStatus = getHealthStatus(gladiator);
-  const StatusIcon = healthStatus.icon;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      onClick={() => router.push(`/${locale}/gladiator/${gladiator.id}`)}
-      className="group cursor-pointer"
-      data-testid={`gladiator-${gladiator.id}`}
-    >
-      <div className="relative bg-gradient-to-br from-zinc-900 to-black border border-amber-900/30 rounded-[clamp(0.75rem,2vw,1rem)] p-[clamp(1rem,3vw,1.5rem)] hover:border-amber-700/50 transition-all duration-300 hover:shadow-lg hover:shadow-amber-900/20">
-        {/* Avatar and Basic Info */}
-        <div className="flex items-start gap-[clamp(0.75rem,2vw,1rem)]">
-          {/* Avatar */}
-          <div className="relative flex-shrink-0">
-            <div className="w-[clamp(3.5rem,10vw,4.5rem)] h-[clamp(3.5rem,10vw,4.5rem)] rounded-full bg-gradient-to-br from-amber-600 to-red-600 flex items-center justify-center text-[clamp(1.25rem,4vw,1.75rem)] font-bold text-white">
-              {gladiator.name.charAt(0)}
-            </div>
-            {!gladiator.alive && (
-              <div className="absolute inset-0 bg-black/80 rounded-full flex items-center justify-center">
-                <span className="text-red-500 text-[clamp(0.875rem,2vw,1.125rem)]">✝</span>
-              </div>
-            )}
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <h4 className="text-[clamp(0.875rem,2.5vw,1.125rem)] font-bold text-amber-400 truncate">
-              {gladiator.name} {gladiator.surname}
-            </h4>
-            <p className="text-[clamp(0.75rem,2vw,0.875rem)] text-gray-400 truncate">
-              {gladiator.birthCity}
-            </p>
-
-            {/* Health Status */}
-            <div className="flex items-center gap-[clamp(0.5rem,1.5vw,0.75rem)] mt-[clamp(0.5rem,1.5vw,0.75rem)]">
-              <StatusIcon className={`w-[clamp(0.875rem,2vw,1rem)] h-[clamp(0.875rem,2vw,1rem)] ${healthStatus.color}`} />
-              <span className={`text-[clamp(0.75rem,2vw,0.875rem)] ${healthStatus.color}`}>
-                {healthStatus.label}
-              </span>
-              {gladiator.injuryTimeLeftHours && (
-                <span className="text-[clamp(0.75rem,2vw,0.875rem)] text-gray-500">
-                  ({gladiator.injuryTimeLeftHours}h)
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Health Bar */}
-        <div className="mt-[clamp(1rem,2.5vw,1.5rem)]">
-          <div className="flex items-center justify-between text-[clamp(0.75rem,2vw,0.875rem)] mb-[clamp(0.25rem,1vw,0.5rem)]">
-            <span className="text-gray-500">{t.health}</span>
-            <span className="text-gray-400">{gladiator.currentHealth} / {gladiator.health} HP</span>
-          </div>
-          <div className="h-[clamp(0.5rem,1.5vw,0.75rem)] bg-gray-800 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                gladiator.currentHealth === gladiator.health
-                  ? 'bg-gradient-to-r from-green-500 to-green-600'
-                  : gladiator.currentHealth > gladiator.health * 0.5
-                  ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
-                  : 'bg-gradient-to-r from-red-500 to-red-600'
-              }`}
-              style={{ width: `${(gladiator.currentHealth / gladiator.health) * 100}%` }}
-            />
-          </div>
-          <div className="text-[clamp(0.625rem,1.5vw,0.75rem)] text-gray-500 mt-[clamp(0.25rem,1vw,0.5rem)]">
-            {Math.round((gladiator.currentHealth / gladiator.health) * 100)}% health
-          </div>
-        </div>
-
-        {/* Hover Effect */}
-        <div className="absolute inset-0 bg-gradient-to-t from-amber-900/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-[clamp(0.75rem,2vw,1rem)] pointer-events-none" />
-
-        {/* View Details Button (appears on hover) */}
-        <button
-          className="absolute bottom-[clamp(0.75rem,2vw,1rem)] right-[clamp(0.75rem,2vw,1rem)] px-[clamp(0.75rem,2vw,1rem)] py-[clamp(0.25rem,1vw,0.5rem)] bg-amber-600/80 text-white text-[clamp(0.75rem,2vw,0.875rem)] rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          aria-label={t.viewDetails}
-        >
-          {t.viewDetails}
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
 export default function GladiatorsClient({ ludus, gladiators, locale, translations: t }: Props) {
   const router = useRouter();
   const currentLocale = useLocale();
 
-  useRealtimeRow<Ludus & { id: string }>({
-    table: "ludi",
-    select:
-      "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt",
-    match: { id: ludus.id },
-    initialData: ludus,
-    primaryKey: "id",
-    transform: useCallback((row: Record<string, unknown>) => {
-      const record = row as Record<string, unknown>;
-      return {
-        ...(ludus as Ludus & { id: string }),
-        ...(record as Partial<Ludus>),
-        id: String(record.id ?? ludus.id),
-      } as Ludus & { id: string };
-    }, [ludus]),
-  });
+  useLudusRealtime(ludus);
 
   const { data: realtimeGladiators } = useRealtimeCollection<NormalizedGladiator>({
     table: "gladiators",
@@ -181,32 +65,23 @@ export default function GladiatorsClient({ ludus, gladiators, locale, translatio
       {currentGladiators.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[clamp(1rem,2vw,1.5rem)]">
           {currentGladiators.map((gladiator, index) => (
-            <motion.div
+            <GladiatorCard
               key={gladiator.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <GladiatorCard
-                gladiator={gladiator}
-                locale={locale}
-                translations={{
-                  viewDetails: t.viewDetails,
-                  health: t.health,
-                  injured: t.injured,
-                  sick: t.sick,
-                  healthy: t.healthy,
-                }}
-              />
-            </motion.div>
+              gladiator={gladiator}
+              locale={locale}
+              translations={{
+                health: t.health,
+                injured: t.injured,
+                sick: t.sick,
+                healthy: t.healthy,
+              }}
+              variant="full"
+              animationIndex={index}
+            />
           ))}
         </div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-[clamp(2rem,8vw,4rem)]"
-        >
+        <div className="text-center py-[clamp(2rem,8vw,4rem)]">
           <div className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-[clamp(0.75rem,2vw,1rem)] p-[clamp(2rem,5vw,3rem)]">
             <h3 className="text-[clamp(1.125rem,3vw,1.5rem)] font-bold text-amber-400 mb-[clamp(1rem,2vw,1.5rem)]">{t.noGladiators}</h3>
             <button
@@ -216,7 +91,7 @@ export default function GladiatorsClient({ ludus, gladiators, locale, translatio
               {t.recruitGladiators}
             </button>
           </div>
-        </motion.div>
+        </div>
       )}
     </PageLayout>
   );

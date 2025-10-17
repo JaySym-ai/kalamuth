@@ -3,6 +3,7 @@ import { requireAuthAPI } from "@/lib/auth/server";
 import { createServiceRoleClient } from "@/utils/supabase/server";
 import { Ludus } from "@/types/ludus";
 import { SERVERS } from "@/data/servers";
+import { handleAPIError, badRequestResponse } from "@/lib/api/errors";
 
 export const runtime = "nodejs";
 
@@ -13,10 +14,7 @@ export async function POST(req: Request) {
     const { name, logoUrl, serverId, locationCity, motto } = body;
 
     if (!name || !logoUrl || !serverId) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return badRequestResponse("Missing required fields");
     }
 
     // Ensure user doesn't already have a ludus on this server
@@ -29,18 +27,12 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (existing) {
-      return NextResponse.json(
-        { error: "User already has a ludus on this server" },
-        { status: 400 }
-      );
+      return badRequestResponse("User already has a ludus on this server");
     }
 
     const server = SERVERS.find((s) => s.id === serverId);
     if (!server) {
-      return NextResponse.json(
-        { error: "Invalid server" },
-        { status: 400 }
-      );
+      return badRequestResponse("Invalid server");
     }
 
     const now = new Date().toISOString();
@@ -78,12 +70,6 @@ export async function POST(req: Request) {
       initialGladiatorCount: server.config.initialGladiatorsPerLudus,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    return NextResponse.json(
-      { error: "Failed to create ludus", details: (error as Error).message },
-      { status: 500 }
-    );
+    return handleAPIError(error, "Failed to create ludus");
   }
 }

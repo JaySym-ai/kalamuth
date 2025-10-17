@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
 import { getQuestDurationMinutes } from "@/lib/ludus/repository";
-import { debug_error } from "@/utils/debug";
+import { handleAPIError, badRequestResponse, notFoundResponse, internalErrorResponse } from "@/lib/api/errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const questId = typeof body?.questId === 'string' ? body.questId.trim() : null;
 
     if (!questId) {
-      return NextResponse.json({ error: "missing_quest_id" }, { status: 400 });
+      return badRequestResponse("missing_quest_id");
     }
 
     // Fetch quest with ludus info
@@ -26,11 +26,11 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (questErr || !quest) {
-      return NextResponse.json({ error: "quest_not_found" }, { status: 404 });
+      return notFoundResponse("quest");
     }
 
     if (quest.status !== 'pending') {
-      return NextResponse.json({ error: "quest_not_pending" }, { status: 400 });
+      return badRequestResponse("quest_not_pending");
     }
 
     // Fetch ludus to get server config
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       .eq('id', questId);
 
     if (updateErr) {
-      return NextResponse.json({ error: "failed_to_accept_quest" }, { status: 500 });
+      return internalErrorResponse(updateErr, "Failed to accept quest");
     }
 
     // Calculate completion time based on server config
@@ -76,11 +76,7 @@ export async function POST(req: Request) {
       message: `Quest accepted! The gladiator will return in ${questDurationMinutes} minute${questDurationMinutes !== 1 ? 's' : ''}.`,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    debug_error("Quest acceptance error:", error);
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    return handleAPIError(error, "Quest acceptance error");
   }
 }
 

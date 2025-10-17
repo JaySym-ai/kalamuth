@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
 import { createServiceRoleClient } from "@/utils/supabase/server";
 import { SERVERS } from "@/data/servers";
-import OpenAI from "openai";
-import { generateOneGladiator } from "@/lib/generation/generateGladiator";
-import { rollRarity, getInitialGladiatorRarityConfig } from "@/lib/gladiator/rarity";
-import { debug_error, debug_warn } from "@/utils/debug";
+import { getInitialGladiatorRarityConfig } from "@/lib/gladiator/rarity";
+import { debug_error } from "@/utils/debug";
+import { serializeError, nowIso } from "@/utils/errors";
+import { getOpenRouterClient } from "@/lib/ai/client";
+import { getExistingGladiatorNames } from "@/lib/gladiator/names";
+import { generateGladiatorWithRetry } from "@/lib/gladiator/generation";
 
 export const runtime = "nodejs";
-
-function nowIso() { return new Date().toISOString(); }
 
 export async function POST(req: Request) {
   try {
@@ -81,16 +81,16 @@ export async function POST(req: Request) {
     if (jobErr) return NextResponse.json({ error: jobErr.message }, { status: 500 });
 
     // From here on, we process the job directly in Next.js
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
+    let client;
+    try {
+      client = getOpenRouterClient();
+    } catch {
       await serviceRole
         .from('jobs')
         .update({ status: 'completed_with_errors', created: 0, errors: ['missing_openrouter_api_key'], finishedAt: nowIso() })
         .eq('id', job.id);
       return NextResponse.json({ error: 'config_missing' }, { status: 500 });
     }
-
-    const client = new OpenAI({ apiKey, baseURL: 'https://openrouter.ai/api/v1', defaultHeaders: { 'X-Title': 'Kalamuth' } });
 
     // Recompute capacity at execution time
     const { count: execExistingCount } = await supabase
@@ -106,88 +106,46 @@ export async function POST(req: Request) {
     }
 
     // Fetch existing gladiator names in this ludus to avoid duplicates
-    const { data: existingGladiators } = await supabase
-      .from('gladiators')
-      .select('name, surname')
-      .eq('ludusId', ludusId);
-
-    const existingNames = new Set<string>(
-      (existingGladiators || []).map(g =>
-        `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase()
-      )
-    );
+    const existingNames = await getExistingGladiatorNames(supabase, ludusId);
 
     let created = 0;
     const errors: string[] = [];
 
+    // Roll rarity config for initial gladiators (only bad and common)
+    const initialRarityConfig = getInitialGladiatorRarityConfig();
+
     for (let i = 0; i < toCreate; i++) {
-      let retries = 3; // Allow retries if we get a duplicate name
-      let gladiatorCreated = false;
+      const gladiator = await generateGladiatorWithRetry({
+        client,
+        jobId: job.id,
+        existingNames,
+        rarityConfig: initialRarityConfig,
+      });
 
-      while (retries > 0 && !gladiatorCreated) {
-        try {
-          // Roll rarity for initial gladiators (only bad and common)
-          const initialRarityConfig = getInitialGladiatorRarityConfig();
-          const rarity = rollRarity(initialRarityConfig);
+      if (!gladiator) {
+        errors.push(`Gladiator ${i + 1}: Failed after retries`);
+        continue;
+      }
 
-          const g = await generateOneGladiator(client, {
-            jobId: job.id,
-            attempt: i + 1,
-            existingNames: Array.from(existingNames),
-            rarity
-          });
+      const now = nowIso();
+      const { error: insErr } = await supabase.from('gladiators').insert({
+        ...gladiator,
+        userId: user.id,
+        ludusId,
+        serverId: ludus.serverId || null,
+        createdAt: now,
+        updatedAt: now,
+      });
 
-          // Check if this name already exists
-          const fullName = `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase();
-          if (existingNames.has(fullName)) {
-            throw new Error(`Duplicate name generated: ${g.name} ${g.surname}`);
-          }
-
-          const now = nowIso();
-          const { error: insErr } = await supabase.from('gladiators').insert({
-            ...g,
-            userId: user.id,
-            ludusId,
-            serverId: ludus.serverId || null,
-            createdAt: now,
-            updatedAt: now,
-          });
-
-          if (insErr) {
-            // Check if it's a unique constraint violation
-            if (insErr.message.includes('gladiators_ludus_fullname_unique')) {
-              throw new Error(`Duplicate name in database: ${g.name} ${g.surname}`);
-            }
-            throw new Error(insErr.message);
-          }
-
-          // Success - add to our tracking set
-          existingNames.add(fullName);
-          created++;
-          gladiatorCreated = true;
-        } catch (e) {
-          retries--;
-          const msg = e instanceof Error ? e.message : String(e);
-
-          if (retries === 0) {
-            // Final failure after all retries
-            if (process.env.NODE_ENV !== 'production') {
-              debug_error('Gladiator generation failed after retries', {
-                jobId: job.id,
-                attempt: i + 1,
-                error: msg
-              });
-            }
-            errors.push(msg);
-          } else if (process.env.NODE_ENV !== 'production') {
-            debug_warn('Gladiator generation retry', {
-              jobId: job.id,
-              attempt: i + 1,
-              retriesLeft: retries,
-              error: msg
-            });
-          }
+      if (insErr) {
+        // Check if it's a unique constraint violation
+        if (insErr.message.includes('gladiators_ludus_fullname_unique')) {
+          errors.push(`Gladiator ${i + 1}: Duplicate name in database`);
+        } else {
+          errors.push(`Gladiator ${i + 1}: ${serializeError(insErr)}`);
         }
+      } else {
+        created++;
       }
     }
 

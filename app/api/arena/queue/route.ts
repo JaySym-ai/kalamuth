@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
 import { createServiceRoleClient } from "@/utils/supabase/server";
 import type { CombatQueueEntry } from "@/types/combat";
+import { handleAPIError, badRequestResponse } from "@/lib/api/errors";
 import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
@@ -12,20 +13,16 @@ export const runtime = "nodejs";
  */
 export async function GET(req: Request) {
   try {
-    const { user, supabase } = await requireAuthAPI();
+    const { supabase } = await requireAuthAPI();
 
-  const url = new URL(req.url);
-  const arenaSlug = url.searchParams.get("arenaSlug");
-  const serverId = url.searchParams.get("serverId");
+    const url = new URL(req.url);
+    const arenaSlug = url.searchParams.get("arenaSlug");
+    const serverId = url.searchParams.get("serverId");
 
-  if (!arenaSlug || !serverId) {
-    return NextResponse.json(
-      { error: "Missing arenaSlug or serverId" },
-      { status: 400 }
-    );
-  }
+    if (!arenaSlug || !serverId) {
+      return badRequestResponse("Missing arenaSlug or serverId");
+    }
 
-  try {
     // Fetch all waiting queue entries for this arena/server
     const { data: queueEntries, error } = await supabase
       .from("combat_queue")
@@ -42,14 +39,7 @@ export async function GET(req: Request) {
       count: queueEntries?.length || 0,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    debug_error("Error fetching queue:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch queue" },
-      { status: 500 }
-    );
+    return handleAPIError(error, "Error fetching queue");
   }
 }
 
@@ -61,8 +51,6 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const { user, supabase } = await requireAuthAPI();
-
-  try {
     const body = await req.json();
     const { arenaSlug, serverId, gladiatorId } = body;
 
@@ -145,18 +133,7 @@ export async function POST(req: Request) {
       queueEntry: queueEntry as CombatQueueEntry,
     });
   } catch (error) {
-    debug_error("Error joining queue:", error);
-    return NextResponse.json(
-      { error: "Failed to join queue" },
-      { status: 500 }
-    );
-  }
-  } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    debug_error("Queue join error:", error);
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    return handleAPIError(error, "Queue join error");
   }
 }
 
@@ -168,17 +145,13 @@ export async function DELETE(req: Request) {
   try {
     const { user, supabase } = await requireAuthAPI();
 
-  const url = new URL(req.url);
-  const queueId = url.searchParams.get("queueId");
+    const url = new URL(req.url);
+    const queueId = url.searchParams.get("queueId");
 
-  if (!queueId) {
-    return NextResponse.json(
-      { error: "Missing queueId" },
-      { status: 400 }
-    );
-  }
+    if (!queueId) {
+      return badRequestResponse("Missing queueId");
+    }
 
-  try {
     // Verify ownership and delete
     const { error } = await supabase
       .from("combat_queue")
@@ -191,18 +164,7 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    debug_error("Error leaving queue:", error);
-    return NextResponse.json(
-      { error: "Failed to leave queue" },
-      { status: 500 }
-    );
-  }
-  } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    debug_error("Queue leave error:", error);
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    return handleAPIError(error, "Queue leave error");
   }
 }
 

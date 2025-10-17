@@ -6,10 +6,7 @@ import { LudusZ, type LudusFromZod } from "@/lib/ludus/schema";
 import type { Ludus } from "@/types/ludus";
 import { DEFAULT_SERVER_ID, SERVERS } from "@/data/servers";
 import { transformLudusData } from "./transform";
-
-function nowIso() {
-  return new Date().toISOString();
-}
+import { nowIso } from "@/utils/errors";
 
 function getLudusMaxGladiators(serverId: string): number {
   const s = SERVERS.find((s) => s.id === serverId) ?? SERVERS.find((s) => s.id === DEFAULT_SERVER_ID);

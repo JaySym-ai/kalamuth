@@ -1,18 +1,18 @@
 "use client";
 
-import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import type { Ludus } from "@/types/ludus";
 import type { GameServer } from "@/types/server";
-import { useRealtimeRow } from "@/lib/supabase/realtime";
+import { useLudusRealtime } from "@/lib/ludus/hooks";
 
-import LogoutButton from "@/app/components/auth/LogoutButton";
-import ChangeServerButton from "@/app/components/dashboard/ChangeServerButton";
+import LogoutButton from "@/components/auth/LogoutButton";
+import ChangeServerButton from "@/components/dashboard/ChangeServerButton";
 import LudusStats from "./LudusStats";
 import PageLayout from "@/components/layout/PageLayout";
+import { slideDown, slideUpWithDelay } from "@/lib/animations/presets";
 
 interface DashboardTranslations {
   title: string;
@@ -54,24 +54,7 @@ export default function DashboardClient({ ludus, server, translations: t }: Prop
   const router = useRouter();
   const currentLocale = useLocale();
 
-  const { data: realtimeLudus } = useRealtimeRow<Ludus & { id: string }>({
-    table: "ludi",
-    select:
-      "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt",
-    match: { id: ludus.id },
-    initialData: ludus,
-    primaryKey: "id",
-    transform: useCallback((row: Record<string, unknown>) => {
-      const record = row as Record<string, unknown>;
-      return {
-        ...(ludus as Ludus & { id: string }),
-        ...(record as Partial<Ludus>),
-        id: String(record.id ?? ludus.id),
-      } as Ludus & { id: string };
-    }, [ludus]),
-  });
-
-  const currentLudus = realtimeLudus ?? ludus;
+  const { ludus: currentLudus } = useLudusRealtime(ludus);
 
 
   return (
@@ -90,8 +73,7 @@ export default function DashboardClient({ ludus, server, translations: t }: Prop
       {/* Server Tagline */}
       {server && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+          {...slideDown}
           className="mb-4 px-4 py-2 bg-gradient-to-r from-amber-900/30 to-orange-900/30 border border-amber-700/50 rounded-lg text-center"
         >
           <p className="text-xs sm:text-sm text-amber-100">
@@ -262,9 +244,7 @@ export default function DashboardClient({ ludus, server, translations: t }: Prop
         {/* Right Column - Empty or future content */}
         <div className="lg:col-span-2">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            {...slideUpWithDelay(0.3)}
             className="bg-black/60 backdrop-blur-sm border border-amber-900/30 rounded-xl p-6 text-center"
           >
             <div className="text-gray-400">

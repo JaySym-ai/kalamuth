@@ -19,7 +19,7 @@ This migration replaces the complex RLS policies with simpler, non-recursive one
 ### Option 1: Supabase Dashboard (Recommended)
 1. Go to your Supabase project dashboard
 2. Navigate to **SQL Editor**
-3. Copy the contents of `supabase/migrations/0012_fix_acceptance_recursion.sql`
+3. Copy the contents of `supabase/migrations/0013_fix_infinite_recursion_final.sql`
 4. Paste and run the SQL
 5. You should see "Success. No rows returned"
 

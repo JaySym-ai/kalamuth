@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
-import { openrouter } from "@/lib/ai/openrouter";
+import { getOpenRouterClient } from "@/lib/ai/client";
+import { handleAPIError, badRequestResponse, notFoundResponse, unauthorizedResponse } from "@/lib/api/errors";
 
 interface ChatMessage {
   id: string;
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     const { message, gladiatorId, conversationHistory, locale } = await request.json();
 
     if (!message || !gladiatorId) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return badRequestResponse("Missing required fields");
     }
 
     // Fetch gladiator data
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error || !gladiator) {
-      return NextResponse.json({ error: "Gladiator not found" }, { status: 404 });
+      return notFoundResponse("gladiator");
     }
 
     // Verify gladiator belongs to user's ludus
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!ludus) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return unauthorizedResponse();
     }
 
     // Create conversation context
@@ -78,11 +79,12 @@ ${responseLanguage} Respond in character, keeping responses relatively concise (
     ];
 
     // Get AI response with fallback models
+    const client = getOpenRouterClient();
+    let response = "I understand, master."; // Default fallback response
     let completion;
-    let response = "I don't know what to say.";
-    
+
     try {
-      completion = await openrouter.chat.completions.create({
+      completion = await client.chat.completions.create({
         model: "google/gemini-2.5-flash-lite",
         messages,
         temperature: 0.8,
@@ -92,7 +94,7 @@ ${responseLanguage} Respond in character, keeping responses relatively concise (
     } catch (error) {
       console.log("Primary model failed, trying fallback:", error instanceof Error ? error.message : String(error));
       try {
-        completion = await openrouter.chat.completions.create({
+        completion = await client.chat.completions.create({
           model: "meta-llama/llama-3.2-3b-instruct:free",
           messages,
           temperature: 0.8,
@@ -113,10 +115,6 @@ ${responseLanguage} Respond in character, keeping responses relatively concise (
     return NextResponse.json({ response });
 
   } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.error("Gladiator chat error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return handleAPIError(error, "Gladiator chat error");
   }
 }

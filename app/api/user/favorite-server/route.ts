@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
+import { handleAPIError, badRequestResponse, internalErrorResponse } from "@/lib/api/errors";
 
 export const runtime = "nodejs";
 
@@ -18,21 +19,14 @@ export async function GET() {
       .maybeSingle();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return internalErrorResponse(error, "Failed to fetch favorite server");
     }
 
     return NextResponse.json({
       favoriteServerId: userRow?.favoriteServerId ?? null,
     });
-  } catch (err) {
-    if (err instanceof Error && err.message === "unauthorized") {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    const error = err as Error;
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleAPIError(error, "Failed to fetch favorite server");
   }
 }
 
@@ -48,10 +42,7 @@ export async function POST(req: Request) {
     const { serverId } = body;
 
     if (!serverId) {
-      return NextResponse.json(
-        { error: "serverId is required" },
-        { status: 400 }
-      );
+      return badRequestResponse("serverId is required");
     }
 
     // Note: We allow setting favorite server even without a ludus
@@ -64,19 +55,12 @@ export async function POST(req: Request) {
       .eq("id", u.id);
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+      return internalErrorResponse(updateError, "Failed to update favorite server");
     }
 
     return NextResponse.json({ ok: true, favoriteServerId: serverId });
-  } catch (err) {
-    if (err instanceof Error && err.message === "unauthorized") {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    const error = err as Error;
-    return NextResponse.json(
-      { error: error.message || "Internal server error" },
-      { status: 500 }
-    );
+  } catch (error) {
+    return handleAPIError(error, "Failed to update favorite server");
   }
 }
 

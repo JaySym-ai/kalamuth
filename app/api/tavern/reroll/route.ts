@@ -1,28 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
 import { createServiceRoleClient } from "@/utils/supabase/server";
-import OpenAI from "openai";
-import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 import { SERVERS } from "@/data/servers";
-import { rollRarity } from "@/lib/gladiator/rarity";
-import { debug_error, debug_log, debug_warn } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
+import { nowIso } from "@/utils/errors";
+import { getOpenRouterClient } from "@/lib/ai/client";
+import { getExistingGladiatorNames } from "@/lib/gladiator/names";
+import { generateGladiatorWithRetry } from "@/lib/gladiator/generation";
 
 export const runtime = "nodejs";
-
-function nowIso() { return new Date().toISOString(); }
-
-function serializeError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  if (typeof error === 'object' && error !== null) {
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return String(error);
-    }
-  }
-  return String(error);
-}
 
 export async function POST(req: Request) {
   try {
@@ -59,68 +45,28 @@ export async function POST(req: Request) {
     }
 
     // Generate new gladiator
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) return NextResponse.json({ error: "missing_api_key" }, { status: 500 });
-
-    const client = new OpenAI({
-      apiKey,
-      baseURL: 'https://openrouter.ai/api/v1',
-      defaultHeaders: { 'X-Title': 'Kalamuth' },
-      timeout: 60000 // 60 second timeout
-    });
+    let client;
+    try {
+      client = getOpenRouterClient();
+    } catch {
+      return NextResponse.json({ error: "missing_api_key" }, { status: 500 });
+    }
 
     // Get server config for rarity rolling
     const server = SERVERS.find(s => s.id === ludus.serverId);
     const rarityConfig = server?.config.rarityConfig;
 
     // Fetch existing gladiator names
-    const { data: existingGladiators } = await supabase
-      .from('gladiators')
-      .select('name, surname')
-      .eq('ludusId', ludusId);
+    const existingNames = await getExistingGladiatorNames(supabase, ludusId, ludus.serverId);
 
-    const existingNames = new Set<string>(
-      (existingGladiators || []).map(g =>
-        `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase()
-      )
-    );
-
-    let newGladiator = null;
-    let retries = 3;
-    let lastError: unknown = null;
-
-    while (retries > 0 && !newGladiator) {
-      try {
-        // Roll rarity for new gladiator
-        const rarity = rarityConfig ? rollRarity(rarityConfig) : 'common';
-
-        const g = await generateOneGladiator(client, {
-          jobId: `tavern-reroll-${ludusId}`,
-          attempt: 1,
-          existingNames: Array.from(existingNames),
-          rarity
-        });
-
-        const fullName = `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase();
-        if (!existingNames.has(fullName)) {
-          newGladiator = g;
-          debug_log(`[tavern/reroll] Successfully generated new gladiator: ${fullName}`);
-        } else {
-          lastError = `Duplicate name generated: ${fullName}`;
-          debug_warn(`[tavern/reroll] Duplicate name generated (retry ${4 - retries}/3): ${fullName}`);
-          retries--;
-        }
-      } catch (e) {
-        lastError = e;
-        const errorMsg = serializeError(e);
-        debug_error(`[tavern/reroll] Error generating new gladiator (retry ${4 - retries}/3): ${errorMsg}`);
-        retries--;
-      }
-    }
+    const newGladiator = await generateGladiatorWithRetry({
+      client,
+      jobId: `tavern-reroll-${ludusId}`,
+      existingNames,
+      rarityConfig,
+    });
 
     if (!newGladiator) {
-      const errorMsg = serializeError(lastError);
-      debug_error(`[tavern/reroll] Failed to generate new gladiator after 3 retries. Last error: ${errorMsg}`);
       return NextResponse.json({ error: "generation_failed" }, { status: 500 });
     }
 

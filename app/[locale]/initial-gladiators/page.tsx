@@ -5,6 +5,8 @@ import { getInitialGladiatorsByLudus } from "@/lib/gladiator/repository";
 import { requireAuthPage } from "@/lib/auth/server";
 import { debug_error } from "@/utils/debug";
 import InitialGladiatorsClient from "./InitialGladiatorsClient";
+import BackgroundEffects from "@/components/ui/BackgroundEffects";
+import GlowOrbs from "@/components/ui/GlowOrbs";
 import { SERVERS } from "@/data/servers";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
 
@@ -62,14 +64,8 @@ export default async function InitialGladiatorsPage({ params }: { params: Promis
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
       {/* Epic Background */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-red-950/20 to-black" />
-        <div className="absolute inset-0 bg-[url('/arena-bg.svg')] opacity-5" />
-
-        {/* Animated glows */}
-        <div className="absolute top-1/4 right-1/4 w-48 h-48 sm:w-64 sm:h-64 md:w-96 md:h-96 bg-red-600/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 left-1/4 w-48 h-48 sm:w-64 sm:h-64 md:w-96 md:h-96 bg-amber-600/20 rounded-full blur-3xl animate-pulse delay-1000" />
-      </div>
+      <BackgroundEffects variant="arena" showArenaPattern />
+      <GlowOrbs variant="diagonal" size="md" />
 
       {/* Content */}
       <div className="relative z-10 min-h-screen px-4 py-12">

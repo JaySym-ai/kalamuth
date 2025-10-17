@@ -1,7 +1,32 @@
 import { Page, expect } from '@playwright/test';
 
-// Pre-created test accounts (must exist in the test server)
+/**
+ * Pre-created test accounts (must exist in the test server)
+ *
+ * All test accounts use the same password for simplicity.
+ * These accounts should be created in the test server before running tests.
+ */
 export const TEST_CREDENTIALS = {
+  // Primary test account - used in most tests
+  primary: {
+    email: 'test2@hotmail.com',
+    password: 'qplsk8hothot',
+  },
+  // Secondary test accounts for multi-user scenarios
+  secondary: {
+    email: 'test3@hotmail.com',
+    password: 'qplsk8hothot',
+  },
+  tertiary: {
+    email: 'test4@hotmail.com',
+    password: 'qplsk8hothot',
+  },
+  // Legacy test account (for backward compatibility with old tests)
+  legacy: {
+    email: 'testplay@kalamuth.com',
+    password: 'testpassword123',
+  },
+  // Backward compatibility - direct access to email/password
   email: 'test2@hotmail.com',
   password: 'qplsk8hothot',
 };
@@ -9,8 +34,13 @@ export const TEST_CREDENTIALS = {
 /**
  * Helper function to log in a user with existing credentials
  * Note: The test account must already exist in the test server
+ *
+ * @param page - Playwright page object
+ * @param email - Email address (defaults to primary test account)
+ * @param password - Password (defaults to primary test account password)
+ * @param locale - Locale for the auth page (defaults to 'en')
  */
-export async function loginUser(page: Page, email = TEST_CREDENTIALS.email, password = TEST_CREDENTIALS.password, locale = 'en') {
+export async function loginUser(page: Page, email = TEST_CREDENTIALS.primary.email, password = TEST_CREDENTIALS.primary.password, locale = 'en') {
   // Clear any existing auth state first
   await clearAuthState(page);
 
@@ -123,8 +153,12 @@ export async function testApiAuthentication(page: Page, shouldBeAuthenticated: b
 /**
  * Helper function to setup test user (alias for loginUser)
  * Note: The test account must already exist in the test server
+ *
+ * @param page - Playwright page object
+ * @param email - Email address (defaults to primary test account)
+ * @param password - Password (defaults to primary test account password)
  */
-export async function setupTestUser(page: Page, email = TEST_CREDENTIALS.email, password = TEST_CREDENTIALS.password) {
+export async function setupTestUser(page: Page, email = TEST_CREDENTIALS.primary.email, password = TEST_CREDENTIALS.primary.password) {
   await loginUser(page, email, password);
 }
 

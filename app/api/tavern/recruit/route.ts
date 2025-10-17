@@ -1,28 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
 import { createServiceRoleClient } from "@/utils/supabase/server";
-import OpenAI from "openai";
-import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 import { SERVERS } from "@/data/servers";
-import { rollRarity } from "@/lib/gladiator/rarity";
-import { debug_error, debug_log, debug_warn } from "@/utils/debug";
+import { debug_error } from "@/utils/debug";
+import { serializeError, nowIso } from "@/utils/errors";
+import { getOpenRouterClient } from "@/lib/ai/client";
+import { getExistingGladiatorNames } from "@/lib/gladiator/names";
+import { generateAndInsertTavernGladiator } from "@/lib/gladiator/generation";
 
 export const runtime = "nodejs";
-
-function nowIso() { return new Date().toISOString(); }
-
-function serializeError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  if (typeof error === 'object' && error !== null) {
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return String(error);
-    }
-  }
-  return String(error);
-}
 
 export async function POST(req: Request) {
   try {
@@ -153,73 +139,26 @@ export async function POST(req: Request) {
     }
 
     // Generate replacement tavern gladiator immediately to maintain backup system
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (apiKey) {
-      try {
-        const client = new OpenAI({ apiKey, baseURL: 'https://openrouter.ai/api/v1', defaultHeaders: { 'X-Title': 'Kalamuth' } });
+    try {
+      const client = getOpenRouterClient();
+      const server = SERVERS.find(s => s.id === ludus.serverId);
+      const rarityConfig = server?.config.rarityConfig;
+      const existingNames = await getExistingGladiatorNames(supabase, ludusId, ludus.serverId);
 
-        // Get server config for rarity rolling
-        const server = SERVERS.find(s => s.id === ludus.serverId);
-        const rarityConfig = server?.config.rarityConfig;
-
-        // Fetch existing gladiator names
-        const { data: existingGladiators } = await supabase
-          .from('gladiators')
-          .select('name, surname')
-          .eq('ludusId', ludusId);
-
-        const existingNames = new Set<string>(
-          (existingGladiators || []).map(g =>
-            `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase()
-          )
-        );
-
-        let retries = 3;
-        let lastError: unknown = null;
-        while (retries > 0) {
-          try {
-            // Roll rarity for replacement gladiator
-            const rarity = rarityConfig ? rollRarity(rarityConfig) : 'common';
-
-            const g = await generateOneGladiator(client, {
-              jobId: `tavern-replace-${ludusId}-${Date.now()}`,
-              attempt: 1,
-              existingNames: Array.from(existingNames),
-              rarity
-            });
-
-            const fullName = `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase();
-            if (!existingNames.has(fullName)) {
-              await supabase.from('tavern_gladiators').insert({
-                ...g,
-                userId: user.id,
-                ludusId,
-                serverId: ludus.serverId || null,
-                createdAt: now,
-                updatedAt: now,
-              });
-              debug_log(`[tavern/recruit] Successfully generated replacement gladiator: ${fullName}`);
-              break;
-            }
-            lastError = `Duplicate name generated: ${fullName}`;
-            debug_warn(`[tavern/recruit] Duplicate name generated (retry ${4 - retries}/3): ${fullName}`);
-            retries--;
-          } catch (e) {
-            lastError = e;
-            const errorMsg = serializeError(e);
-            debug_error(`[tavern/recruit] Error generating replacement gladiator (retry ${4 - retries}/3): ${errorMsg}`);
-            retries--;
-          }
-        }
-        if (lastError && retries === 0) {
-          const errorMsg = serializeError(lastError);
-          debug_warn(`[tavern/recruit] Failed to generate replacement gladiator after 3 retries: ${errorMsg}`);
-        }
-      } catch (error) {
-        const errorMsg = serializeError(error);
-        debug_error(`[tavern/recruit] Failed to generate replacement gladiator: ${errorMsg}`);
-        // Don't fail the recruitment if replacement generation fails
-      }
+      await generateAndInsertTavernGladiator({
+        client,
+        jobId: `tavern-replace-${ludusId}-${Date.now()}`,
+        existingNames,
+        rarityConfig,
+        supabase,
+        userId: user.id,
+        ludusId,
+        serverId: ludus.serverId || null,
+      });
+    } catch (error) {
+      const errorMsg = serializeError(error);
+      debug_error(`[tavern/recruit] Failed to generate replacement gladiator: ${errorMsg}`);
+      // Don't fail the recruitment if replacement generation fails
     }
 
     return NextResponse.json({ ok: true }, { status: 200 });

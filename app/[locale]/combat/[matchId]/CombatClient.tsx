@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import CombatStream from "@/app/components/combat/CombatStream";
+import CombatStream from "@/components/combat/CombatStream";
 import type { CombatGladiator } from "@/types/combat";
 
 interface CombatClientProps {

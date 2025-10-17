@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
 import type { CombatantSummary, CombatLogEntry, CombatMatchAcceptance } from "@/types/combat";
+import { handleAPIError, badRequestResponse, notFoundResponse, internalErrorResponse } from "@/lib/api/errors";
 import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
@@ -15,7 +16,7 @@ export async function GET(
   const { matchId } = await params;
 
   if (!matchId) {
-    return NextResponse.json({ error: "missing matchId" }, { status: 400 });
+    return badRequestResponse("missing matchId");
   }
 
   const { data: match, error: matchError } = await supabase
@@ -25,12 +26,11 @@ export async function GET(
     .maybeSingle();
 
   if (matchError) {
-    debug_error("Failed to load match", matchError);
-    return NextResponse.json({ error: "failed_to_fetch_match" }, { status: 500 });
+    return internalErrorResponse(matchError, "Failed to load match");
   }
 
   if (!match) {
-    return NextResponse.json({ error: "match_not_found" }, { status: 404 });
+    return notFoundResponse("match");
   }
 
   const gladiatorIds = [match.gladiator1Id, match.gladiator2Id];
@@ -107,11 +107,7 @@ export async function GET(
     logs,
   });
   } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    debug_error("Match fetch error:", error);
-    return NextResponse.json({ error: "internal_error" }, { status: 500 });
+    return handleAPIError(error, "Match fetch error");
   }
 }
 

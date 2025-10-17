@@ -1,10 +1,10 @@
-import Header from "../components/layout/Header";
-import Footer from "../components/layout/Footer";
-import HeroSection from "../components/sections/HeroSection";
-import FeaturesSection from "../components/sections/FeaturesSection";
-import GladiatorShowcase from "../components/sections/GladiatorShowcase";
-import BattlePreview from "../components/sections/BattlePreview";
-import CTASection from "../components/sections/CTASectionContainer";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import HeroSection from "@/components/marketing/HeroSection";
+import FeaturesSection from "@/components/marketing/FeaturesSection";
+import GladiatorShowcase from "@/components/marketing/GladiatorShowcase";
+import BattlePreview from "@/components/marketing/BattlePreview";
+import CTASection from "@/components/marketing/CTASectionContainer";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";

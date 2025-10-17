@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocale } from "next-intl";
+import Image from "next/image";
 import PageLayout from "@/components/layout/PageLayout";
 import type { Ludus } from "@/types/ludus";
 import { motion } from "framer-motion";
@@ -19,7 +20,7 @@ interface Props {
   translations: InventoryTranslations;
 }
 
-export default function InventoryClient({ ludus, locale, translations: t }: Props) {
+export default function InventoryClient({ ludus, translations: t }: Props) {
   const currentLocale = useLocale();
 
   return (
@@ -44,9 +45,11 @@ export default function InventoryClient({ ludus, locale, translations: t }: Prop
             className="mb-6"
           >
             <div className="relative w-24 h-24 mx-auto mb-4">
-              <img
+              <Image
                 src="/assets/icon/inventory.png"
                 alt="Inventory"
+                width={96}
+                height={96}
                 className="w-full h-full object-contain opacity-80"
               />
             </div>

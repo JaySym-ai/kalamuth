@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
-import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
+import { getOpenRouterClient } from "@/lib/ai/client";
 import type { GeneratedQuest, VolunteerInfo, QuestGenerationContext } from "@/types/quest";
 import { debug_log, debug_error } from "@/utils/debug";
 
@@ -69,7 +69,8 @@ export async function POST(req: Request) {
       }))
     });
 
-    const questCompletion = await openrouter.chat.completions.create({
+    const client = getOpenRouterClient();
+    const questCompletion = await client.chat.completions.create({
       model: MODEL_STORYTELLING,
       messages: [{ role: "user", content: questPrompt }],
       temperature: 0.85,
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
 
     // Find volunteer gladiator
     const volunteerPrompt = buildVolunteerPrompt(quest, gladiators, locale);
-    const volunteerCompletion = await openrouter.chat.completions.create({
+    const volunteerCompletion = await client.chat.completions.create({
       model: MODEL_STORYTELLING,
       messages: [{ role: "user", content: volunteerPrompt }],
       temperature: 0.8,

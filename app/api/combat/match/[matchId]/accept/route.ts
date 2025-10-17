@@ -11,18 +11,17 @@ export const runtime = "nodejs";
  * Accept a combat match request
  */
 export async function POST(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ matchId: string }> }
 ) {
   try {
-    const { user, supabase } = await requireAuthAPI();
+    const { user } = await requireAuthAPI();
 
-  const { matchId } = await params;
-  if (!matchId) {
-    return NextResponse.json({ error: "missing matchId" }, { status: 400 });
-  }
+    const { matchId } = await params;
+    if (!matchId) {
+      return NextResponse.json({ error: "missing matchId" }, { status: 400 });
+    }
 
-  try {
     // Use service role client to bypass RLS temporarily
     const serviceRole = createServiceRoleClient();
 
@@ -84,12 +83,12 @@ export async function POST(
     }
 
     const allAccepted = allAcceptances.every(a => a.status === "accepted");
-    
+
     // If both accepted, update match status to pending
     if (allAccepted && allAcceptances.length === 2) {
       const { error: updateError } = await serviceRole
         .from("combat_matches")
-        .update({ 
+        .update({
           status: "pending",
           acceptanceDeadline: null // Clear the deadline
         })
@@ -111,16 +110,6 @@ export async function POST(
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
     debug_error("Error accepting match:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-  } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-    debug_error("Match accept error:", error);
     return NextResponse.json({ error: "internal_error" }, { status: 500 });
   }
 }

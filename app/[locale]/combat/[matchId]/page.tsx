@@ -6,6 +6,7 @@ import { debug_error } from "@/utils/debug";
 import CombatClient from "./CombatClient";
 import GameViewport from "@/components/layout/GameViewport";
 import ScrollableContent from "@/components/layout/ScrollableContent";
+import BackgroundEffects from "@/components/ui/BackgroundEffects";
 
 interface PageProps {
   params: Promise<{
@@ -125,7 +126,7 @@ export default async function CombatPage({ params }: PageProps) {
   return (
     <GameViewport>
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-zinc-900 to-black" />
+      <BackgroundEffects variant="combat" />
 
       {/* Scrollable Content */}
       <ScrollableContent className="relative z-10">

@@ -6,9 +6,10 @@ import { useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import type { Ludus } from "@/types/ludus";
 import type { Quest } from "@/types/quest";
-import { useRealtimeRow, useRealtimeCollection } from "@/lib/supabase/realtime";
+import { useRealtimeCollection } from "@/lib/supabase/realtime";
+import { useLudusRealtime } from "@/lib/ludus/hooks";
 
-import LogoutButton from "@/app/components/auth/LogoutButton";
+import LogoutButton from "@/components/auth/LogoutButton";
 import PageLayout from "@/components/layout/PageLayout";
 import QuestGenerationComponent from "./components/QuestGenerationComponent";
 import QuestDetailsComponent from "./components/QuestDetailsComponent";
@@ -85,22 +86,7 @@ export default function QuestsClient({ ludus, initialQuests, questDurationMinute
   const [error, setError] = useState<string | null>(null);
 
   // Get current ludus data
-  useRealtimeRow<Ludus & { id: string }>({
-    table: "ludi",
-    select:
-      "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt",
-    match: { id: ludus.id },
-    initialData: ludus,
-    primaryKey: "id",
-    transform: useCallback((row: Record<string, unknown>) => {
-      const record = row as Record<string, unknown>;
-      return {
-        ...(ludus as Ludus & { id: string }),
-        ...(record as Partial<Ludus>),
-        id: String(record.id ?? ludus.id),
-      } as Ludus & { id: string };
-    }, [ludus]),
-  });
+  useLudusRealtime(ludus);
 
   // Real-time quests subscription
   const { data: realtimeQuests } = useRealtimeCollection<Quest>({

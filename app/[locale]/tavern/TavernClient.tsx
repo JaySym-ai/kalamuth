@@ -11,6 +11,7 @@ import type { Ludus } from "@/types/ludus";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 import { useRealtimeCollection } from "@/lib/supabase/realtime";
 import GameViewport from "@/components/layout/GameViewport";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface TavernTranslations {
   title: string;
@@ -319,12 +320,7 @@ export default function TavernClient({ ludus, tavernGladiators, locale, translat
   if (loading && gladiators.length === 0) {
     return (
       <GameViewport>
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4" />
-            <p className="text-amber-400">{t.loadingGladiators}</p>
-          </div>
-        </div>
+        <LoadingSpinner size="lg" centered label={t.loadingGladiators} />
       </GameViewport>
     );
   }

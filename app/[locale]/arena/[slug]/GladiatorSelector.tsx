@@ -2,18 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Skull, ChevronDown, ChevronUp } from "lucide-react";
+import { Heart, ChevronDown, ChevronUp } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
+import GladiatorAvatar from "@/components/ui/GladiatorAvatar";
+import { getExtendedHealthStatus, type ExtendedHealthStatus } from "@/lib/gladiator/health-status";
 
 
-type GladiatorStatus = {
-  label: string;
-  color: string;
-  badgeClass: string;
-  borderClass: string;
-  disabled: boolean;
-  variant: "healthy" | "injured" | "sick" | "queued" | "critical";
-};
 
 interface Props {
   gladiators: NormalizedGladiator[];
@@ -54,59 +48,16 @@ export default function GladiatorSelector({
     }
   }, [initiallyExpanded, isExpanded]);
 
-  const getGladiatorStatus = (gladiator: NormalizedGladiator): GladiatorStatus => {
-    if (!gladiator.alive) {
-      return {
-        label: t.gladiatorDead,
-        color: "text-gray-300",
-        badgeClass: "bg-gray-800/60",
-        borderClass: "border-gray-700/50",
-        disabled: true,
-        variant: "critical",
-      };
-    }
-
-    if (queuedGladiatorIds.has(gladiator.id)) {
-      return {
-        label: t.gladiatorAlreadyQueued,
-        color: "text-blue-300",
-        badgeClass: "bg-blue-900/40",
-        borderClass: "border-blue-800/40",
-        disabled: true,
-        variant: "queued",
-      };
-    }
-
-    if (gladiator.injury) {
-      return {
-        label: t.gladiatorInjured,
-        color: "text-red-300",
-        badgeClass: "bg-red-900/30",
-        borderClass: "border-red-600/60 hover:border-red-500/80 focus-visible:border-red-400/80",
-        disabled: false,
-        variant: "injured",
-      };
-    }
-
-    if (gladiator.sickness) {
-      return {
-        label: t.gladiatorSick,
-        color: "text-blue-300",
-        badgeClass: "bg-blue-900/30",
-        borderClass: "border-blue-600/60 hover:border-blue-500/80 focus-visible:border-blue-400/80",
-        disabled: false,
-        variant: "sick",
-      };
-    }
-
-    return {
-      label: t.healthStatus,
-      color: "text-emerald-300",
-      badgeClass: "bg-emerald-900/20",
-      borderClass: "border-emerald-600/40 hover:border-emerald-500/60 focus-visible:border-emerald-400/80",
-      disabled: false,
-      variant: "healthy",
-    };
+  const getGladiatorStatus = (gladiator: NormalizedGladiator): ExtendedHealthStatus => {
+    return getExtendedHealthStatus(gladiator, {
+      healthy: t.healthStatus,
+      injured: t.gladiatorInjured,
+      sick: t.gladiatorSick,
+      dead: t.gladiatorDead,
+      queued: t.gladiatorAlreadyQueued,
+    }, {
+      queuedGladiatorIds,
+    });
   };
 
   const selectedGladiator = gladiators.find(g => g.id === selectedGladiatorId);
@@ -130,9 +81,13 @@ export default function GladiatorSelector({
           className="mb-4 p-4 bg-gradient-to-br from-amber-900/20 to-red-900/20 border border-amber-600/40 rounded-xl"
         >
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-600 to-red-600 flex items-center justify-center text-2xl font-bold text-white">
-              {selectedGladiator.name.charAt(0)}
-            </div>
+            <GladiatorAvatar
+              name={selectedGladiator.name}
+              avatarUrl={selectedGladiator.avatarUrl}
+              size="md"
+              alive={selectedGladiator.alive}
+              injured={!!selectedGladiator.injury}
+            />
             <div className="flex-1">
               <h3 className="font-bold text-amber-300 text-lg">
                 {selectedGladiator.name} {selectedGladiator.surname}
@@ -221,16 +176,13 @@ export default function GladiatorSelector({
                   >
                     <div className="flex items-center gap-3">
                       {/* Avatar */}
-                      <div className="relative">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-600 to-red-600 flex items-center justify-center text-lg font-bold text-white">
-                          {gladiator.name.charAt(0)}
-                        </div>
-                        {!gladiator.alive && (
-                          <div className="absolute inset-0 bg-black/80 rounded-full flex items-center justify-center">
-                            <Skull className="w-6 h-6 text-red-500" />
-                          </div>
-                        )}
-                      </div>
+                      <GladiatorAvatar
+                        name={gladiator.name}
+                        avatarUrl={gladiator.avatarUrl}
+                        size="sm"
+                        alive={gladiator.alive}
+                        injured={!!gladiator.injury}
+                      />
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">

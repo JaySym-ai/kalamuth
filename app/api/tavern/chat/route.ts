@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
-import OpenAI from "openai";
+import { getOpenRouterClient } from "@/lib/ai/client";
 import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
@@ -37,7 +37,7 @@ interface GladiatorContext {
 
 export async function POST(req: Request) {
   try {
-    const { user, supabase } = await requireAuthAPI();
+    const { supabase } = await requireAuthAPI();
 
     const body = await req.json().catch(() => ({}));
     const message = typeof body?.message === 'string' ? body.message.trim() : null;
@@ -116,16 +116,7 @@ export async function POST(req: Request) {
     };
 
     // Generate response using OpenRouter
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "missing_api_key" }, { status: 500 });
-    }
-
-    const client = new OpenAI({
-      apiKey,
-      baseURL: 'https://openrouter.ai/api/v1',
-      defaultHeaders: { 'X-Title': 'Kalamuth' }
-    });
+    const client = getOpenRouterClient();
 
     const systemPrompt = `You are ${context.name} ${context.surname}, a gladiator in a tavern. This is a full roleplay - you ARE this character, not an AI pretending to be one.
 

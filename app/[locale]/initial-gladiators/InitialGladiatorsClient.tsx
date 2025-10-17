@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { normalizeGladiator, type NormalizedGladiator } from "@/lib/gladiator/normalize";
 import { useRealtimeCollection } from "@/lib/supabase/realtime";
+import SkeletonCard from "@/components/ui/SkeletonCard";
 
 interface Props {
   gladiators: NormalizedGladiator[];
@@ -226,32 +227,8 @@ export default function InitialGladiatorsClient({ gladiators, ludusId, minRequir
           if (!gladiator) {
             // Placeholder skeleton for empty slot
             return (
-              <div key={`slot-skeleton-${idx}`} className="relative" aria-hidden="true" data-testid="gladiator-skeleton">
-                <div className="bg-black/40 backdrop-blur-sm border border-red-900/30 rounded-xl p-6 animate-pulse">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <div className="h-5 w-40 bg-amber-700/30 rounded mb-2"></div>
-                      <div className="h-3 w-24 bg-amber-700/20 rounded"></div>
-                    </div>
-                    <div className="h-10 w-10 bg-amber-700/20 rounded-full"></div>
-                  </div>
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm mb-1">
-                      <div className="h-3 w-16 bg-red-700/20 rounded"></div>
-                      <div className="h-3 w-10 bg-red-700/30 rounded"></div>
-                    </div>
-                    <div className="h-2 bg-black/50 rounded-full overflow-hidden">
-                      <div className="h-full w-1/3 bg-gradient-to-r from-red-600/60 to-red-400/60"></div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div className="h-3 w-20 bg-amber-700/20 rounded"></div>
-                    <div className="h-3 w-12 bg-amber-700/30 rounded"></div>
-                    <div className="h-3 w-16 bg-amber-700/20 rounded"></div>
-                    <div className="h-3 w-10 bg-amber-700/30 rounded"></div>
-                  </div>
-                  <div className="h-3 w-48 bg-amber-700/20 rounded"></div>
-                </div>
+              <div key={`slot-skeleton-${idx}`} className="relative">
+                <SkeletonCard variant="gladiator" />
               </div>
             );
           }

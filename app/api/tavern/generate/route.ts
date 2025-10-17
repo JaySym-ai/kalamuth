@@ -1,27 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
-import OpenAI from "openai";
-import { generateOneGladiator } from "@/lib/generation/generateGladiator";
 import { SERVERS } from "@/data/servers";
-import { rollRarity } from "@/lib/gladiator/rarity";
 import { debug_error } from "@/utils/debug";
-
-function serializeError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  if (typeof error === 'object' && error !== null) {
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return String(error);
-    }
-  }
-  return String(error);
-}
+import { serializeError, nowIso } from "@/utils/errors";
+import { getOpenRouterClient } from "@/lib/ai/client";
+import { getExistingGladiatorNames } from "@/lib/gladiator/names";
+import { generateGladiatorWithRetry } from "@/lib/gladiator/generation";
 
 export const runtime = "nodejs";
-
-function nowIso() { return new Date().toISOString(); }
 
 export async function POST(req: Request) {
   try {
@@ -54,79 +40,51 @@ export async function POST(req: Request) {
     }
 
     const toCreate = 2 - (existingCount ?? 0);
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) return NextResponse.json({ error: "missing_api_key" }, { status: 500 });
-
-    const client = new OpenAI({
-      apiKey,
-      baseURL: 'https://openrouter.ai/api/v1',
-      defaultHeaders: { 'X-Title': 'Kalamuth' },
-      timeout: 60000 // 60 second timeout
-    });
+    
+    let client;
+    try {
+      client = getOpenRouterClient();
+    } catch {
+      return NextResponse.json({ error: "missing_api_key" }, { status: 500 });
+    }
 
     // Get server config for rarity rolling
     const server = SERVERS.find(s => s.id === ludus.serverId);
     const rarityConfig = server?.config.rarityConfig;
 
     // Fetch existing gladiator names to avoid duplicates
-    const { data: existingGladiators } = await supabase
-      .from('gladiators')
-      .select('name, surname')
-      .eq('ludusId', ludusId);
-
-    const existingNames = new Set<string>(
-      (existingGladiators || []).map(g =>
-        `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase()
-      )
-    );
+    const existingNames = await getExistingGladiatorNames(supabase, ludusId, ludus.serverId);
 
     let created = 0;
     const errors: string[] = [];
 
     for (let i = 0; i < toCreate; i++) {
-      let retries = 3;
-      let gladiatorCreated = false;
+      const gladiator = await generateGladiatorWithRetry({
+        client,
+        jobId: `tavern-${ludusId}`,
+        existingNames,
+        rarityConfig,
+      });
 
-      while (retries > 0 && !gladiatorCreated) {
-        try {
-          // Roll rarity for this gladiator
-          const rarity = rarityConfig ? rollRarity(rarityConfig) : 'common';
+      if (!gladiator) {
+        errors.push(`Gladiator ${i + 1}: Failed after retries`);
+        continue;
+      }
 
-          const g = await generateOneGladiator(client, {
-            jobId: `tavern-${ludusId}`,
-            attempt: i + 1,
-            existingNames: Array.from(existingNames),
-            rarity
-          });
+      const now = nowIso();
+      const { error: insErr } = await supabase.from('tavern_gladiators').insert({
+        ...gladiator,
+        userId: user.id,
+        ludusId,
+        serverId: ludus.serverId || null,
+        createdAt: now,
+        updatedAt: now,
+      });
 
-          const fullName = `${g.name} ${g.surname}`.replace(/\s+/g, ' ').trim().toLowerCase();
-          if (existingNames.has(fullName)) {
-            throw new Error(`Duplicate name generated: ${g.name} ${g.surname}`);
-          }
-
-          const now = nowIso();
-          const { error: insErr } = await supabase.from('tavern_gladiators').insert({
-            ...g,
-            userId: user.id,
-            ludusId,
-            serverId: ludus.serverId || null,
-            createdAt: now,
-            updatedAt: now,
-          });
-
-          if (insErr) throw insErr;
-
-          existingNames.add(fullName);
-          created++;
-          gladiatorCreated = true;
-        } catch (e) {
-          retries--;
-          const errorMsg = serializeError(e);
-          debug_error(`[tavern/generate] Gladiator ${i + 1} generation attempt failed (retry ${4 - retries}/3): ${errorMsg}`);
-          if (retries === 0) {
-            errors.push(`Gladiator ${i + 1}: ${errorMsg}`);
-          }
-        }
+      if (insErr) {
+        errors.push(`Gladiator ${i + 1}: ${serializeError(insErr)}`);
+      } else {
+        created++;
       }
     }
 

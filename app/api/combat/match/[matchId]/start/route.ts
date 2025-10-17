@@ -1,10 +1,10 @@
-import { cookies } from "next/headers";
 import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
-import { openrouter, ensureOpenRouterKey } from "@/lib/ai/openrouter";
+import { getOpenRouterClient } from "@/lib/ai/client";
 import { ARENAS } from "@/data/arenas";
 import { getCombatConfigForArena } from "@/lib/combat/config";
 import type { CombatGladiator, CombatLogEntry, BattleState } from "@/types/combat";
 import { debug_error, debug_log } from "@/utils/debug";
+import type { User } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ const MODEL_STORYTELLING = "google/gemini-2.5-flash-lite";
 // Helper function to create a watch stream for existing matches
 async function createWatchStream(
   matchId: string,
-  locale: string
+  _locale: string
 ): Promise<Response> {
   // Use service role for system operations to bypass RLS
   const serviceRole = createServiceRoleClient();
@@ -191,8 +191,8 @@ export async function GET(
   { params }: { params: Promise<{ matchId: string }> }
 ) {
   // Note: Auth check is done inside try-catch to handle streaming errors properly
-  let user;
-  let supabase;
+  let user: User;
+  let supabase: ReturnType<typeof createClient>;
 
   try {
     const authResult = await (async () => {
@@ -287,7 +287,7 @@ export async function GET(
       let isClosed = false;
 
       try {
-        ensureOpenRouterKey();
+        const client = getOpenRouterClient();
 
         // Helper to send SSE message
         const sendEvent = (data: unknown) => {
@@ -526,7 +526,7 @@ function normalizeGladiator(row: Record<string, unknown>, locale: string): Comba
 }
 
 async function saveLog(
-  supabase: ReturnType<typeof createServiceRoleClient>,
+  _supabase: ReturnType<typeof createServiceRoleClient>,
   matchId: string,
   actionNumber: number,
   type: string,
@@ -627,7 +627,7 @@ Write a dramatic 2-3 sentence introduction in ${locale === "fr" ? "French" : "En
 
 IMPORTANT: Write ONLY the announcement. Do NOT include phrases like "Voici une introduction" or "Here is". Start directly with the announcement.`;
 
-  const completion = await openrouter.chat.completions.create({
+  const completion = await client.chat.completions.create({
     model: MODEL_STORYTELLING,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.9,
@@ -643,7 +643,7 @@ async function generateAction(
   g2: CombatGladiator,
   state: BattleState,
   arena: { name: string; deathEnabled: boolean },
-  config: { deathChancePercent: number; injuryChancePercent: number },
+  _config: { deathChancePercent: number; injuryChancePercent: number },
   locale: string
 ): Promise<string> {
   const prompt = `You are a gladiator arena commentator. Write ONLY the narration itself, with NO introduction, NO meta-commentary, NO action numbers.
@@ -668,7 +668,7 @@ Write 1-2 sentences of realistic gladiator combat narration in ${locale === "fr"
 
 IMPORTANT: Write ONLY the narration. Do NOT include phrases like "Voici une narration" or "Here is" or action numbers. Start directly with the action description.`;
 
-  const completion = await openrouter.chat.completions.create({
+  const completion = await client.chat.completions.create({
     model: MODEL_STORYTELLING,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.85,
@@ -693,7 +693,7 @@ Write 1-2 sentences announcing the victory in ${locale === "fr" ? "French" : "En
 
 IMPORTANT: Write ONLY the announcement. Do NOT include phrases like "Voici l'annonce" or "Here is". Start directly with the victory announcement.`;
 
-  const completion = await openrouter.chat.completions.create({
+  const completion = await client.chat.completions.create({
     model: MODEL_STORYTELLING,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.9,

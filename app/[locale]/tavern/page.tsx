@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import { getCurrentUserLudus } from "@/lib/ludus/repository";
+import { getCurrentUserLudusTransformed } from "@/lib/ludus/repository";
 import { getTavernGladiatorsByLudus } from "@/lib/gladiator/repository";
 import { requireAuthPage } from "@/lib/auth/server";
 import { debug_error } from "@/utils/debug";
@@ -20,68 +20,42 @@ export default async function TavernPage({ params }: { params: Promise<{ locale:
   let tavernGladiators: NormalizedGladiator[] = [];
 
   try {
-    // Get user's current ludus (with server isolation logic)
-    const ludus = await getCurrentUserLudus(
-      user.id,
-      "id,userId,serverId,name,logoUrl,treasury,reputation,morale,facilities,maxGladiators,gladiatorCount,motto,locationCity,createdAt,updatedAt"
-    );
+    ludusData = await getCurrentUserLudusTransformed(user.id);
 
-    if (!ludus) {
+    if (!ludusData) {
+      debug_error("No ludus found for user, redirecting to server selection");
       redirect(`/${locale}/server-selection`);
     }
 
-    const treasurySource = (ludus.treasury as { currency?: string; amount?: unknown } | null) ?? {};
-    const facilitiesSource = (ludus.facilities as Record<string, unknown> | null) ?? {};
-
-    const parseNumber = (value: unknown, fallback: number) =>
-      typeof value === "number"
-        ? value
-        : Number.parseInt(typeof value === "string" ? value : `${fallback}`, 10) || fallback;
-
-    const currency =
-      treasurySource.currency === "denarii" || treasurySource.currency === "sestertii"
-        ? (treasurySource.currency as "denarii" | "sestertii")
-        : "sestertii";
-
-    ludusData = {
-      id: (ludus.id as string) ?? "",
-      userId: (ludus.userId as string) ?? user.id,
-      serverId: (ludus.serverId as string) ?? "",
-      name: (ludus.name as string) ?? "Ludus",
-      logoUrl: (ludus.logoUrl as string) ?? "🏛️",
-      treasury: {
-        currency,
-        amount: parseNumber(treasurySource.amount, 0),
-      },
-      reputation: parseNumber(ludus.reputation, 0),
-      morale: parseNumber(ludus.morale, 50),
-      facilities: {
-        infirmaryLevel: parseNumber(facilitiesSource.infirmaryLevel, 1),
-        trainingGroundLevel: parseNumber(facilitiesSource.trainingGroundLevel, 1),
-        quartersLevel: parseNumber(facilitiesSource.quartersLevel, 1),
-        kitchenLevel: parseNumber(facilitiesSource.kitchenLevel, 1),
-      },
-      maxGladiators: parseNumber(ludus.maxGladiators, 0),
-      gladiatorCount: parseNumber(ludus.gladiatorCount, 0),
-      motto: typeof ludus.motto === "string" ? ludus.motto : undefined,
-      locationCity: typeof ludus.locationCity === "string" ? ludus.locationCity : undefined,
-      createdAt: typeof ludus.createdAt === "string" ? ludus.createdAt : new Date().toISOString(),
-      updatedAt: typeof ludus.updatedAt === "string" ? ludus.updatedAt : new Date().toISOString(),
-    } as Ludus & { id: string };
-
     // Fetch tavern gladiators for this ludus
-    tavernGladiators = await getTavernGladiatorsByLudus(ludus.id, locale);
+    tavernGladiators = await getTavernGladiatorsByLudus(ludusData.id, locale);
+
+    // Log if no gladiators found (this is normal, but good to track)
+    if (tavernGladiators.length === 0) {
+      debug_error("No tavern gladiators found for ludus:", ludusData.id);
+    }
   } catch (error) {
+    // Check if this is a Next.js redirect error (which is expected)
+    const redirectError = error as { digest?: string };
+    if (redirectError?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error; // Re-throw redirect errors
+    }
+
     debug_error("Error loading tavern data:", error);
     redirect(`/${locale}/server-selection`);
   }
 
   const t = await getTranslations("Tavern");
 
+  // This should never happen due to the redirect above, but TypeScript safety
+  if (!ludusData) {
+    redirect(`/${locale}/server-selection`);
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black">
       <TavernClient
-        ludus={ludusData!}
+        ludus={ludusData}
         tavernGladiators={tavernGladiators}
         locale={locale}
         translations={{

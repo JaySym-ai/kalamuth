@@ -5,7 +5,7 @@ import {useRouter} from "next/navigation";
 import {useLocale, useTranslations} from "next-intl";
 import {motion, AnimatePresence} from "framer-motion";
 import { createClient } from "@/utils/supabase/clients";
-import Logo from "../../components/ui/Logo";
+import Logo from "@/components/ui/Logo";
 
 export default function AuthClient() {
   const t = useTranslations("Auth");
