@@ -12,6 +12,7 @@ interface ShopTranslations {
   backToDashboard: string;
   comingSoon: string;
   description: string;
+  treasury: string;
 }
 
 interface Props {
@@ -65,7 +66,7 @@ export default function ShopClient({ ludus, translations: t }: Props) {
             transition={{ delay: 0.4 }}
             className="mt-8 pt-6 border-t border-amber-900/30"
           >
-            <p className="text-sm text-gray-400 mb-2">Your Treasury</p>
+            <p className="text-sm text-gray-400 mb-2">{t.treasury}</p>
             <p className="text-xl font-bold text-amber-300">
               {ludus.treasury.amount.toLocaleString()} {ludus.treasury.currency}
             </p>

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireAuthPage } from "@/lib/auth/server";
 import { getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
+
 import type { CombatGladiator } from "@/types/combat";
 import { normalizeGladiator } from "@/lib/gladiator/normalize";
 import { toCombatGladiator } from "@/lib/gladiator/adapters";
@@ -109,6 +111,8 @@ export default async function CombatPage({ params }: PageProps) {
   const g1Norm = normalizeGladiator(String(gladiatorRows[0].id), gladiatorRows[0] as Record<string, unknown>, locale);
   const g2Norm = normalizeGladiator(String(gladiatorRows[1].id), gladiatorRows[1] as Record<string, unknown>, locale);
   const gladiator1: CombatGladiator = toCombatGladiator(g1Norm);
+  const cookieStore = await cookies();
+
   const gladiator2: CombatGladiator = toCombatGladiator(g2Norm);
 
   // Fetch combat config

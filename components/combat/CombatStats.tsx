@@ -10,6 +10,7 @@ interface CombatStatsProps {
   elapsedSeconds: number;
   isComplete: boolean;
   winnerId?: string;
+  winnerName?: string;
   translations: {
     action: string;
     elapsed: string;
@@ -26,12 +27,13 @@ export default function CombatStats({
   elapsedSeconds,
   isComplete,
   winnerId,
+  winnerName,
   translations: t,
 }: CombatStatsProps) {
   return (
     <div className="space-y-1">
       {/* Stats row - horizontal on mobile */}
-      <div className="flex gap-2 overflow-x-auto pb-1 justify-center">
+      <div className="flex gap-2 overflow-x-auto pb-1 justify-center px-1">
         {/* Action counter */}
         <StatCard
           icon={<Zap className="w-4 h-4" />}
@@ -69,7 +71,7 @@ export default function CombatStats({
           <StatCard
             icon={<Trophy className="w-4 h-4" />}
             label={t.winner}
-            value="🏆"
+            value={winnerName ? `${winnerName} 🏆` : "🏆"}
             color="text-yellow-400"
             bgColor="bg-yellow-900/20"
             borderColor="border-yellow-700/40"
@@ -99,15 +101,15 @@ function StatCard({ icon, label, value, color, bgColor, borderColor, dataTestId 
       data-testid={dataTestId}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex-shrink-0 px-responsive-2 py-responsive-1 rounded-responsive-base border ${bgColor} ${borderColor} min-w-fit`}
+      className={`flex-shrink-0 px-2 py-1 sm:px-responsive-2 sm:py-responsive-1 rounded-responsive-base border ${bgColor} ${borderColor} min-w-0`}
     >
-      <div className="flex items-center gap-responsive-sm">
+      <div className="flex items-center gap-1 sm:gap-responsive-sm">
         <div className={`${color} icon-responsive-xs`}>{icon}</div>
         <div className="flex flex-col gap-responsive-1">
-          <span className="text-responsive-xs text-gray-400 uppercase tracking-wide leading-none">
+          <span className="text-[10px] sm:text-responsive-xs text-gray-400 uppercase tracking-wide leading-none whitespace-nowrap">
             {label}
           </span>
-          <div className={`text-responsive-sm font-bold ${color} leading-none`}>
+          <div className={`text-[12px] sm:text-responsive-sm font-bold ${color} leading-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[24vw] sm:max-w-none`}>
             {value}
           </div>
         </div>

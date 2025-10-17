@@ -39,6 +39,7 @@ export default async function ShopPage({ params }: { params: Promise<{ locale: s
           backToDashboard: t("backToDashboard"),
           comingSoon: t("comingSoon"),
           description: t("description"),
+          treasury: t("treasury"),
         }}
       />
     </main>

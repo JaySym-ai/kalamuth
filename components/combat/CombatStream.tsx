@@ -315,6 +315,13 @@ export default function CombatStream({
         elapsedSeconds={elapsedSeconds}
         isComplete={battleState.isComplete}
         winnerId={battleState.winnerId}
+        winnerName={
+          battleState.winnerId === gladiator1.id
+            ? `${gladiator1.name} ${gladiator1.surname}`
+            : battleState.winnerId === gladiator2.id
+            ? `${gladiator2.name} ${gladiator2.surname}`
+            : undefined
+        }
         translations={t}
       />
 

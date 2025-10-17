@@ -65,12 +65,12 @@ export default function CombatIntroduction({
             </Link>
           </motion.div>
 
-          {/* Arena name - center */}
+          {/* Arena name - center (desktop) */}
           <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="absolute left-1/2 transform -translate-x-1/2"
+            className="hidden sm:block absolute left-1/2 transform -translate-x-1/2"
           >
             <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-full bg-black/40 border border-amber-700/40">
               <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
@@ -82,10 +82,24 @@ export default function CombatIntroduction({
           {/* Spacer for balance - right side */}
           <div className="w-[120px] sm:w-[140px]" />
         </div>
+
+        {/* Arena name - stacked (mobile) */}
+        <motion.div
+          initial={{ y: -10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="sm:hidden mt-3 flex justify-center"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-black/40 border border-amber-700/40">
+            <MapPin className="w-3 h-3 text-amber-400" />
+            <span className="text-xs font-semibold text-amber-100">{t.arena}</span>
+            <span className="text-xs text-gray-300">{arenaName}</span>
+          </div>
+        </motion.div>
       </div>
 
       {/* Gladiators */}
-      <div className="relative z-10 grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-6 items-center">
+      <div className="relative z-10 grid grid-cols-[1fr_auto_1fr] gap-3 sm:gap-6 items-center">
         {/* Gladiator 1 */}
         <GladiatorCard gladiator={gladiator1} maxHealth={maxHealth1 || gladiator1.health} delay={0.3} />
 
