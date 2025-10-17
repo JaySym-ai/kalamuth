@@ -1,15 +1,14 @@
-import { createClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { requireAuthAPI } from "@/lib/auth/server";
+import { badRequestResponse, handleAPIError } from "@/lib/api/errors";
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const { supabase } = await requireAuthAPI();
     const { ludusId } = await request.json();
 
     if (!ludusId) {
-      return NextResponse.json({ error: "ludusId is required" }, { status: 400 });
+      return badRequestResponse("ludusId_required");
     }
 
     // Get all completed quests for this ludus, ordered by creation date (newest first)
@@ -21,8 +20,7 @@ export async function POST(request: NextRequest) {
       .order("createdAt", { ascending: false });
 
     if (fetchError) {
-      console.error("Error fetching quests for cleanup:", fetchError);
-      return NextResponse.json({ error: "Failed to fetch quests" }, { status: 500 });
+      throw new Error(`Failed to fetch quests: ${fetchError.message}`);
     }
 
     // If there are more than 3 completed quests, delete the oldest ones
@@ -38,8 +36,7 @@ export async function POST(request: NextRequest) {
           .in("id", questIdsToDelete);
 
         if (deleteError) {
-          console.error("Error deleting old quests:", deleteError);
-          return NextResponse.json({ error: "Failed to delete old quests" }, { status: 500 });
+          throw new Error(`Failed to delete old quests: ${deleteError.message}`);
         }
 
         console.log(`Cleaned up ${questsToDelete.length} old quests for ludus ${ludusId}`);
@@ -48,7 +45,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Quest cleanup error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return handleAPIError(error, "Quests cleanup");
   }
 }

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { requireAuthPage } from "@/lib/auth/server";
 import { getTranslations } from "next-intl/server";
 import type { CombatGladiator } from "@/types/combat";
+import { normalizeGladiator } from "@/lib/gladiator/normalize";
+import { toCombatGladiator } from "@/lib/gladiator/adapters";
 import { debug_error } from "@/utils/debug";
 import CombatClient from "./CombatClient";
 import GameViewport from "@/components/layout/GameViewport";
@@ -104,8 +106,10 @@ export default async function CombatPage({ params }: PageProps) {
 
   const gladiatorRows = [gladiator1Data, gladiator2Data];
 
-  const gladiator1 = normalizeGladiator(gladiatorRows[0], locale);
-  const gladiator2 = normalizeGladiator(gladiatorRows[1], locale);
+  const g1Norm = normalizeGladiator(String(gladiatorRows[0].id), gladiatorRows[0] as Record<string, unknown>, locale);
+  const g2Norm = normalizeGladiator(String(gladiatorRows[1].id), gladiatorRows[1] as Record<string, unknown>, locale);
+  const gladiator1: CombatGladiator = toCombatGladiator(g1Norm);
+  const gladiator2: CombatGladiator = toCombatGladiator(g2Norm);
 
   // Fetch combat config
   const configResponse = await fetch(
@@ -148,68 +152,4 @@ export default async function CombatPage({ params }: PageProps) {
   );
 }
 
-function normalizeGladiator(row: Record<string, unknown>, locale: string): CombatGladiator {
-  const extractText = (field: unknown): string => {
-    if (typeof field === "string") return field;
-    if (field && typeof field === "object" && locale in field) {
-      return (field as Record<string, string>)[locale];
-    }
-    return "";
-  };
-
-  const extractStats = (stats: unknown) => {
-    if (!stats || typeof stats !== "object") {
-      return {
-        strength: "",
-        agility: "",
-        dexterity: "",
-        speed: "",
-        chance: "",
-        intelligence: "",
-        charisma: "",
-        loyalty: "",
-      };
-    }
-    const s = stats as Record<string, unknown>;
-    return {
-      strength: extractText(s.strength),
-      agility: extractText(s.agility),
-      dexterity: extractText(s.dexterity),
-      speed: extractText(s.speed),
-      chance: extractText(s.chance),
-      intelligence: extractText(s.intelligence),
-      charisma: extractText(s.charisma),
-      loyalty: extractText(s.loyalty),
-    };
-  };
-
-  const maxHealth = (row.health as number) || 100;
-  return {
-    id: row.id as string,
-    name: row.name as string,
-    surname: row.surname as string,
-    avatarUrl: (row.avatarUrl as string) || null,
-    rankingPoints: (row.rankingPoints as number) || 1000,
-    health: maxHealth,
-    currentHealth: maxHealth,
-    userId: (row.userId as string) || null,
-    ludusId: (row.ludusId as string) || null,
-    alive: typeof row.alive === "boolean" ? row.alive : true,
-    injury: extractText(row.injury),
-    sickness: extractText(row.sickness),
-    stats: extractStats(row.stats),
-    lifeGoal: extractText(row.lifeGoal),
-    personality: extractText(row.personality),
-    backstory: extractText(row.backstory),
-    weakness: extractText(row.weakness),
-    fear: extractText(row.fear),
-    likes: extractText(row.likes),
-    dislikes: extractText(row.dislikes),
-    birthCity: (row.birthCity as string) || "Unknown",
-    handicap: extractText(row.handicap),
-    uniquePower: extractText(row.uniquePower),
-    physicalCondition: extractText(row.physicalCondition),
-    notableHistory: extractText(row.notableHistory),
-  };
-}
 

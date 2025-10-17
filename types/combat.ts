@@ -153,19 +153,6 @@ export interface CombatConfig {
   injuryChancePercent: number;
 }
 
-/**
- * Extended match with combat configuration
- */
-export interface CombatMatchWithConfig extends CombatMatch {
-  maxActions: number;
-  actionIntervalSeconds: number;
-  deathChancePercent: number;
-  injuryChancePercent: number;
-  winnerId?: string;
-  winnerMethod?: WinnerMethod;
-  totalActions: number;
-  durationSeconds?: number;
-}
 
 /**
  * Full gladiator data for combat (includes all traits for AI context)

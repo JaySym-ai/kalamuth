@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthAPI } from "@/lib/auth/server";
+import { badRequestResponse, handleAPIError } from "@/lib/api/errors";
 import { debug_error } from "@/utils/debug";
 
 export const runtime = "nodejs";
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
     const matchId = url.searchParams.get("matchId");
 
     if (!matchId) {
-      return NextResponse.json({ error: "Missing matchId" }, { status: 400 });
+      return badRequestResponse("missing_matchId");
     }
 
     // Fetch acceptances
@@ -27,10 +28,7 @@ export async function GET(req: Request) {
 
     if (acceptanceError) {
       debug_error("Error fetching acceptances:", acceptanceError);
-      return NextResponse.json({
-        error: "Failed to fetch acceptances",
-        details: acceptanceError
-      }, { status: 500 });
+      throw new Error(`Failed to fetch acceptances: ${acceptanceError.message}`);
     }
 
     // Fetch match
@@ -48,11 +46,8 @@ export async function GET(req: Request) {
       userId: user.id,
     });
   } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
     debug_error("Debug acceptances error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return handleAPIError(error, "Debug acceptances");
   }
 }
 

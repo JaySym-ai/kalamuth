@@ -1,10 +1,15 @@
-import { createClient, createServiceRoleClient } from "@/utils/supabase/server";
+import { createServiceRoleClient } from "@/utils/supabase/server";
+import { requireAuthAPI } from "@/lib/auth/server";
+import { handleAPIError, notFoundResponse } from "@/lib/api/errors";
+import { NextResponse } from "next/server";
 import { getOpenRouterClient } from "@/lib/ai/client";
 import { ARENAS } from "@/data/arenas";
 import { getCombatConfigForArena } from "@/lib/combat/config";
 import type { CombatGladiator, CombatLogEntry, BattleState } from "@/types/combat";
 import { debug_error, debug_log } from "@/utils/debug";
-import type { User } from "@supabase/supabase-js";
+import { streamMatchLogs } from "@/lib/combat/streams";
+import { normalizeGladiator } from "@/lib/gladiator/normalize";
+import { toCombatGladiator } from "@/lib/gladiator/adapters";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,203 +17,15 @@ export const dynamic = "force-dynamic";
 // Model for storytelling/narration
 const MODEL_STORYTELLING = "google/gemini-2.5-flash-lite";
 
-// Helper function to create a watch stream for existing matches
-async function createWatchStream(
-  matchId: string,
-  _locale: string
-): Promise<Response> {
-  // mark locale as intentionally unused for now (reserved for future localized streams)
-  void _locale;
-  // Use service role for system operations to bypass RLS
-  const serviceRole = createServiceRoleClient();
-
-  // Create SSE stream
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        // Track if controller is closed to prevent sending events after close
-        let isClosed = false;
-
-        // Helper to send SSE message
-        const sendEvent = (data: unknown) => {
-          if (isClosed) return; // Don't send if controller is closed
-          try {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-          } catch (error) {
-            // Controller might be closed, mark it and stop trying to send
-            isClosed = true;
-            debug_error("Failed to send event (controller likely closed):", error);
-          }
-        };
-
-        // Fetch all existing logs for this match using service role
-        const { data: existingLogs, error: logsError } = await serviceRole
-          .from("combat_logs")
-          .select("*")
-          .eq("matchId", matchId)
-          .order("actionNumber", { ascending: true });
-
-        if (logsError) {
-          throw new Error(`Failed to fetch logs: ${logsError.message}`);
-        }
-
-        // Send existing logs
-        if (existingLogs && existingLogs.length > 0) {
-          for (const log of existingLogs) {
-            const logEntry: CombatLogEntry = {
-              id: log.id,
-              matchId: log.matchId,
-              actionNumber: log.actionNumber,
-              message: log.message,
-              createdAt: log.createdAt,
-              type: log.type,
-              locale: log.locale,
-              gladiator1Health: log.gladiator1Health,
-              gladiator2Health: log.gladiator2Health,
-            };
-            sendEvent({ type: "log", log: logEntry });
-          }
-        }
-
-        // Check current match status using service role
-        const { data: match } = await serviceRole
-          .from("combat_matches")
-          .select("status, winnerId, winnerMethod")
-          .eq("id", matchId)
-          .maybeSingle();
-
-        // If match is completed, send completion event and close
-        if (match?.status === "completed") {
-          sendEvent({
-            type: "complete",
-            winnerId: match.winnerId,
-            winnerMethod: match.winnerMethod,
-          });
-          controller.close();
-          return;
-        }
-
-        // Track intervals for cleanup
-        let pollInterval: NodeJS.Timeout | null = null;
-
-        // If match is in progress, poll for new logs
-        if (match?.status === "in_progress") {
-          let lastActionNumber = existingLogs && existingLogs.length > 0
-            ? Math.max(...existingLogs.map((log) => log.actionNumber))
-            : 0;
-          let isComplete = false;
-
-          // Poll for new logs every 1 second
-          pollInterval = setInterval(async () => {
-            try {
-              // Check if match is complete using service role
-              const { data: updatedMatch } = await serviceRole
-                .from("combat_matches")
-                .select("status, winnerId, winnerMethod")
-                .eq("id", matchId)
-                .maybeSingle();
-
-              if (updatedMatch?.status === "completed" && !isComplete) {
-                isComplete = true;
-                sendEvent({
-                  type: "complete",
-                  winnerId: updatedMatch.winnerId,
-                  winnerMethod: updatedMatch.winnerMethod,
-                });
-                if (pollInterval) clearInterval(pollInterval);
-                controller.close();
-                return;
-              }
-
-              // Fetch new logs since last action using service role
-              const { data: newLogs } = await serviceRole
-                .from("combat_logs")
-                .select("*")
-                .eq("matchId", matchId)
-                .gt("actionNumber", lastActionNumber)
-                .order("actionNumber", { ascending: true });
-
-              if (newLogs && newLogs.length > 0) {
-                for (const log of newLogs) {
-                  const logEntry: CombatLogEntry = {
-                    id: log.id,
-                    matchId: log.matchId,
-                    actionNumber: log.actionNumber,
-                    message: log.message,
-                    createdAt: log.createdAt,
-                    type: log.type,
-                    locale: log.locale,
-                    gladiator1Health: log.gladiator1Health,
-                    gladiator2Health: log.gladiator2Health,
-                  };
-                  sendEvent({ type: "log", log: logEntry });
-                  lastActionNumber = Math.max(lastActionNumber, log.actionNumber);
-                }
-              }
-            } catch (error) {
-              debug_error("Poll error:", error);
-              if (pollInterval) clearInterval(pollInterval);
-            }
-          }, 1000);
-        }
-
-        // Send periodic ping to keep connection alive
-        const pingInterval = setInterval(() => {
-          sendEvent({ type: "ping" });
-        }, 30000);
-
-        // Handle client disconnect - clean up all intervals
-        const originalClose = controller.close.bind(controller);
-        controller.close = () => {
-          isClosed = true; // Mark as closed to prevent further sends
-          if (pollInterval) clearInterval(pollInterval);
-          clearInterval(pingInterval);
-          originalClose();
-        };
-      } catch (error) {
-        debug_error("Watch stream error:", error);
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ type: "error", message: "Failed to watch match" })}\n\n`)
-        );
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET",
-      "Access-Control-Allow-Headers": "Cache-Control",
-    },
-  });
-}
+// Shared streaming utility replaces this local duplicate implementation
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ matchId: string }> }
 ) {
   // Note: Auth check is done inside try-catch to handle streaming errors properly
-  let user: User;
-  let supabase: ReturnType<typeof createClient>;
-
   try {
-    const authResult = await (async () => {
-      const { cookies: cookiesFn } = await import("next/headers");
-      const { createClient } = await import("@/utils/supabase/server");
-      const cookieStore = await cookiesFn();
-      const sb = createClient(cookieStore);
-      const { data: auth } = await sb.auth.getUser();
-      if (!auth.user) throw new Error("unauthorized");
-      return { user: auth.user, supabase: sb };
-    })();
-
-    user = authResult.user;
-    supabase = authResult.supabase;
+    const { user, supabase } = await requireAuthAPI();
 
   const { matchId } = await params;
   const url = new URL(req.url);
@@ -222,7 +39,7 @@ export async function GET(
     .maybeSingle();
 
   if (matchError || !match) {
-    return new Response("Match not found", { status: 404 });
+    return notFoundResponse("match");
   }
 
   // Verify user is a participant
@@ -233,7 +50,7 @@ export async function GET(
     .eq("userId", user.id);
 
   if (!participantCheck || participantCheck.length === 0) {
-    return new Response("Forbidden", { status: 403 });
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
   // Use service role for system operations
@@ -241,9 +58,9 @@ export async function GET(
 
   // Check if match is already in progress or completed
   if (match.status !== "pending") {
-    // Match already started - stream existing logs like the watch endpoint
+    // Match already started - use shared streaming utility
     // This handles the case where both users try to start simultaneously
-    return createWatchStream(matchId, locale);
+    return streamMatchLogs(matchId);
   }
 
   // Update match status to in_progress
@@ -259,24 +76,26 @@ export async function GET(
     .in("id", [match.gladiator1Id, match.gladiator2Id]);
 
   if (!gladiatorRows || gladiatorRows.length !== 2) {
-    return new Response("Failed to load gladiators", { status: 500 });
+    throw new Error("Failed to load gladiators");
   }
 
   // Ensure correct order: gladiator1 must match gladiator1Id, gladiator2 must match gladiator2Id
-  const gladiator1Raw = gladiatorRows.find((g) => g.id === match.gladiator1Id);
-  const gladiator2Raw = gladiatorRows.find((g) => g.id === match.gladiator2Id);
+  const gladiator1Raw = (gladiatorRows as Array<{ id: string }>).find((g) => g.id === match.gladiator1Id);
+  const gladiator2Raw = (gladiatorRows as Array<{ id: string }>).find((g) => g.id === match.gladiator2Id);
 
   if (!gladiator1Raw || !gladiator2Raw) {
-    return new Response("Failed to load gladiators", { status: 500 });
+    throw new Error("Failed to load gladiators");
   }
 
-  const gladiator1 = normalizeGladiator(gladiator1Raw, locale);
-  const gladiator2 = normalizeGladiator(gladiator2Raw, locale);
+  const g1Norm = normalizeGladiator(String(gladiator1Raw.id), gladiator1Raw as Record<string, unknown>, locale);
+  const g2Norm = normalizeGladiator(String(gladiator2Raw.id), gladiator2Raw as Record<string, unknown>, locale);
+  const gladiator1: CombatGladiator = toCombatGladiator(g1Norm);
+  const gladiator2: CombatGladiator = toCombatGladiator(g2Norm);
 
   // Get arena and combat config
   const arena = ARENAS.find((a) => a.name.toLowerCase().replace(/\s+/g, "-") === match.arenaSlug);
   if (!arena) {
-    return new Response("Arena not found", { status: 404 });
+    return notFoundResponse("arena");
   }
 
   const config = getCombatConfigForArena(arena);
@@ -461,72 +280,11 @@ export async function GET(
     },
   });
   } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return new Response("Unauthorized", { status: 401 });
-    }
-    return new Response("Internal server error", { status: 500 });
+    return handleAPIError(error, "Combat match start");
   }
 }
 
 // Helper functions
-function normalizeGladiator(row: Record<string, unknown>, locale: string): CombatGladiator {
-  const extractText = (field: unknown): string => {
-    if (typeof field === "string") return field;
-    if (field && typeof field === "object" && locale in field) {
-      return (field as Record<string, string>)[locale];
-    }
-    return "";
-  };
-
-  const extractStats = (stats: unknown) => {
-    if (!stats || typeof stats !== "object") {
-      return {
-        strength: "", agility: "", dexterity: "", speed: "",
-        chance: "", intelligence: "", charisma: "", loyalty: "",
-      };
-    }
-    const s = stats as Record<string, unknown>;
-    return {
-      strength: extractText(s.strength),
-      agility: extractText(s.agility),
-      dexterity: extractText(s.dexterity),
-      speed: extractText(s.speed),
-      chance: extractText(s.chance),
-      intelligence: extractText(s.intelligence),
-      charisma: extractText(s.charisma),
-      loyalty: extractText(s.loyalty),
-    };
-  };
-
-  const maxHealth = row.health as number;
-  return {
-    id: row.id as string,
-    name: row.name as string,
-    surname: row.surname as string,
-    avatarUrl: row.avatarUrl as string,
-    rankingPoints: row.rankingPoints as number,
-    health: maxHealth,
-    currentHealth: maxHealth,
-    userId: row.userId as string,
-    ludusId: row.ludusId as string,
-    alive: row.alive as boolean,
-    injury: extractText(row.injury),
-    sickness: extractText(row.sickness),
-    stats: extractStats(row.stats),
-    lifeGoal: extractText(row.lifeGoal),
-    personality: extractText(row.personality),
-    backstory: extractText(row.backstory),
-    weakness: extractText(row.weakness),
-    fear: extractText(row.fear),
-    likes: extractText(row.likes),
-    dislikes: extractText(row.dislikes),
-    birthCity: row.birthCity as string,
-    handicap: extractText(row.handicap),
-    uniquePower: extractText(row.uniquePower),
-    physicalCondition: extractText(row.physicalCondition),
-    notableHistory: extractText(row.notableHistory),
-  };
-}
 
 async function saveLog(
   _supabase: ReturnType<typeof createServiceRoleClient>,

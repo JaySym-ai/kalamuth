@@ -262,12 +262,4 @@ export const OpenRouterGladiatorJsonSchema = {
   ],
 } as const;
 
-export function makeGladiatorArrayJsonSchema(count: number) {
-  return {
-    type: "array",
-    minItems: count,
-    maxItems: count,
-    items: OpenRouterGladiatorJsonSchema,
-  } as const;
-}
 

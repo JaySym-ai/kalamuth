@@ -1,7 +1,6 @@
 import { requireAuthAPI } from "@/lib/auth/server";
-import { createServiceRoleClient } from "@/utils/supabase/server";
-import type { CombatLogEntry } from "@/types/combat";
-import { debug_error } from "@/utils/debug";
+import { notFoundResponse, handleAPIError } from "@/lib/api/errors";
+import { streamMatchLogs } from "@/lib/combat/streams";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +26,7 @@ export async function GET(
       .maybeSingle();
 
     if (matchError || !match) {
-      return new Response("Match not found", { status: 404 });
+      return notFoundResponse("match");
     }
 
     // Verify user is a participant
@@ -41,147 +40,9 @@ export async function GET(
       return new Response("Forbidden", { status: 403 });
     }
 
-    // Use service role for system operations to bypass RLS
-    const serviceRole = createServiceRoleClient();
-
-    // Create SSE stream
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          // Helper to send SSE message
-          const sendEvent = (data: unknown) => {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-          };
-
-        // Fetch all existing logs for this match using service role
-        const { data: existingLogs, error: logsError } = await serviceRole
-          .from("combat_logs")
-          .select("*")
-          .eq("matchId", matchId)
-          .order("actionNumber", { ascending: true });
-
-        if (logsError) {
-          throw new Error(`Failed to fetch logs: ${logsError.message}`);
-        }
-
-        // Send all existing logs
-        if (existingLogs && existingLogs.length > 0) {
-          for (const log of existingLogs) {
-            const logEntry: CombatLogEntry = {
-              id: log.id,
-              matchId: log.matchId,
-              actionNumber: log.actionNumber,
-              message: log.message,
-              createdAt: log.createdAt,
-              type: log.type,
-              locale: log.locale,
-              gladiator1Health: log.gladiator1Health,
-              gladiator2Health: log.gladiator2Health,
-            };
-            sendEvent({ type: "log", log: logEntry });
-          }
-        }
-
-        // If match is already complete, send complete event
-        if (match.status === "completed") {
-          sendEvent({
-            type: "complete",
-            winnerId: match.winnerId,
-            winnerMethod: match.winnerMethod,
-          });
-          controller.close();
-          return;
-        }
-
-        // If match is in progress, poll for new logs
-        if (match.status === "in_progress") {
-          let lastActionNumber = existingLogs && existingLogs.length > 0
-            ? Math.max(...existingLogs.map((log) => log.actionNumber))
-            : 0;
-          let isComplete = false;
-
-          // Poll for new logs every 1 second
-          const pollInterval = setInterval(async () => {
-            try {
-              // Check if match is complete using service role
-              const { data: updatedMatch } = await serviceRole
-                .from("combat_matches")
-                .select("status, winnerId, winnerMethod")
-                .eq("id", matchId)
-                .maybeSingle();
-
-              if (updatedMatch?.status === "completed" && !isComplete) {
-                isComplete = true;
-                sendEvent({
-                  type: "complete",
-                  winnerId: updatedMatch.winnerId,
-                  winnerMethod: updatedMatch.winnerMethod,
-                });
-                clearInterval(pollInterval);
-                controller.close();
-                return;
-              }
-
-              // Fetch new logs since last action using service role
-              const { data: newLogs } = await serviceRole
-                .from("combat_logs")
-                .select("*")
-                .eq("matchId", matchId)
-                .gt("actionNumber", lastActionNumber)
-                .order("actionNumber", { ascending: true });
-
-              if (newLogs && newLogs.length > 0) {
-                for (const log of newLogs) {
-                  const logEntry: CombatLogEntry = {
-                    id: log.id,
-                    matchId: log.matchId,
-                    actionNumber: log.actionNumber,
-                    message: log.message,
-                    createdAt: log.createdAt,
-                    type: log.type,
-                    locale: log.locale,
-                    gladiator1Health: log.gladiator1Health,
-                    gladiator2Health: log.gladiator2Health,
-                  };
-                  sendEvent({ type: "log", log: logEntry });
-                  lastActionNumber = Math.max(lastActionNumber, log.actionNumber);
-                }
-              }
-            } catch (error) {
-              debug_error("Poll error:", error);
-              clearInterval(pollInterval);
-            }
-          }, 1000);
-
-          // Handle client disconnect
-          const originalClose = controller.close.bind(controller);
-          controller.close = () => {
-            clearInterval(pollInterval);
-            originalClose();
-          };
-        }
-        } catch (error) {
-          debug_error("Watch stream error:", error);
-          const errorMessage = error instanceof Error ? error.message : "Unknown error";
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", message: errorMessage })}\n\n`));
-          controller.close();
-        }
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
-    });
+    return streamMatchLogs(matchId);
   } catch (error) {
-    if (error instanceof Error && error.message === "unauthorized") {
-      return new Response("Unauthorized", { status: 401 });
-    }
-    return new Response("Internal server error", { status: 500 });
+    return handleAPIError(error, "Combat match watch");
   }
 }
 
