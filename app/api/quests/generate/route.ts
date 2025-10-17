@@ -48,7 +48,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "no_gladiators_available" }, { status: 400 });
     }
 
-    ensureOpenRouterKey();
 
     // Generate quest
     const questPrompt = buildQuestPrompt({

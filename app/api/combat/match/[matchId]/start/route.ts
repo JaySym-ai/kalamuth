@@ -17,6 +17,8 @@ async function createWatchStream(
   matchId: string,
   _locale: string
 ): Promise<Response> {
+  // mark locale as intentionally unused for now (reserved for future localized streams)
+  void _locale;
   // Use service role for system operations to bypass RLS
   const serviceRole = createServiceRoleClient();
 
@@ -311,7 +313,7 @@ export async function GET(
         };
 
         // Send introduction
-        const introMessage = await generateIntroduction(gladiator1, gladiator2, arena.name, locale);
+        const introMessage = await generateIntroduction(gladiator1, gladiator2, arena.name, locale, client);
         const introLog = await saveLog(supabase, matchId, 0, "introduction", introMessage, locale, battleState);
         sendEvent({ type: "log", log: introLog });
 
@@ -328,7 +330,8 @@ export async function GET(
             battleState,
             arena,
             config,
-            locale
+            locale,
+            client
           );
 
           // Calculate damage and update health
@@ -397,7 +400,7 @@ export async function GET(
               ? locale === "fr"
                 ? `Après ${battleState.actionNumber} actions, les juges accordent la décision à ${winnerName} face à ${loser.name} ${loser.surname}.`
                 : `After ${battleState.actionNumber} actions, the judges award the decision to ${winnerName} over ${loser.name} ${loser.surname}.`
-              : await generateVictory(winnerName, battleState.winnerMethod || "knockout", locale);
+              : await generateVictory(winnerName, battleState.winnerMethod || "knockout", locale, client);
             const victoryLog = await saveLog(supabase, matchId, battleState.actionNumber + 1, "victory", victoryMessage, locale, battleState);
             sendEvent({ type: "log", log: victoryLog });
           }
@@ -607,7 +610,8 @@ async function generateIntroduction(
   g1: CombatGladiator,
   g2: CombatGladiator,
   arenaName: string,
-  locale: string
+  locale: string,
+  client: ReturnType<typeof getOpenRouterClient>
 ): Promise<string> {
   const prompt = `You are a gladiator arena commentator. Write ONLY the introduction itself, with NO meta-commentary.
 
@@ -644,7 +648,8 @@ async function generateAction(
   state: BattleState,
   arena: { name: string; deathEnabled: boolean },
   _config: { deathChancePercent: number; injuryChancePercent: number },
-  locale: string
+  locale: string,
+  client: ReturnType<typeof getOpenRouterClient>
 ): Promise<string> {
   const prompt = `You are a gladiator arena commentator. Write ONLY the narration itself, with NO introduction, NO meta-commentary, NO action numbers.
 
@@ -682,7 +687,8 @@ IMPORTANT: Write ONLY the narration. Do NOT include phrases like "Voici une narr
 async function generateVictory(
   winnerName: string,
   method: string,
-  locale: string
+  locale: string,
+  client: ReturnType<typeof getOpenRouterClient>
 ): Promise<string> {
   const prompt = `You are a gladiator arena commentator. Write ONLY the victory announcement itself, with NO meta-commentary.
 

@@ -29,7 +29,7 @@ export async function GET() {
     onboardingDone: Boolean(userRow?.onboardingDone),
     hasLudus,
   });
-  } catch (error) {
+  } catch {
     return unauthorizedResponse();
   }
 }
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
   if (error) return internalErrorResponse(error, "Failed to update user onboarding status");
   return NextResponse.json({ ok: true });
-  } catch (error) {
+  } catch {
     return unauthorizedResponse();
   }
 }
