@@ -92,21 +92,22 @@ test.describe('Combat Spectator Viewing', () => {
       // Wait for battle to complete (with timeout)
       await page.waitForTimeout(30000);
 
-      // Check if battle is complete
-      const completeStatus = page.locator('text=/Victoire|Victory/');
-      if (await completeStatus.isVisible({ timeout: 5000 })) {
-        // Reload the page to simulate a new viewer
-        await page.reload();
-        await page.waitForLoadState('networkidle');
+      // Wait for fight status to become complete without reload (fallback should handle it)
+      const statusCard = page.getByTestId('combat-status');
+      await expect(statusCard).toBeVisible({ timeout: 60000 });
+      await expect(statusCard).toContainText(/Terminé|Complete/);
 
-        // Should still see the completed fight
-        const combatLog = page.locator('[class*="combat"]');
-        await expect(combatLog).toBeVisible();
+      // Reload the page to simulate a new viewer and ensure completed state is preserved
+      await page.reload();
+      await page.waitForLoadState('networkidle');
+      const statusCardAfterReload = page.getByTestId('combat-status');
+      await expect(statusCardAfterReload).toBeVisible({ timeout: 10000 });
+      await expect(statusCardAfterReload).toContainText(/Terminé|Complete/);
 
-        // Should see the winner
-        const winner = page.locator('text=/Victoire|Victory/');
-        await expect(winner).toBeVisible();
-      }
+      // Winner trophy visible
+      const winner = page.getByTestId('combat-winner');
+      await expect(winner).toBeVisible();
+
     }
   });
 

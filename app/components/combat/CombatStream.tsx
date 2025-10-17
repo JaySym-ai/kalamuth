@@ -174,7 +174,7 @@ export default function CombatStream({
 
     eventSource.onmessage = handleMessage;
 
-    eventSource.onerror = () => {
+    eventSource.onerror = async () => {
       eventSource.close();
 
       // Clear any existing reconnect timeout
@@ -182,12 +182,32 @@ export default function CombatStream({
         clearTimeout(reconnectTimeoutRef.current);
       }
 
+      // Immediate status check to avoid waiting when fight actually completed
+      try {
+        const res = await fetch(`/api/combat/match/${matchId}/status`);
+        if (res.ok) {
+          const s = await res.json();
+          if (s.status === "completed") {
+            setBattleState((prev) => ({
+              ...prev,
+              isComplete: true,
+              winnerId: s.winnerId,
+              winnerMethod: s.winnerMethod,
+            }));
+            setIsStreaming(false);
+            return;
+          }
+        }
+      } catch {
+        // ignore network errors; we'll fall back to reconnection
+      }
+
       // Only attempt reconnection if we haven't exceeded max attempts
       if (reconnectAttempts < 5) {
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000); // Exponential backoff, max 10s
 
         reconnectTimeoutRef.current = setTimeout(() => {
-          setReconnectAttempts(prev => prev + 1);
+          setReconnectAttempts((prev) => prev + 1);
           startBattle();
         }, delay);
       } else {
@@ -233,6 +253,36 @@ export default function CombatStream({
       }
     };
   }, []);
+
+
+  // Fallback: if we've reached maxActions but never received 'complete', poll status
+  useEffect(() => {
+    if (!battleState.isComplete && battleState.actionNumber >= maxActions) {
+      const timeoutId = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/combat/match/${matchId}/status`);
+          if (res.ok) {
+            const s = await res.json();
+            if (s.status === "completed") {
+              setBattleState((prev) => ({
+                ...prev,
+                isComplete: true,
+                winnerId: s.winnerId,
+                winnerMethod: s.winnerMethod,
+              }));
+              setIsStreaming(false);
+              if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+              }
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }, 1500); // small grace period for the 'complete' event
+      return () => clearTimeout(timeoutId);
+    }
+  }, [battleState.actionNumber, battleState.isComplete, maxActions, matchId]);
 
   return (
     <div className="space-y-8">

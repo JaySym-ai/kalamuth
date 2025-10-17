@@ -368,7 +368,7 @@ export default function ArenaDetailClient({
           return [details.match as CombatMatch, ...current];
         });
         debug_log('🔔 Injected match from acceptance trigger', { matchId });
-      } catch (e) {
+      } catch {
         // swallow
       }
     };
@@ -395,7 +395,7 @@ export default function ArenaDetailClient({
           return [details.match as CombatMatch, ...current];
         });
         debug_log('📥 Injected match from queue fallback', { matchId });
-      } catch (e) {
+      } catch {
         // no-op
       }
     })();

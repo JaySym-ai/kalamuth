@@ -5,6 +5,31 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Heart, Swords, Brain, Star, MapPin, AlertCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { NormalizedGladiator } from "@/lib/gladiator/normalize";
+
+// Helper function to safely extract localized string from bilingual data
+function getLocalizedString(value: unknown, locale: string): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const obj = value as Record<string, unknown>;
+    // Try to get the localized version first
+    if (typeof obj[locale] === "string") {
+      return obj[locale] as string;
+    }
+    // Fallback to English
+    if (typeof obj.en === "string") {
+      return obj.en as string;
+    }
+    // Fallback to any available string
+    for (const key in obj) {
+      if (typeof obj[key] === "string") {
+        return obj[key] as string;
+      }
+    }
+  }
+  return "—"; // Default fallback
+}
 import { useRealtimeRow } from "@/lib/supabase/realtime";
 
 interface Props {
@@ -90,7 +115,7 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
             {/* Avatar */}
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-600 to-red-600 flex items-center justify-center text-4xl font-bold text-white">
-                {currentGladiator.name.charAt(0)}
+                {getLocalizedString(currentGladiator.name, locale).charAt(0)}
               </div>
               {!currentGladiator.alive && (
                 <div className="absolute inset-0 bg-black/80 rounded-full flex items-center justify-center">
@@ -102,12 +127,12 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
             {/* Basic Info */}
             <div className="flex-1">
               <h1 className="text-3xl font-black text-amber-400">
-                {currentGladiator.name} {currentGladiator.surname}
+                {getLocalizedString(currentGladiator.name, locale)} {getLocalizedString(currentGladiator.surname, locale)}
               </h1>
               <div className="flex items-center gap-4 mt-2 text-gray-400">
                 <div className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
-                  <span>{t.from} {currentGladiator.birthCity}</span>
+                  <span>{t.from} {getLocalizedString(currentGladiator.birthCity, locale)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Heart className="w-4 h-4" />
@@ -120,13 +145,13 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
                 {currentGladiator.injury && (
                   <div className="flex items-center gap-1 px-3 py-1 bg-orange-900/30 border border-orange-700/50 rounded-full text-orange-400 text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    <span>{currentGladiator.injury}</span>
+                    <span>{getLocalizedString(currentGladiator.injury, locale)}</span>
                   </div>
                 )}
                 {currentGladiator.sickness && (
                   <div className="flex items-center gap-1 px-3 py-1 bg-yellow-900/30 border border-yellow-700/50 rounded-full text-yellow-400 text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    <span>{currentGladiator.sickness}</span>
+                    <span>{getLocalizedString(currentGladiator.sickness, locale)}</span>
                   </div>
                 )}
               </div>
@@ -142,13 +167,14 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {Object.entries(currentGladiator.stats).map(([stat, description]) => {
                 const Icon = statIcons[stat] || Star;
+                const localizedDescription = getLocalizedString(description, locale);
                 return (
                   <div key={stat} className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Icon className="w-5 h-5 text-amber-400" />
                       <span className="font-semibold text-amber-400 capitalize">{t[stat as keyof typeof t] || stat}</span>
                     </div>
-                    <p className="text-sm text-gray-300">{description}</p>
+                    <p className="text-sm text-gray-300">{localizedDescription}</p>
                   </div>
                 );
               })}
@@ -162,19 +188,19 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
               <div className="space-y-3">
                 <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.lifeGoal}</h3>
-                  <p className="text-sm text-gray-300">{currentGladiator.lifeGoal}</p>
+                  <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.lifeGoal, locale)}</p>
                 </div>
                 <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.personalityTrait}</h3>
-                  <p className="text-sm text-gray-300">{currentGladiator.personality}</p>
+                  <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.personality, locale)}</p>
                 </div>
                 <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.likes}</h3>
-                  <p className="text-sm text-gray-300">{currentGladiator.likes}</p>
+                  <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.likes, locale)}</p>
                 </div>
                 <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.dislikes}</h3>
-                  <p className="text-sm text-gray-300">{currentGladiator.dislikes}</p>
+                  <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.dislikes, locale)}</p>
                 </div>
               </div>
             </div>
@@ -184,18 +210,18 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
               <div className="space-y-3">
                 <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.backstory}</h3>
-                  <p className="text-sm text-gray-300">{currentGladiator.backstory}</p>
+                  <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.backstory, locale)}</p>
                 </div>
                 {currentGladiator.notableHistory && (
                   <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                     <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.notableHistory}</h3>
-                    <p className="text-sm text-gray-300">{currentGladiator.notableHistory}</p>
+                    <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.notableHistory, locale)}</p>
                   </div>
                 )}
                 {currentGladiator.physicalCondition && (
                   <div className="bg-black/40 border border-amber-900/20 rounded-lg p-4">
                     <h3 className="text-sm font-semibold text-gray-400 mb-1">{t.physicalCondition}</h3>
-                    <p className="text-sm text-gray-300">{currentGladiator.physicalCondition}</p>
+                    <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.physicalCondition, locale)}</p>
                   </div>
                 )}
               </div>
@@ -209,25 +235,25 @@ export default function GladiatorDetailClient({ gladiator, locale, translations:
               {currentGladiator.weakness && (
                 <div className="bg-black/40 border border-red-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-red-400 mb-1">{t.weakness}</h3>
-                  <p className="text-sm text-gray-300">{currentGladiator.weakness}</p>
+                  <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.weakness, locale)}</p>
                 </div>
               )}
               {currentGladiator.fear && (
                 <div className="bg-black/40 border border-purple-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-purple-400 mb-1">{t.fear}</h3>
-                  <p className="text-sm text-gray-300">{currentGladiator.fear}</p>
+                  <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.fear, locale)}</p>
                 </div>
               )}
               {currentGladiator.handicap && (
                 <div className="bg-black/40 border border-orange-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-orange-400 mb-1">{t.handicap}</h3>
-                  <p className="text-sm text-gray-300">{currentGladiator.handicap}</p>
+                  <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.handicap, locale)}</p>
                 </div>
               )}
               {currentGladiator.uniquePower && (
                 <div className="bg-black/40 border border-green-900/20 rounded-lg p-4">
                   <h3 className="text-sm font-semibold text-green-400 mb-1">{t.uniquePower}</h3>
-                  <p className="text-sm text-gray-300">{currentGladiator.uniquePower}</p>
+                  <p className="text-sm text-gray-300">{getLocalizedString(currentGladiator.uniquePower, locale)}</p>
                 </div>
               )}
             </div>

@@ -34,15 +34,22 @@ export async function GET(
     return new Response("Match not found", { status: 404 });
   }
 
-  // Verify user is a participant (optional check for status endpoint)
+  // Verify user is a participant and check server consistency
   const { data: participantCheck } = await supabase
     .from("gladiators")
-    .select("id")
+    .select("id, serverId")
     .in("id", [match.gladiator1Id, match.gladiator2Id])
     .eq("userId", user.id);
 
   if (!participantCheck || participantCheck.length === 0) {
     return new Response("Forbidden", { status: 403 });
+  }
+
+  // Verify all participants are from the same server
+  const uniqueServers = new Set(participantCheck.map(g => g.serverId));
+  if (uniqueServers.size > 1) {
+    debug_error("Match contains gladiators from different servers", { matchId, servers: Array.from(uniqueServers) });
+    return new Response("Server mismatch", { status: 400 });
   }
 
   return Response.json({

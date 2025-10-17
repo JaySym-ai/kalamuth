@@ -234,7 +234,11 @@
     "weakness": "Faiblesse",
     "fear": "Peur",
     "handicap": "Handicap",
-    "uniquePower": "Pouvoir Unique"
+    "uniquePower": "Pouvoir Unique",
+    "typeMessage": "Tapez votre message...",
+    "gladiatorInfo": "Info Gladiateur",
+    "chat": "Chat",
+    "sendMessage": "Envoyer"
   },
   "ChangeServer": {
     "button": "Changer de Serveur",

@@ -234,7 +234,11 @@
     "weakness": "Weakness",
     "fear": "Fear",
     "handicap": "Handicap",
-    "uniquePower": "Unique Power"
+    "uniquePower": "Unique Power",
+    "typeMessage": "Type your message...",
+    "gladiatorInfo": "Gladiator Info",
+    "chat": "Chat",
+    "sendMessage": "Send"
   },
   "ChangeServer": {
     "button": "Change Server",

@@ -112,16 +112,13 @@ test.describe('Server Switch Complete Flow', () => {
 
     // Select a server without ludus
     const serverOptions = page.locator('[data-testid^="server-option-"]');
-    let targetServerId = '';
     const count = await serverOptions.count();
 
     for (let i = 0; i < count; i++) {
       const option = serverOptions.nth(i);
       const statusText = await option.locator('text=/Has Ludus|No Ludus/').textContent();
-      
+
       if (statusText?.includes('No Ludus')) {
-        const testId = await option.getAttribute('data-testid');
-        targetServerId = testId?.replace('server-option-', '') || '';
         await option.click();
         break;
       }

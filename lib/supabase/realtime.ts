@@ -290,7 +290,7 @@ export function useRealtimeCollection<T extends object>(
         if (status === "SUBSCRIBED" && fetchOnMount) {
           try {
             refreshRef.current();
-          } catch (e) {
+          } catch {
             // no-op
           }
         }
@@ -299,7 +299,7 @@ export function useRealtimeCollection<T extends object>(
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, schema, table, matchKey, channelFilter, rowMatches, getPrimaryKeyValue, transformRow, applyOrder]);
+  }, [supabase, schema, table, matchKey, channelFilter, rowMatches, getPrimaryKeyValue, transformRow, applyOrder, fetchOnMount]);
 
   return {
     data,

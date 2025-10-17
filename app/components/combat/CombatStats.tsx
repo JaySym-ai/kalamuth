@@ -47,6 +47,7 @@ export default function CombatStats({
           color="text-amber-400"
           bgColor="bg-amber-900/20"
           borderColor="border-amber-700/40"
+          dataTestId="combat-action-counter"
         />
 
         {/* Elapsed time */}
@@ -67,6 +68,7 @@ export default function CombatStats({
           color={isComplete ? "text-emerald-400" : "text-orange-400"}
           bgColor={isComplete ? "bg-emerald-900/20" : "bg-orange-900/20"}
           borderColor={isComplete ? "border-emerald-700/40" : "border-orange-700/40"}
+          dataTestId="combat-status"
         />
 
         {/* Winner (if complete) */}
@@ -78,6 +80,7 @@ export default function CombatStats({
             color="text-yellow-400"
             bgColor="bg-yellow-900/20"
             borderColor="border-yellow-700/40"
+            dataTestId="combat-winner"
           />
         )}
       </div>
@@ -94,11 +97,13 @@ interface StatCardProps {
   color: string;
   bgColor: string;
   borderColor: string;
+  dataTestId?: string;
 }
 
-function StatCard({ icon, label, value, color, bgColor, borderColor }: StatCardProps) {
+function StatCard({ icon, label, value, color, bgColor, borderColor, dataTestId }: StatCardProps) {
   return (
     <motion.div
+      data-testid={dataTestId}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={`flex-shrink-0 px-responsive-2 py-responsive-1 rounded-responsive-base border ${bgColor} ${borderColor} min-w-fit`}
